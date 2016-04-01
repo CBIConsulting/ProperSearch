@@ -62,7 +62,13 @@
     "webpack-dev-server": "^1.14.1"
   },
   "dependencies": {
+    "es6-set": "^0.1.4",
+    "immutable": "^3.7.6",
     "react": "^0.14.7",
-    "react-dom": "^0.14.7"
+    "react-dimensions": "^1.0.2",
+    "react-dom": "^0.14.7",
+    "react-immutable-render-mixin": "^0.9.5",
+    "react-virtualized": "^6.0.2",
+    "underscore": "^1.8.3"
   }
 }
