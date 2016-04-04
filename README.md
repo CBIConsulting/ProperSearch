@@ -54,11 +54,6 @@ Check your http://localhost:8080/ or  `open http://localhost:8080/`
 `npm test`
 
 ### Component properties
-
-		onEnter: null, // Optional - To do when key down Enter - SearchField
-
-		minLength: 3
-
 * data: List data. (Array)
  	* value: Id name. (String)
  	* label: Name to show (String)
