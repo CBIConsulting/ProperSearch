@@ -465,7 +465,7 @@ th {
       width: 100%;
       color: #777777;
       padding-left: 30px;
-      padding-right: 20px;
+      padding-right: 30px;
       border: none;
       outline: none; }
     .proper-search .proper-search-field .search-input i.fa-search {
@@ -479,10 +479,8 @@ th {
     .proper-search .proper-search-field .search-input .btn-clear {
       background: none;
       overflow: visible;
-      position: relative;
-      float: right;
       border: 0;
-      bottom: 22px;
+      margin-left: -26px;
       outline: none; }
       .proper-search .proper-search-field .search-input .btn-clear i {
         color: #777777; }
@@ -535,6 +533,19 @@ th {
     background-image: -moz-linear-gradient(bottom, #CECECE, #ffffff);
     background-image: -webkit-linear-gradient(#fff, #CECECE);
     background-image: linear-gradient(#fff, #CECECE); }
+
+.proper-search .search-list .search-list-virtual ::-webkit-scrollbar {
+  width: 12px; }
+
+.proper-search .search-list .search-list-virtual ::-webkit-scrollbar-track {
+  background-color: #eaeaea;
+  border-left: 1px solid #ccc; }
+
+.proper-search .search-list .search-list-virtual ::-webkit-scrollbar-thumb {
+  background-color: #ccc; }
+
+.proper-search .search-list .search-list-virtual ::-webkit-scrollbar-thumb:hover {
+  background-color: #aaa; }
 
 .proper-search .search-list .search-list-virtual:focus, .proper-search .search-list .search-list-virtual:active {
   border: none;

@@ -108,10 +108,6 @@ var ProperSearch =
 
 	var Set = __webpack_require__(44);
 
-	function getDefaultFilter() {
-		return;
-	}
-
 	function getDefaultProps() {
 		return {
 			data: [],
@@ -122,9 +118,18 @@ var ProperSearch =
 			filter: null,
 			listWidth: null,
 			listHeight: 200,
-			listRowHeight: 20,
+			listRowHeight: 26,
 			afterSelect: null,
-			onEnter: null // Optional - To do when key down Enter - SearchField
+			afterSearch: null,
+			onEnter: null, // Optional - To do when key down Enter - SearchField
+			fieldClass: null,
+			listClass: null,
+			className: null,
+			placeholder: 'Search...',
+			searchIcon: 'fa fa-search fa-fw',
+			clearIcon: 'fa fa-times fa-fw',
+			throttle: 160, // milliseconds
+			minLength: 3
 		};
 	}
 
@@ -254,7 +259,7 @@ var ProperSearch =
 
 				this.setState({
 					data: filteredData
-				});
+				}, this.sendSearch(value));
 			}
 		}, {
 			key: 'sendSelection',
@@ -293,13 +298,25 @@ var ProperSearch =
 				}
 			}
 		}, {
+			key: 'sendSearch',
+			value: function sendSearch(searchValue) {
+				if (typeof this.props.afterSearch == 'function') {
+					this.props.afterSearch.call(this, searchValue);
+				}
+			}
+		}, {
 			key: 'render',
 			value: function render() {
 				var messages = this.props.messages[this.props.lang],
 				    content = messages.loading,
 				    data = this.state.data,
 				    selection = this.state.selection,
-				    allSelected = data.size == selection.size;
+				    allSelected = data.size == selection.size,
+				    className = "proper-search";
+
+				if (this.props.className) {
+					className += ' ' + this.props.className;
+				}
 
 				if (this.state.ready) {
 					content = _react2['default'].createElement(_searchList2['default'], {
@@ -311,14 +328,23 @@ var ProperSearch =
 						multiSelect: this.props.multiSelect,
 						listHeight: this.props.listHeight,
 						listWidth: this.props.listWidth,
-						listRowHeight: this.props.listRowHeight
+						listRowHeight: this.props.listRowHeight,
+						className: this.props.listClass
 					});
 				}
 
 				return _react2['default'].createElement(
 					'div',
-					{ className: 'proper-search' },
-					_react2['default'].createElement(_searchField2['default'], { onSearch: this.handleSearch.bind(this) }),
+					{ className: "proper-search " + className },
+					_react2['default'].createElement(_searchField2['default'], {
+						onSearch: this.handleSearch.bind(this),
+						className: this.props.fieldClass,
+						placeholder: this.props.placeholder,
+						searchIcon: this.props.searchIcon,
+						clearIcon: this.props.clearIcon,
+						throttle: this.props.throttle,
+						minLength: this.props.minLength
+					}),
 					content
 				);
 			}
@@ -5379,7 +5405,7 @@ var ProperSearch =
 			messages: null,
 			selection: new Set(),
 			allSelected: false,
-			listRowHeight: 30,
+			listRowHeight: 26,
 			listHeight: 200,
 			listWidth: null // Container width by default
 		};
@@ -5565,16 +5591,20 @@ var ProperSearch =
 			key: 'render',
 			value: function render() {
 				var toolbar = null,
-				    className = this.props.className || '',
 				    rowsCount = 0,
-				    list = this.getContent();
+				    list = this.getContent(),
+				    className = "search-list";
 
 				if (this.props.multiSelect) toolbar = this.getToolbar();
 				rowsCount = this.props.data.size;
 
+				if (this.props.className) {
+					className += ' ' + this.props.className;
+				}
+
 				return _react2['default'].createElement(
 					'div',
-					{ className: "search-list " + className },
+					{ className: className },
 					toolbar,
 					_react2['default'].createElement(_reactVirtualized.VirtualScroll, {
 						className: "search-list-virtual",

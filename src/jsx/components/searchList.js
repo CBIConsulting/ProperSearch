@@ -160,13 +160,17 @@ class SearchList extends React.Component {
 	}
 
 	render(){
-		let toolbar = null, className = this.props.className || '', rowsCount = 0, list = this.getContent();
+		let toolbar = null, rowsCount = 0, list = this.getContent(), className = "search-list";
 
 		if (this.props.multiSelect) toolbar = this.getToolbar();
 		rowsCount = this.props.data.size;
 
+		if (this.props.className) {
+			className += ' '+this.props.className;
+		}
+
 		return (
-			<div className={"search-list " + className}>
+			<div className={className}>
 				{toolbar}
 				<VirtualScroll
 					className={"search-list-virtual"}

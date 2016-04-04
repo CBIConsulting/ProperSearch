@@ -12,4 +12,4 @@ const afterSelect = (data, selection) => {
 	console.info(selection);
 }
 
-ReactDOM.render(<Search data={data} multiSelect={false} afterSelect={afterSelect}/>, body);
+ReactDOM.render(<Search data={data} multiSelect={true} afterSelect={afterSelect}/>, body);

@@ -6,10 +6,6 @@ import SeachField from './searchField';
 import messages from "../lang/messages";
 const Set = require('es6-set');
 
-function getDefaultFilter() {
-	return ;
-}
-
 function getDefaultProps() {
 	return {
 		data: [],
@@ -22,7 +18,16 @@ function getDefaultProps() {
 		listHeight: 200,
 		listRowHeight: 26,
 		afterSelect: null,
-		onEnter: null // Optional - To do when key down Enter - SearchField
+		afterSearch: null,
+		onEnter: null, // Optional - To do when key down Enter - SearchField
+		fieldClass: null,
+		listClass: null,
+		className: null,
+		placeholder: 'Search...',
+		searchIcon: 'fa fa-search fa-fw',
+		clearIcon: 'fa fa-times fa-fw',
+		throttle: 160, // milliseconds
+		minLength: 3
 	}
 }
 
@@ -130,7 +135,7 @@ class Search extends React.Component {
 
 		this.setState({
 			data: filteredData
-		});
+		}, this.sendSearch(value));
 	}
 
 	sendSelection(selection) {
@@ -154,11 +159,23 @@ class Search extends React.Component {
 		}
 	}
 
+	sendSearch(searchValue) {
+		if (typeof this.props.afterSearch == 'function') {
+			this.props.afterSearch.call(this, searchValue);
+		}
+	}
+
 	render() {
-		let messages = this.props.messages[this.props.lang], content = messages.loading,
+		let messages = this.props.messages[this.props.lang],
+		content = messages.loading,
 		data = this.state.data,
 		selection = this.state.selection,
-		allSelected = data.size == selection.size;
+		allSelected = data.size == selection.size,
+		className = "proper-search";
+
+		if (this.props.className) {
+			className += ' '+this.props.className;
+		}
 
 		if (this.state.ready) {
 			content = (
@@ -172,13 +189,22 @@ class Search extends React.Component {
 					listHeight={this.props.listHeight}
 					listWidth={this.props.listWidth}
 					listRowHeight={this.props.listRowHeight}
+					className={this.props.listClass}
 				/>
 			);
 		}
 
 		return (
-			<div className="proper-search">
-				<SeachField onSearch={this.handleSearch.bind(this)}/>
+			<div className={"proper-search " + className}>
+				<SeachField
+					onSearch={this.handleSearch.bind(this)}
+					className={this.props.fieldClass}
+					placeholder={this.props.placeholder}
+					searchIcon={this.props.searchIcon}
+					clearIcon={this.props.clearIcon}
+					throttle={this.props.throttle}
+					minLength={this.props.minLength}
+				/>
 				{content}
 			</div>
 		);
