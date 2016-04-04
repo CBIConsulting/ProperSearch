@@ -1,6 +1,6 @@
 @import "compass";
-@import "react-virtualized-styles";
 @import "normalize";
+@import "react-virtualized-styles";
 
 .proper-search {
 	.proper-search-field {
@@ -24,14 +24,14 @@
 		    	outline: none;
 			}
 
-			i.fa-search {
+			i.proper-search-field-icon {
 				color: #777777;
 				overflow: visible;
 			    margin-right: -20px;
 			    position: relative;
 			    float: left;
 			    border: 0;
-			    padding: 5px;
+			    padding: 4px;
 		    }
 
 		    .btn-clear{
