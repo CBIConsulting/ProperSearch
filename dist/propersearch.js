@@ -11304,7 +11304,7 @@ var ProperSearch =
 					_react2['default'].createElement(
 						'div',
 						{ className: 'search-input' },
-						_react2['default'].createElement('i', { className: this.props.searchIcon }),
+						_react2['default'].createElement('i', { className: this.props.searchIcon + ' ' + 'proper-search-field-icon' }),
 						_react2['default'].createElement('input', {
 							ref: 'searchfield',
 							checkAll: false,

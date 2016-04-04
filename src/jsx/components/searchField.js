@@ -149,7 +149,7 @@ class SearchField extends React.Component {
 		return (
 			<div className={className} id={uniqueId}>
 				<div className="search-input">
-					<i className={this.props.searchIcon} />
+					<i className={this.props.searchIcon + ' ' + 'proper-search-field-icon'} />
 					<input
 						ref="searchfield"
 						checkAll={false}

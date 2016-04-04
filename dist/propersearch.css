@@ -1,96 +1,3 @@
-/* Grid default theme */
-.Grid {
-  position: relative;
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
-  /* Without this property, Chrome repaints the entire Grid any time a new row or column is added.
-     Firefox only repaints the new row or column (regardless of this property).
-     Safari and IE don't support the property at all. */
-  will-change: transform; }
-
-.Grid__innerScrollContainer {
-  box-sizing: border-box;
-  overflow: hidden; }
-
-.Grid__cell {
-  position: absolute; }
-
-/* FlexTable default theme */
-.FlexTable__Grid {
-  overflow-x: hidden; }
-
-.FlexTable__headerRow {
-  font-weight: 700;
-  text-transform: uppercase;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  overflow: hidden; }
-
-.FlexTable__headerTruncatedText {
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow: hidden; }
-
-.FlexTable__row {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  overflow: hidden; }
-
-.FlexTable__headerColumn,
-.FlexTable__rowColumn {
-  margin-right: 10px;
-  min-width: 0px; }
-
-.FlexTable__headerColumn:first-of-type,
-.FlexTable__rowColumn:first-of-type {
-  margin-left: 10px; }
-
-.FlexTable__headerColumn {
-  align-items: center;
-  display: flex;
-  flex-direction: row;
-  overflow: hidden; }
-
-.FlexTable__sortableHeaderColumn {
-  cursor: pointer; }
-
-.FlexTable__rowColumn {
-  justify-content: center;
-  flex-direction: column;
-  display: flex;
-  overflow: hidden;
-  height: 100%; }
-
-.FlexTable__sortableHeaderIconContainer {
-  display: flex;
-  align-items: center; }
-
-.FlexTable__sortableHeaderIcon {
-  flex: 0 0 24px;
-  height: 1em;
-  width: 1em;
-  fill: currentColor; }
-
-.FlexTable__truncatedColumnText {
-  text-overflow: ellipsis;
-  overflow: hidden; }
-
-/* VirtualScroll default theme */
-.VirtualScroll {
-  position: relative;
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch; }
-
-.VirtualScroll__innerScrollContainer {
-  box-sizing: border-box;
-  overflow: hidden; }
-
-.VirtualScroll__row {
-  position: absolute; }
-
 /*! normalize.scss v0.1.0 | MIT License | based on git.io/normalize */
 /**
  * 1. Set default font family to sans-serif.
@@ -449,6 +356,99 @@ td,
 th {
   padding: 0; }
 
+/* Grid default theme */
+.Grid {
+  position: relative;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  /* Without this property, Chrome repaints the entire Grid any time a new row or column is added.
+     Firefox only repaints the new row or column (regardless of this property).
+     Safari and IE don't support the property at all. */
+  will-change: transform; }
+
+.Grid__innerScrollContainer {
+  box-sizing: border-box;
+  overflow: hidden; }
+
+.Grid__cell {
+  position: absolute; }
+
+/* FlexTable default theme */
+.FlexTable__Grid {
+  overflow-x: hidden; }
+
+.FlexTable__headerRow {
+  font-weight: 700;
+  text-transform: uppercase;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  overflow: hidden; }
+
+.FlexTable__headerTruncatedText {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden; }
+
+.FlexTable__row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  overflow: hidden; }
+
+.FlexTable__headerColumn,
+.FlexTable__rowColumn {
+  margin-right: 10px;
+  min-width: 0px; }
+
+.FlexTable__headerColumn:first-of-type,
+.FlexTable__rowColumn:first-of-type {
+  margin-left: 10px; }
+
+.FlexTable__headerColumn {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden; }
+
+.FlexTable__sortableHeaderColumn {
+  cursor: pointer; }
+
+.FlexTable__rowColumn {
+  justify-content: center;
+  flex-direction: column;
+  display: flex;
+  overflow: hidden;
+  height: 100%; }
+
+.FlexTable__sortableHeaderIconContainer {
+  display: flex;
+  align-items: center; }
+
+.FlexTable__sortableHeaderIcon {
+  flex: 0 0 24px;
+  height: 1em;
+  width: 1em;
+  fill: currentColor; }
+
+.FlexTable__truncatedColumnText {
+  text-overflow: ellipsis;
+  overflow: hidden; }
+
+/* VirtualScroll default theme */
+.VirtualScroll {
+  position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; }
+
+.VirtualScroll__innerScrollContainer {
+  box-sizing: border-box;
+  overflow: hidden; }
+
+.VirtualScroll__row {
+  position: absolute; }
+
 .proper-search .proper-search-field {
   font-size: 14px;
   margin: 0;
@@ -468,14 +468,14 @@ th {
       padding-right: 30px;
       border: none;
       outline: none; }
-    .proper-search .proper-search-field .search-input i.fa-search {
+    .proper-search .proper-search-field .search-input i.proper-search-field-icon {
       color: #777777;
       overflow: visible;
       margin-right: -20px;
       position: relative;
       float: left;
       border: 0;
-      padding: 5px; }
+      padding: 4px; }
     .proper-search .proper-search-field .search-input .btn-clear {
       background: none;
       overflow: visible;
@@ -533,19 +533,6 @@ th {
     background-image: -moz-linear-gradient(bottom, #CECECE, #ffffff);
     background-image: -webkit-linear-gradient(#fff, #CECECE);
     background-image: linear-gradient(#fff, #CECECE); }
-
-.proper-search .search-list .search-list-virtual ::-webkit-scrollbar {
-  width: 12px; }
-
-.proper-search .search-list .search-list-virtual ::-webkit-scrollbar-track {
-  background-color: #eaeaea;
-  border-left: 1px solid #ccc; }
-
-.proper-search .search-list .search-list-virtual ::-webkit-scrollbar-thumb {
-  background-color: #ccc; }
-
-.proper-search .search-list .search-list-virtual ::-webkit-scrollbar-thumb:hover {
-  background-color: #aaa; }
 
 .proper-search .search-list .search-list-virtual:focus, .proper-search .search-list .search-list-virtual:active {
   border: none;
