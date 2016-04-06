@@ -7,11 +7,77 @@
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.4.0/css/font-awesome.min.css">
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.5/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="../dist/propersearch.css">
+    <style type="text/css">
+      .form-horizontal{
+        text-align: center;
+        color: #696969;
+      }
+
+      .button {
+        margin-left: -26px;
+      }
+
+      .input {
+        padding-left: 30px;
+      }
+
+    </style>
   </head>
   <body>
     <div style="position: absolute; width: 100%; top: 20%;">
-      <div style="position: absolute; top: 0; left: 33%;  width: 15%;">
-        <div id="canvas" style="position: absolute; top: 0; bottom: 0; width: 100%;">loading...</div>
+      <div style="position: absolute; top: 0; left: 20%;  width: 10%;">
+        <div style="position: absolute; top: 0; bottom: 0; width: 100%;">
+          <form class="form-horizontal" role="form">
+            <div class="form-group">
+                <div class="col-lg-10">
+                  <label> Id-field: </label>
+                </div>
+                <div class="col-lg-10">
+                  <input type="text" class="form-control input" id="idField" placeholder="Id field">
+                </div>
+                <div class="col-lg-2">
+                  <button id="btn-idField" class="button">-></button>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-lg-10">
+                  <label> Display-field: </label>
+                </div>
+                <div class="col-lg-10">
+                  <input type="text" class="form-control input" id="displayField" placeholder="Display field">
+                </div>
+                <div class="col-lg-2">
+                  <button id="btn-displayField" class="button">-></button>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-lg-10">
+                  <label> Multiselect </label>
+                </div>
+                <div class="col-lg-10">
+                  <select class="form-control" id="multiselect_id">
+                    <option value="1" selected>Yes</option>
+                    <option value="0">No</option>
+                  </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-lg-10">
+                  <label> Language: </label>
+                </div>
+                <div class="col-lg-10">
+                  <select class="form-control input" id="language">
+                    <option value="ESP">Spanish</option>
+                    <option value="ENG" selected>English</option>
+                  </select>
+                </div>
+            </div>
+          </form>
+        </div>
+      </div>
+      <div style="position: absolute; top: 0; left: 33%;  width: 18%;">
+        <div id="canvas" style="position: absolute; top: 0; bottom: 0; width: 75%;">loading...</div>
+        <div id="canvas2" style="position: absolute; top: 0; bottom: 0; right: 0; width: 20%;"></div>
       </div>
     </div>
   </body>
