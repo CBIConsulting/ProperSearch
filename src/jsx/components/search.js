@@ -3,8 +3,8 @@ import Immutable from 'immutable';
 import _ from 'underscore';
 import SearchList from './searchList';
 import SeachField from './searchField';
-import Normalizer from 'normalizer';
 import messages from "../lang/messages";
+import Normalizer from "../utils/normalize";
 import {shallowEqualImmutable} from 'react-immutable-render-mixin';
 const Set = require('es6-set');
 
@@ -438,7 +438,7 @@ class Search extends React.Component {
  * @param (String)	value 	String written in the search field
  */
 	handleSearch(value) {
-		let lValue = value ? value.toLowerCase() : null, filter = null;
+		let lValue = value ? value : null, filter = null;
 		let data = this.state.initialData, filteredData = data, selection = this.state.selection;
 		let displayField = this.state.displayField, idField = this.state.idField;
 		let hasFilter = (typeof this.props.filter == 'function');
@@ -474,7 +474,7 @@ class Search extends React.Component {
 					}
 
 					filter = Normalizer.normalize(filter);
-					return filter.toLowerCase().indexOf(lValue) >= 0;
+					return filter.indexOf(lValue) >= 0;
 				});
 			}
 		}
