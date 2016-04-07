@@ -15,16 +15,17 @@ describe('SearchField', () => {
 		let def = $.Deferred();
 		let props = {
 			onSearch: q => {
-				console.log(q);
-				called++;
-				if (q == 'foo') {
-					def.resolve(q);
+				if (q !== '') {
+					called++;
+					if (q == 'foo') {
+						def.resolve(q);
+					}
 				}
 			}
 		};
 
 		let component = prepare(props);
-		let node = component.refs.searchfield;
+		let node = component.refs.propersearch_field;
 
 		node.value = 'f';
 		TestUtils.Simulate.keyUp(node, {key: 'f'});
@@ -36,10 +37,7 @@ describe('SearchField', () => {
 		def.done((q) => {
 			expect(called).toBe(1);
 			expect(q).toBe('foo');
-			//expect(props.onSearch).toHaveBeenCalledWith('foo');
 		}).always(done);
-
-		console.log(component.refs);
 	});
 });
 
