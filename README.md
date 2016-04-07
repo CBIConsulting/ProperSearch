@@ -1,5 +1,5 @@
 # ProperSearch
-====================================
+
 [![Build Status](https://travis-ci.org/CBIConsulting/ProperSearch.svg)](https://travis-ci.org/CBIConsulting/ProperSearch)
 
 A proper search component for react. With a search field and a list of items allows the user to filter that list and select the items. The component return the
