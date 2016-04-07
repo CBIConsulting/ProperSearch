@@ -75,7 +75,7 @@ class App extends React.Component {
 		let multiSelect = !this.state.multiSelect;
 
 		if (random % 2 == 0) language = 'ENG';
-		else language = 'ESP';
+		else language = 'SPA';
 
 		for (let i = (Math.floor(Math.random()* 1000) + 10); i >= 0; i--) {
 			data.push({value: 'item-' + i, label: 'Item ' + i, name: 'Teeést ' + i});
@@ -178,7 +178,7 @@ class App extends React.Component {
 		                <label> Language: </label>
 		               	<div className="form-inline">
 		                  <select ref="lang" className="form-control input" id="language" defaultValue={language}  onChange={this.onChangeLang.bind(this)}>
-		                    <option value="ESP">Spanish</option>
+		                    <option value="SPA">Spanish</option>
 		                    <option value="ENG">English</option>
 		                  </select>
 		                </div>
