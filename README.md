@@ -4,7 +4,8 @@
 
 A proper search component for react. With a search field and a list of items allows the user to filter that list and select the items. The component return the
 selected data when it's selected. Allows multi and single selection. The list is virtual rendered, was designed to handle thousands items without sacrificing
-performance, only render the items in the view. Used react-virtualized to render the list items.
+performance, only render the items in the view. Used react-virtualized to render the list items. This component has a lot of configurable settings, read the
+component properties section for more info.
 
 Used technologies:
 
@@ -28,7 +29,7 @@ Features of ProperSearch:
 * List virtual rendered
 
 
-The compile and compressed ProperTable distribution file can be found in the dist folder along with the css file. Add the default stylesheet `dist/propertable.min.css`, then import it into any module.
+The compile and compressed ProperSearch distribution file can be found in the dist folder along with the css file. Add the default stylesheet `dist/propertable.min.css`, then import it into any module.
 
 ##External dependencies
 * React and React DOM
@@ -94,6 +95,7 @@ Check your http://localhost:8080/ or  `open http://localhost:8080/`
 	```
 * fieldClass: ClassName for the search field (String)
 * listClass: ClassName for the list (String)
+* listElementClass: ClassName for each element of the list (String)
 * className: ClassName for the component container (String)
 * placeholder: Placeholder for the search field (String) Default 'Search...'
 * searchIcon: ClassName for the search icon in the left of the search field (String) Default 'fa fa-search fa-fw' (FontAwesome)
@@ -101,6 +103,74 @@ Check your http://localhost:8080/ or  `open http://localhost:8080/`
 * throttle: Time between filtering action and the next. It affects to the search field onChange method setting an timeout (Integer) Default 160
 * minLength: Min. length of the written string in the search field to start filtering. (Integer) Default 3
 * onEnter: Custom function to be called on Enter key up.
+* idField: Name of the field that will be used to build the selection. Default 'value'
+	* Ex:
+	```javascript
+		let data = [];
+		data.push(value:'3', label: 'Orange', price: '9', kg: 200);
+
+		<Search
+			...
+			idField='value'
+			...
+		/>
+
+		Selecting Orange you ill get a selection -> [3] and data -> [{value:'3', label: 'Orange', price: '9', kg: 200}]
+	```
+* displayField: Field of the data which should be used to display in each element of the list. It can be a string or a function, just remenber to set the showIcon property to false if you are using another component and then only that component will be rendered inside each list element. Default: 'label'.
+	* Ex:
+	```javascript
+		let buttonClick = (e, name) => {
+			alert('Button ' + name + ' has been clicked');
+		}
+
+		let formater = listElement => {
+			return <button className ="btn btn-default" onClick={ (e) => {buttonClick(e, listElement.name)} }>{ listElement.name }</button>;
+		}
+
+		let data = [];
+		data.push(id:'16', display: formater, name: 'test 1');
+
+		<Search
+			...
+			idField={'id'}
+			displayField={'display'}
+			...
+		/>
+	```
+* listShowIcon: Setting if the check icon on the left of each list element must be printed or not
+* autoComplete: If the search field has autocomplete 'on' or 'off'. Default 'off'
+* defaultSearch: Set a default searching string to search when the components get mounted or this prop is updated.
+* filterField: Field to use for filtering on search field change.
+* filter: Function used to filter on type something in the search field. By default the data will be filtered by its displayfield, if it's a function then by it's name, if it doesn't exist then by its idField. (Important: If filterField it's set up then the data will by filter by this field). Note: if you use the filter then you'll get each element of list and the search field value, then you can filter that in the way you wanted). The search value it's normalized.
+	* Ex:
+	```javascript
+	let filter = (listElement, searchValue) => {
+		let data = listElement.name.toLowerCase();
+		data = Normalizer.normalize(data);
+		return data.indexOf(searchValue) >= 0;
+	}
+
+	let buttonClick = (e, name) => {
+		alert('Button ' + name + ' has been clicked');
+	}
+
+	let formater = listElement => {
+		return <button className ="btn btn-default" onClick={ (e) => {buttonClick(e, listElement.name)} }>{ listElement.name }</button>;
+	}
+
+	let data = [];
+	data.push(id:'16', display: formater, name: 'test 1');
+
+	<Search
+		...
+		idField={'id'}
+		displayField={'display'}
+		filter={filter}
+		...
+	/>
+```
+
 
 ### Basic Example
 

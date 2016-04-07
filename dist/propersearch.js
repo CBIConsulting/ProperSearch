@@ -57,7 +57,7 @@ var ProperSearch =
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
-	__webpack_require__(97);
+	__webpack_require__(99);
 
 	exports["default"] = _search2["default"];
 	module.exports = exports['default'];
@@ -94,9 +94,15 @@ var ProperSearch =
 
 	var _searchField2 = _interopRequireDefault(_searchField);
 
-	var _messages = __webpack_require__(96);
+	var _normalizer = __webpack_require__(96);
+
+	var _normalizer2 = _interopRequireDefault(_normalizer);
+
+	var _messages = __webpack_require__(98);
 
 	var _messages2 = _interopRequireDefault(_messages);
+
+	var _reactImmutableRenderMixin = __webpack_require__(6);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
@@ -108,14 +114,14 @@ var ProperSearch =
 
 	var Set = __webpack_require__(44);
 
+	// For more info about this read ReadMe.md
 	function getDefaultProps() {
 		return {
 			data: [],
 			messages: _messages2['default'],
 			lang: 'ENG',
-			defaultSelection: new Set(),
+			defaultSelection: null,
 			multiSelect: false,
-			filter: null,
 			listWidth: null,
 			listHeight: 200,
 			listRowHeight: 26,
@@ -124,14 +130,48 @@ var ProperSearch =
 			onEnter: null, // Optional - To do when key down Enter - SearchField
 			fieldClass: null,
 			listClass: null,
+			listElementClass: null,
 			className: null,
 			placeholder: 'Search...',
 			searchIcon: 'fa fa-search fa-fw',
 			clearIcon: 'fa fa-times fa-fw',
 			throttle: 160, // milliseconds
-			minLength: 3
+			minLength: 3,
+			defaultSearch: null,
+			autoComplete: 'off',
+			idField: 'value',
+			displayField: 'label',
+			listShowIcon: true,
+			filter: null, // Optional function (to be used when the displayField is an function too)
+			filterField: null // By default it will be the displayField
 		};
 	}
+
+	/**
+	 * A proper search component for react. With a search field and a list of items allows the user to filter that list and select the items.
+	 * The component return the selected data when it's selected. Allows multi and single selection. The list is virtual rendered, was designed
+	 * to handle thousands of elements without sacrificing performance, just render the elements in the view. Used react-virtualized to render the list items.
+	 *
+	 * Simple example usage:
+	 *
+	 * 	let data = [];
+	 * 	data.push({
+	 *	  	value: 1,
+	 *	  	label: 'Apple'
+	 * 	});
+	 *
+	 *	let afterSelect = (data, selection) => {
+	 *		console.info(data);
+	 *		console.info(selection);
+	 *	}
+	 *
+	 * 	<Search
+	 *		data={data}
+	 *		multiSelect={true}
+	 *		afterSelect={afterSelect}
+	 *	/>
+	 * ```
+	 */
 
 	var Search = function (_React$Component) {
 		_inherits(Search, _React$Component);
@@ -144,11 +184,13 @@ var ProperSearch =
 			var preparedData = _this.prepareData();
 
 			_this.state = {
-				data: preparedData.data,
-				initialData: preparedData.data,
-				rawData: preparedData.rawdata,
-				indexedData: preparedData.indexed,
-				selection: _this.props.defaultSelection,
+				data: preparedData.data, // Data to work with (Inmutable)
+				initialData: preparedData.data, // Same data as state.data but this data never changes. (Inmutable)
+				rawData: preparedData.rawdata, // Received data without any modfication (Inmutable)
+				indexedData: preparedData.indexed, // Received data indexed (No Inmutable)
+				initialIndexed: preparedData.indexed, // When data get filtered keep the full indexed
+				selection: new Set(),
+				allSelected: false,
 				ready: false
 			};
 			return _this;
@@ -157,62 +199,299 @@ var ProperSearch =
 		_createClass(Search, [{
 			key: 'componentDidMount',
 			value: function componentDidMount() {
-				this.applySelection();
+				this.setDefaultSelection(this.props.defaultSelection);
+
+				this.setState({
+					ready: true
+				});
 			}
 		}, {
-			key: 'applySelection',
-			value: function applySelection() {
-				var newSelection = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
+			key: 'shouldComponentUpdate',
+			value: function shouldComponentUpdate(nextProps, nextState) {
+				var stateChanged = !(0, _reactImmutableRenderMixin.shallowEqualImmutable)(this.state, nextState);
+				var propsChanged = !(0, _reactImmutableRenderMixin.shallowEqualImmutable)(this.props, nextProps);
+				var somethingChanged = propsChanged || stateChanged;
 
-				var data = this.state.data,
-				    selection = newSelection || this.state.selection;
-				var parsed = null;
+				// Update row indexes when data get filtered
+				if (this.state.data.size != nextState.data.size) {
+					var parsed = null,
+					    indexed = null;
 
-				parsed = data.map(function (element) {
-					if (selection.has(element.get('value', null))) {
-						element = element.set('_selected', true);
-					} else {
-						element = element.set('_selected', false);
+					parsed = this.prepareData(nextState.data);
+					indexed = parsed.indexed;
+
+					this.setState({
+						data: parsed.data,
+						indexedData: parsed.indexed,
+						allSelected: this.isAllSelected(parsed.data, nextState.selection)
+					});
+
+					return false;
+				}
+
+				if (propsChanged) {
+					var dataChanged = !(0, _reactImmutableRenderMixin.shallowEqualImmutable)(this.props.data, nextProps.data);
+					var selectionChanged = !(0, _reactImmutableRenderMixin.shallowEqualImmutable)(this.props.defaultSelection, nextProps.defaultSelection);
+
+					if (dataChanged) {
+						var preparedData = this.prepareData(_immutable2['default'].fromJS(nextProps.data), nextProps.idField);
+						var _selection = null;
+
+						if (selectionChanged) _selection = nextProps.defaultSelection;
+
+						this.setState({
+							data: preparedData.data,
+							initialData: preparedData.data,
+							rawData: preparedData.rawdata,
+							indexedData: preparedData.indexed,
+							initialIndexed: preparedData.indexed
+						}, this.setDefaultSelection(_selection));
+
+						return false;
 					}
 
-					return element;
+					if (selectionChanged) {
+						this.setDefaultSelection(selection);
+
+						return false;
+					}
+				}
+
+				return somethingChanged;
+			}
+
+			/**
+	   * Before the components update set the updated selection data to the components state.
+	   *
+	   * @param {object}	nextProps	The props that will be set for the updated component
+	   * @param {object}	nextState	The state that will be set for the updated component
+	   */
+
+		}, {
+			key: 'componentWillUpdate',
+			value: function componentWillUpdate(nextProps, nextState) {
+				var dataChangedProps = !(0, _reactImmutableRenderMixin.shallowEqualImmutable)(this.props.data, nextProps.data);
+
+				// Selection
+				if (this.props.multiSelect) {
+					if (nextState.selection.size !== this.state.selection.size) {
+						this.updateSelectionData(nextState.selection, nextState.allSelected);
+					}
+				} else {
+					var next = nextState.selection.values().next().value || null;
+					var old = this.state.selection.values().next().value || null;
+
+					if (next !== old) {
+						this.updateSelectionData(next);
+					}
+				}
+			}
+
+			/**
+	   * Method called before the components update to set the new selection to states component and update the data
+	   *
+	   * @param {array}	newSelection	The new selected rows (Set object)
+	   * @param {array}	newAllSelected	If the new state has all the rows selected
+	   */
+
+		}, {
+			key: 'updateSelectionData',
+			value: function updateSelectionData(newSelection) {
+				var _this2 = this;
+
+				var newAllSelected = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
+
+				var newIndexed = _underscore2['default'].clone(this.state.indexedData);
+				var oldSelection = this.state.selection;
+				var rowid = null,
+				    selected = null,
+				    rdata = null,
+				    curIndex = null,
+				    newData = this.state.data,
+				    rowIndex = null;
+
+				if (!this.props.multiSelect) {
+					// Single select
+					var oldId = oldSelection.values().next().value || null;
+
+					if (!_underscore2['default'].isNull(oldId)) {
+						newIndexed[oldId]._selected = false; // Update indexed data
+						rowIndex = newIndexed[oldId]._rowIndex; // Get data index
+						if (newData.get(rowIndex)) {
+							rdata = newData.get(rowIndex).set('_selected', false); // Change the row in that index
+							newData = newData.set(rowIndex, rdata); // Set that row in the data object
+						}
+					}
+
+					if (!_underscore2['default'].isNull(newSelection)) {
+						newIndexed[newSelection]._selected = true; // Update indexed data
+						rowIndex = newIndexed[newSelection]._rowIndex; // Get data index
+						rdata = newData.get(rowIndex).set('_selected', true); // Change the row in that index
+						newData = newData.set(rowIndex, rdata); // Set that row in the data object
+					}
+				} else if (!newAllSelected && this.isSingleChange(newSelection.size)) {
+						// Change one row data at a time
+						var changedId = null,
+						    _selected = null;
+
+						// If the new selection has not one of the ids of the old selection that means an selected element has been unselected.
+						oldSelection.forEach(function (id) {
+							if (!newSelection.has(id)) {
+								changedId = id;
+								_selected = false;
+								return false;
+							}
+						});
+
+						// Otherwise a new row has been selected. Look through the new selection for the new element.
+						if (!changedId) {
+							_selected = true;
+							newSelection.forEach(function (id) {
+								if (!oldSelection.has(id)) {
+									changedId = id;
+									return false;
+								}
+							});
+						}
+
+						newIndexed[changedId]._selected = _selected; // Update indexed data
+						rowIndex = newIndexed[changedId]._rowIndex; // Get data index
+						rdata = newData.get(rowIndex).set('_selected', _selected); // Change the row in that index
+						newData = newData.set(rowIndex, rdata); // Set that row in the data object
+					} else {
+							// Change all data
+							newData = newData.map(function (row) {
+								rowid = row.get(_this2.props.idField);
+								selected = newSelection.has(rowid.toString());
+								rdata = row.set('_selected', selected);
+								curIndex = newIndexed[rowid];
+
+								if (curIndex._selected != selected) {
+									// update indexed data
+									curIndex._selected = selected;
+									newIndexed[rowid] = curIndex;
+								}
+
+								return rdata;
+							});
+						}
+
+				this.setState({
+					data: newData,
+					indexed: newIndexed
+				});
+			}
+
+			/**
+	   * Check if the selection has more than 1 change.
+	   *
+	   * @param {integer}	newSize		Size of the new selection
+	   */
+
+		}, {
+			key: 'isSingleChange',
+			value: function isSingleChange(newSize) {
+				var oldSize = this.state.selection.size;
+
+				if (oldSize - 1 == newSize || oldSize + 1 == newSize) return true;else return false;
+			}
+
+			/**
+	   * In case that the new selection array be different than the selection array in the components state, then update
+	   * the components state with the new data.
+	   *
+	   * @param {array}	newSelection	The selected rows
+	   */
+
+		}, {
+			key: 'triggerSelection',
+			value: function triggerSelection() {
+				var newSelection = arguments.length <= 0 || arguments[0] === undefined ? new Set() : arguments[0];
+
+				this.setState({
+					selection: newSelection,
+					allSelected: this.isAllSelected(this.state.data, newSelection)
+				}, this.sendSelection);
+			}
+
+			/**
+	   * Check if all the current data are selected.
+	   *
+	   * @param {array}	data		The data to compare with selection
+	   * @param {object}	selection	The current selection Set of values (idField)
+	   */
+
+		}, {
+			key: 'isAllSelected',
+			value: function isAllSelected(data, selection) {
+				var _this3 = this;
+
+				var result = true;
+				if (data.size > selection.size) return false;
+
+				data.forEach(function (item, index) {
+					if (!selection.has(item.get(_this3.props.idField, null))) {
+						// Some data not in selection
+						result = false;
+						return false;
+					}
 				});
 
-				if (!newSelection) {
-					this.setState({
-						data: parsed,
-						ready: true
-					});
-				} else {
-					this.setState({
-						data: parsed,
-						selection: selection
-					}, this.sendSelection(selection));
+				return result;
+			}
+
+			/**
+	   * Set up the default selection if exist
+	   *
+	   * @param {array || string ... number} defSelection 	Default selection to be applied to the list
+	   */
+
+		}, {
+			key: 'setDefaultSelection',
+			value: function setDefaultSelection(defSelection) {
+				if (defSelection) {
+					var _selection2 = null;
+
+					if (!_underscore2['default'].isArray(defSelection)) {
+						_selection2 = new Set([defSelection]);
+					} else if (defSelection !== new Set()) {
+						_selection2 = new Set(defSelection);
+					}
+
+					this.triggerSelection(_selection2);
 				}
 			}
 
 			/**
 	   * Prepare the data received by the component for the internal working.
 	   *
-	   * @return (array)	-rawdata: The same data as the props.
-	   *					-indexed: Same as rawdata but indexed by the properId
-	   *					-data: Parsed data to add some fields necesary to internal working.
+	   * @param (object)	newData 	New data for rebuild. (filtering || props changed)
+	   * @param (string)	idField 	New idField if it has been changed. (props changed)
+	   *
+	   * @return (array)	-rawdata: 	The same data as the props.
+	   *					-indexed: 	Same as rawdata but indexed by the idField
+	   *					-data: 		Parsed data to add some fields necesary to internal working.
 	   */
 
 		}, {
 			key: 'prepareData',
 			value: function prepareData() {
+				var newData = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
+				var idField = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
+
 				// The data will be inmutable inside the component
-				var data = _immutable2['default'].fromJS(this.props.data),
-				    index = 0;
+				var data = newData || _immutable2['default'].fromJS(this.props.data),
+				    index = 0,
+				    field = idField || this.props.idField;
 				var indexed = [],
 				    parsed = [];
 
-				// Parsing data to add new fields (selected or not, properId, rowIndex)
+				// Parsing data to add new fields (selected or not, field, rowIndex)
 				parsed = data.map(function (row) {
-					if (!row.get('_properId', false)) {
-						row = row.set('_properId', _underscore2['default'].uniqueId());
+					if (!row.get(field, false)) {
+						row = row.set(field, _underscore2['default'].uniqueId());
 					}
+
 					if (!row.get('_selected', false)) {
 						row = row.set('_selected', false);
 					}
@@ -223,7 +502,7 @@ var ProperSearch =
 				});
 
 				// Prepare indexed data.
-				indexed = _underscore2['default'].indexBy(parsed.toJSON(), '_properId');
+				indexed = _underscore2['default'].indexBy(parsed.toJSON(), field);
 
 				return {
 					rawdata: data,
@@ -231,26 +510,82 @@ var ProperSearch =
 					indexed: indexed
 				};
 			}
+
+			/**
+	   * Function called each time the selection has changed. Apply an update in the components state selection then render again an update the child
+	   * list.
+	   *
+	   * @param (Set)	selection The selected values using the values of the selected data.
+	   */
+
 		}, {
 			key: 'handleSelectionChange',
 			value: function handleSelectionChange(selection) {
-				this.applySelection(selection);
+				this.triggerSelection(selection);
 			}
+
+			/**
+	   * Function called each time the search field has changed. Filter the data by using the received search field value.
+	   *
+	   * @param (String)	value 	String written in the search field
+	   */
+
 		}, {
 			key: 'handleSearch',
 			value: function handleSearch(value) {
+				var _this4 = this;
+
+				var lValue = value ? value.toLowerCase() : null,
+				    filter = null;
 				var data = this.state.initialData,
 				    filteredData = data,
 				    selection = this.state.selection;
+				var displayField = this.props.displayField,
+				    idField = this.props.idField;
+				var hasFilter = typeof this.props.filter == 'function';
 
+				// When the search field has been clear then the value will be null and the data will be the same as initialData, otherwise
+				// the data will be filtered using the .filter() function of Inmutable lib. It return a Inmutable obj with the elements that
+				// match the expresion in the parameter.
 				if (value) {
-					filteredData = data.filter(function (element) {
-						return element.get('label', null).toLowerCase().indexOf(value.toLowerCase()) >= 0;
-					});
+					lValue = _normalizer2['default'].normalize(lValue);
+
+					// If the prop `filter´ has a function then use if to filter as an interator over the indexed data.
+					if (hasFilter) {
+						(function () {
+							var filtered = null,
+							    filteredIndexes = new Set();
+
+							// Filter indexed data using the funtion
+							_underscore2['default'].each(_this4.state.initialIndexed, function (element) {
+								if (_this4.props.filter(element, lValue)) {
+									filteredIndexes.add(element._rowIndex);
+								}
+							});
+
+							// Then get the data that match with that indexed data
+							filteredData = data.filter(function (element) {
+								return filteredIndexes.has(element.get('_rowIndex'));
+							});
+						})();
+					} else {
+						filteredData = data.filter(function (element) {
+							filter = element.get(_this4.props.filterField, null) || element.get(displayField);
+
+							// When it's a function then use the field in filterField to search, if this field doesn't exist then use the field name or then idField.
+							if (typeof filter == 'function') {
+								filter = element.get('name', null) || element.get(idField);
+							}
+
+							filter = _normalizer2['default'].normalize(filter);
+							return filter.toLowerCase().indexOf(lValue) >= 0;
+						});
+					}
 				}
 
+				// Apply selection
 				filteredData = filteredData.map(function (element) {
-					if (selection.has(element.get('value', null))) {
+					if (selection.has(element.get(idField, null))) {
 						element = element.set('_selected', true);
 					}
 
@@ -259,44 +594,63 @@ var ProperSearch =
 
 				this.setState({
 					data: filteredData
-				}, this.sendSearch(value));
+				}, this.sendSearch(lValue));
 			}
+
+			/**
+	   * Get the data that match with the selection in params and send the data and the selection to a function whichs name is afterSelect
+	   * if this function was set up in the component props
+	   */
+
 		}, {
 			key: 'sendSelection',
-			value: function sendSelection(selection) {
-				var _this2 = this;
+			value: function sendSelection() {
+				var _this5 = this;
 
 				if (typeof this.props.afterSelect == 'function') {
 					(function () {
 						var selectionArray = [],
 						    selectedData = [],
 						    properId = null,
-						    rowIndex = null;
-						var _state = _this2.state;
+						    rowIndex = null,
+						    filteredData = null;
+						var _state = _this5.state;
 						var indexedData = _state.indexedData;
 						var initialData = _state.initialData;
 						var rawData = _state.rawData;
 						var data = _state.data;
+						var selection = _state.selection;
 
-						var filteredData = initialData.filter(function (element) {
-							return selection.has(element.get('value', null));
+						// Get the data (initialData) that match with the selection
+
+						filteredData = initialData.filter(function (element) {
+							return selection.has(element.get(_this5.props.idField, null));
 						});
 
+						// Then from the filtered data get the raw data that match with the selection
 						selectedData = filteredData.map(function (row) {
-							properId = row.get('_properId', 0);
-							rowIndex = indexedData[properId]._rowIndex;
+							properId = row.get(_this5.props.idField, 0);
+							rowIndex = _underscore2['default'].isUndefined(indexedData[properId]) ? _this5.state.initialIndexed[properId]._rowIndex : indexedData[properId]._rowIndex;
 
 							return rawData.get(rowIndex);
 						});
 
+						// Parse the selection to return it as an array instead of a Set obj
 						selection.forEach(function (item) {
 							selectionArray.push(item);
 						});
 
-						_this2.props.afterSelect.call(_this2, selectedData.toJSON(), selectionArray);
+						_this5.props.afterSelect.call(_this5, selectedData.toJSON(), selectionArray);
 					})();
 				}
 			}
+
+			/**
+	   * Send the written string in the search field to the afterSearch function if it was set up in the components props
+	   *
+	   * @param (String)	searchValue 	String written in the search field
+	   */
+
 		}, {
 			key: 'sendSearch',
 			value: function sendSearch(searchValue) {
@@ -308,10 +662,10 @@ var ProperSearch =
 			key: 'render',
 			value: function render() {
 				var messages = this.props.messages[this.props.lang],
-				    content = messages.loading,
+				    content = null,
 				    data = this.state.data,
-				    selection = this.state.selection,
-				    allSelected = data.size == selection.size,
+				    selection = new Set(),
+				    allSelected = this.state.allSelected,
 				    className = "proper-search";
 
 				if (this.props.className) {
@@ -319,32 +673,55 @@ var ProperSearch =
 				}
 
 				if (this.state.ready) {
-					content = _react2['default'].createElement(_searchList2['default'], {
-						data: data,
-						onSelectionChange: this.handleSelectionChange.bind(this),
-						messages: messages,
-						selection: selection,
-						allSelected: allSelected,
-						multiSelect: this.props.multiSelect,
-						listHeight: this.props.listHeight,
-						listWidth: this.props.listWidth,
-						listRowHeight: this.props.listRowHeight,
-						className: this.props.listClass
+					this.state.selection.forEach(function (element) {
+						selection.add(element);
 					});
+
+					content = _react2['default'].createElement(
+						'div',
+						null,
+						_react2['default'].createElement(_searchField2['default'], {
+							onSearch: this.handleSearch.bind(this),
+							onEnter: this.props.onEnter,
+							className: this.props.fieldClass,
+							placeholder: this.props.placeholder,
+							defaultValue: this.props.defaultSearch,
+							searchIcon: this.props.searchIcon,
+							clearIcon: this.props.clearIcon,
+							throttle: this.props.throttle,
+							minLength: this.props.minLength,
+							autoComplete: this.props.autoComplete
+						}),
+						_react2['default'].createElement(_searchList2['default'], {
+							data: data,
+							rawData: this.state.rawData,
+							indexedData: this.state.initialIndexed,
+							className: this.props.listClass,
+							idField: this.props.idField,
+							displayField: this.props.displayField,
+							onSelectionChange: this.handleSelectionChange.bind(this),
+							messages: messages,
+							selection: selection,
+							allSelected: allSelected,
+							multiSelect: this.props.multiSelect,
+							listHeight: this.props.listHeight,
+							listWidth: this.props.listWidth,
+							listRowHeight: this.props.listRowHeight,
+							listElementClass: this.props.listElementClass,
+							showIcon: this.props.listShowIcon
+						})
+					);
+				} else {
+					content = _react2['default'].createElement(
+						'div',
+						{ className: 'proper-search-loading' },
+						messages.loading
+					);
 				}
 
 				return _react2['default'].createElement(
 					'div',
 					{ className: "proper-search " + className },
-					_react2['default'].createElement(_searchField2['default'], {
-						onSearch: this.handleSearch.bind(this),
-						className: this.props.fieldClass,
-						placeholder: this.props.placeholder,
-						searchIcon: this.props.searchIcon,
-						clearIcon: this.props.clearIcon,
-						throttle: this.props.throttle,
-						minLength: this.props.minLength
-					}),
 					content
 				);
 			}
@@ -5397,19 +5774,43 @@ var ProperSearch =
 
 	var Set = __webpack_require__(44);
 
+	// For more info about this read ReadMe.md
 	function getDefaultProps() {
 		return {
-			data: [],
+			data: null,
+			rawData: null, // Just when you use a function as a display field. (Inmutable same as received by the main component)
+			indexedData: null, // Just when you use a function as a display field. (array) (Full indexed data not filted)
 			onSelectionChange: null,
-			multiSelect: true,
+			multiSelect: false,
 			messages: null,
 			selection: new Set(),
 			allSelected: false,
 			listRowHeight: 26,
 			listHeight: 200,
-			listWidth: null // Container width by default
+			listWidth: null, // Container width by default
+			idField: 'value',
+			displayField: 'label',
+			showIcon: true,
+			listElementClass: null
 		};
 	}
+
+	/**
+	 * A Component that render a list of selectable items, with single or multiple selection and return the selected items each time a new item be selected.
+	 *
+	 * Simple example usage:
+	 *	let handleSelection = function(selection){
+	 *		console.log('Selected values: ' + selection) // The selection is a Set obj
+	 *	}
+	 *
+	 * 	<SearchList
+	 *		data={data} // As an Inmutable obj
+	 *		idField={'value'} // Field used as an id
+	 *		onSelectionChange={handleSelection}
+	 * 		multiselect={false}
+	 *	/>
+	 * ```
+	 */
 
 	var SearchList = function (_React$Component) {
 		_inherits(SearchList, _React$Component);
@@ -5430,28 +5831,45 @@ var ProperSearch =
 			key: 'shouldComponentUpdate',
 			value: function shouldComponentUpdate(nextProps, nextState) {
 				var propschanged = !(0, _reactImmutableRenderMixin.shallowEqualImmutable)(this.props, nextProps);
-				var statechanged = !(0, _reactImmutableRenderMixin.shallowEqualImmutable)(this.state, nextState);
-				var somethingchanged = propschanged || statechanged;
 
 				if (propschanged) {
-					var nothing = nextProps.selection.size == 0;
+					var nothingSelected = false;
+					propschanged = (0, _reactImmutableRenderMixin.shallowEqualImmutable)(this.props.selection, nextProps.selection); // If selection change don't render
 
-					if (nextProps.allSelected != this.state.allSelected || nothing != this.state.nothingSelected) {
+					if (!nextProps.allSelected) nothingSelected = this.isNothingSelected(nextProps.data, nextProps.selection);
+
+					// When the props change update the state.
+					if (nextProps.allSelected != this.state.allSelected || nothingSelected != this.state.nothingSelected) {
 						this.setState({
 							allSelected: nextProps.allSelected,
-							nothingSelected: nothing
+							nothingSelected: nothingSelected
 						});
+
+						return true;
 					}
 				}
 
-				return somethingchanged;
+				return propschanged;
 			}
+
+			/**
+	   * Function called each time an element of the list is selected. Get the value (value of the idField) of the
+	   * element that was selected, them change the selection and call to onSelectionChange function in the props sending
+	   * the new selection.
+	   *
+	   * @param (String)	itemValue 	Value of the idField of the selected element
+	   * @param (Array)	e 			Element which call the function
+	   */
+
 		}, {
 			key: 'handleElementClick',
 			value: function handleElementClick(itemValue, e) {
+				e.preventDefault();
+
 				var data = this.props.data,
 				    selection = this.props.selection,
-				    nothingSelected = null;
+				    nothingSelected = false,
+				    allSelected = false;
 
 				if (this.props.multiSelect) {
 					if (selection.has(itemValue)) {
@@ -5460,13 +5878,16 @@ var ProperSearch =
 						selection.add(itemValue);
 					}
 				} else {
-					selection = new Set([itemValue]);
+					if (selection.has(itemValue)) selection = new Set();else selection = new Set([itemValue]);
 				}
 
-				nothingSelected = selection.size == 0;
-				if (selection.size != data.size || nothingSelected != this.state.nothingSelected) {
+				allSelected = this.isAllSelected(data, selection);
+				if (!allSelected) nothingSelected = this.isNothingSelected(data, selection);
+
+				// If the state has changed update it
+				if (allSelected != this.state.allSelected || nothingSelected != this.state.nothingSelected) {
 					this.setState({
-						allSelected: selection.size == data.size,
+						allSelected: allSelected,
 						nothingSelected: nothingSelected
 					});
 				}
@@ -5475,23 +5896,85 @@ var ProperSearch =
 					this.props.onSelectionChange.call(this, selection);
 				}
 			}
+
+			/**
+	   * Check if all the current data are not selected
+	   *
+	   * @param {array}	data		The data to compare with selection
+	   * @param {object}	selection	The current selection Set of values (idField)
+	   */
+
+		}, {
+			key: 'isNothingSelected',
+			value: function isNothingSelected(data, selection) {
+				var _this2 = this;
+
+				var result = true;
+				if (selection.size == 0) return true;
+
+				data.forEach(function (element) {
+					if (selection.has(element.get(_this2.props.idField, null))) {
+						// Some data not in selection
+						result = false;
+						return false;
+					}
+				});
+
+				return result;
+			}
+
+			/**
+	   * Check if all the current data are selected.
+	   *
+	   * @param {array}	data		The data to compare with selection
+	   * @param {object}	selection	The current selection Set of values (idField)
+	   */
+
+		}, {
+			key: 'isAllSelected',
+			value: function isAllSelected(data, selection) {
+				var _this3 = this;
+
+				var result = true;
+				if (data.size > selection.size) return false;
+
+				data.forEach(function (element) {
+					if (!selection.has(element.get(_this3.props.idField, null))) {
+						// Some data not in selection
+						result = false;
+						return false;
+					}
+				});
+
+				return result;
+			}
+
+			/**
+	   * Function called each time the buttons in the bar of the list has been clicked. Delete or add all the data elements into the selection, just if it has changed.
+	   * Prevent multiple clicks in the same button.
+	   *
+	   * @param (Boolean)	selectAll 	If its a select all action or an unselect all.
+	   * @param (Array)	e 			Element which call the function
+	   */
+
 		}, {
 			key: 'handleSelectAll',
 			value: function handleSelectAll(selectAll, e) {
 				e.preventDefault();
 
 				var newData = [],
-				    data = this.props.data;
+				    data = this.props.data,
+				    field = this.props.idField;
 				var selection = this.props.selection;
 				var hasChanged = selectAll != this.state.allSelected || !selectAll && !this.state.nothingSelected; // nothingSelected = false then something is selected
 
 				if (selectAll && hasChanged) {
-					data.forEach(function (item) {
-						selection.add(item.get('value', null));
+					data.forEach(function (element) {
+						selection.add(element.get(field, null));
 					});
 				} else {
-					data.forEach(function (item) {
-						selection['delete'](item.get('value', null));
+					data.forEach(function (element) {
+						selection['delete'](element.get(field, null));
 					});
 				}
 
@@ -5506,18 +5989,25 @@ var ProperSearch =
 					this.props.onSelectionChange.call(this, selection);
 				}
 			}
+
+			/**
+	   * Return the tool bar for the top of the list. It will be displayed only when the selection can be multiple.
+	   *
+	   * @return (html) 	The toolbar code
+	   */
+
 		}, {
 			key: 'getToolbar',
 			value: function getToolbar() {
 				return _react2['default'].createElement(
 					'div',
-					{ className: 'search-list-bar' },
+					{ className: 'proper-search-list-bar' },
 					_react2['default'].createElement(
 						'div',
 						{ className: 'btn-group form-inline' },
 						_react2['default'].createElement(
 							'a',
-							{ id: 'search-list-bar-check', className: 'btn', role: 'button', onClick: this.handleSelectAll.bind(this, true) },
+							{ id: 'proper-search-list-bar-check', className: 'btn', role: 'button', onClick: this.handleSelectAll.bind(this, true) },
 							_react2['default'].createElement(
 								'label',
 								null,
@@ -5527,7 +6017,7 @@ var ProperSearch =
 						' ',
 						_react2['default'].createElement(
 							'a',
-							{ id: 'search-list-bar-unCheck', className: 'btn', role: 'button', onClick: this.handleSelectAll.bind(this, false) },
+							{ id: 'proper-search-list-bar-unCheck', className: 'btn', role: 'button', onClick: this.handleSelectAll.bind(this, false) },
 							_react2['default'].createElement(
 								'label',
 								null,
@@ -5537,51 +6027,96 @@ var ProperSearch =
 					)
 				);
 			}
+
+			/**
+	   * Build and return the content of the list.
+	   */
+
 		}, {
 			key: 'getContent',
 			value: function getContent() {
-				var _this2 = this;
+				var _this4 = this;
 
-				var content = null,
+				var icon = null,
 				    result = [],
-				    addClass = '';
+				    selectedClass = null,
+				    className = null,
+				    element = null,
+				    content = null;
 				var data = this.props.data,
-				    selection = this.props.selection;
+				    selection = this.props.selection,
+				    field = this.props.idField;
+				var displayField = this.props.displayField,
+				    showIcon = this.props.showIcon;
+				var listElementClass = this.props.listElementClass;
 
 				data.forEach(function (item, index) {
-					if (_this2.props.multiSelect) {
+					element = item.get(displayField);
+					className = "proper-search-list-element";
 
-						if (item.get('_selected', false)) {
-							content = _react2['default'].createElement('i', { className: 'fa fa-check-square-o' });
-							addClass = ' selected';
-						} else {
-							content = _react2['default'].createElement('i', { className: 'fa fa-square-o' });
-							addClass = '';
+					if (_this4.props.multiSelect) {
+						if (showIcon) {
+							if (item.get('_selected', false)) {
+								icon = _react2['default'].createElement('i', { className: 'fa fa-check-square-o' });
+								selectedClass = ' proper-search-selected';
+							} else {
+								icon = _react2['default'].createElement('i', { className: 'fa fa-square-o' });
+								selectedClass = null;
+							}
 						}
 					} else {
-						if (item.get('_selected')) addClass = ' single-selected';else addClass = '';
+						if (item.get('_selected')) selectedClass = ' proper-search-single-selected';else selectedClass = null;
 					}
 
-					result.push(_react2['default'].createElement(
+					if (listElementClass) {
+						className += ' ' + listElementClass;
+					}
+
+					if (selectedClass) {
+						className += ' ' + selectedClass;
+					}
+
+					if (typeof element == 'function') {
+						var id = item.get(field);
+						element = element(_this4.props.indexedData[id]);
+					}
+
+					content = _react2['default'].createElement(
 						'div',
-						{ key: 'element-' + index, className: "search-list-element" + addClass, onClick: _this2.handleElementClick.bind(_this2, item.get('value')) },
-						content,
-						'  ',
-						item.get('label')
-					));
+						{ key: 'element-' + index, className: className, onClick: _this4.handleElementClick.bind(_this4, item.get(field)) },
+						icon,
+						element
+					);
+
+					result.push(content);
 				});
 
 				return result;
 			}
+			/**
+	   * To be rendered when the data has no data (Ex. filtered data)
+	   *
+	   * @return (html) An div with a message
+	   */
+
 		}, {
 			key: 'noRowsRenderer',
 			value: function noRowsRenderer() {
 				return _react2['default'].createElement(
 					'div',
-					{ className: "search-list search-list-no-data" },
+					{ className: "proper-search-list search-list-no-data" },
 					this.props.messages.noData
 				);
 			}
+
+			/**
+	   * Function called to get the content of each element of the list.
+	   *
+	   * @param 	list 		List of elements builded on getContent.
+	   * @param 	index 		Current index to be rendered.
+	   * @return 	element 	The element on the index position
+	   */
+
 		}, {
 			key: 'rowRenderer',
 			value: function rowRenderer(list, index) {
@@ -5593,7 +6128,7 @@ var ProperSearch =
 				var toolbar = null,
 				    rowsCount = 0,
 				    list = this.getContent(),
-				    className = "search-list";
+				    className = "proper-search-list";
 
 				if (this.props.multiSelect) toolbar = this.getToolbar();
 				rowsCount = this.props.data.size;
@@ -5607,7 +6142,7 @@ var ProperSearch =
 					{ className: className },
 					toolbar,
 					_react2['default'].createElement(_reactVirtualized.VirtualScroll, {
-						className: "search-list-virtual",
+						className: "proper-search-list-virtual",
 						width: this.props.listWidth || this.props.containerWidth,
 						height: this.props.listHeight,
 						rowRenderer: this.rowRenderer.bind(this, list),
@@ -7105,12 +7640,10 @@ var ProperSearch =
 	        'div',
 	        {
 	          ref: 'scrollingContainer',
-	          'aria-label': this.props['aria-label'],
 	          className: (0, _classnames2.default)('Grid', className),
 	          onScroll: this._onScroll,
-	          role: 'grid',
-	          style: gridStyle,
-	          tabIndex: 0
+	          tabIndex: 0,
+	          style: gridStyle
 	        },
 	        childrenToDisplay.length > 0 && _react2.default.createElement(
 	          'div',
@@ -7408,8 +7941,6 @@ var ProperSearch =
 	}(_react.Component);
 
 	Grid.propTypes = {
-	  'aria-label': _react.PropTypes.string,
-
 	  /**
 	   * Optional custom CSS class name to attach to root Grid element.
 	   */
@@ -7500,7 +8031,6 @@ var ProperSearch =
 	  width: _react.PropTypes.number.isRequired
 	};
 	Grid.defaultProps = {
-	  'aria-label': 'grid',
 	  noContentRenderer: function noContentRenderer() {
 	    return null;
 	  },
@@ -8173,8 +8703,6 @@ var ProperSearch =
 	  value: true
 	});
 
-	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 	var _classnames = __webpack_require__(25);
@@ -8303,7 +8831,6 @@ var ProperSearch =
 	          this._getRenderedHeaderRow()
 	        ),
 	        _react2.default.createElement(_Grid2.default, {
-	          'aria-label': this.props['aria-label'],
 	          ref: 'Grid',
 	          className: 'FlexTable__Grid',
 	          columnWidth: width,
@@ -8408,7 +8935,7 @@ var ProperSearch =
 	      var newSortDirection = sortBy !== dataKey || sortDirection === _SortDirection2.default.DESC ? _SortDirection2.default.ASC : _SortDirection2.default.DESC;
 	      var onClick = function onClick() {
 	        sortEnabled && sort(dataKey, newSortDirection);
-	        onHeaderClick && onHeaderClick(dataKey, columnData);
+	        onHeaderClick(dataKey, columnData);
 	      };
 
 	      var renderedHeader = headerRenderer({
@@ -8420,22 +8947,14 @@ var ProperSearch =
 	        sortDirection: sortDirection
 	      });
 
-	      var a11yProps = {};
-
-	      if (sortEnabled || onHeaderClick) {
-	        a11yProps['aria-label'] = column.props['aria-label'] || label || dataKey;
-	        a11yProps.role = 'rowheader';
-	        a11yProps.tabIndex = 0;
-	        a11yProps.onClick = onClick;
-	      }
-
 	      return _react2.default.createElement(
 	        'div',
-	        _extends({}, a11yProps, {
+	        {
 	          key: 'Header-Col' + columnIndex,
 	          className: classNames,
-	          style: style
-	        }),
+	          style: style,
+	          onClick: onClick
+	        },
 	        renderedHeader
 	      );
 	    }
@@ -8459,27 +8978,19 @@ var ProperSearch =
 	        return _this3._createColumn(column, columnIndex, rowData, rowIndex);
 	      });
 
-	      var a11yProps = {};
-
-	      if (onRowClick) {
-	        a11yProps['aria-label'] = 'row';
-	        a11yProps.role = 'row';
-	        a11yProps.tabIndex = 0;
-	        a11yProps.onClick = function () {
-	          return onRowClick(rowIndex);
-	        };
-	      }
-
 	      return _react2.default.createElement(
 	        'div',
-	        _extends({}, a11yProps, {
+	        {
 	          key: rowIndex,
 	          className: (0, _classnames2.default)('FlexTable__row', rowClass),
+	          onClick: function onClick() {
+	            return onRowClick(rowIndex);
+	          },
 	          style: {
 	            height: this._getRowHeight(rowIndex),
 	            paddingRight: scrollbarWidth
 	          }
-	        }),
+	        },
 	        renderedRow
 	      );
 	    }
@@ -8548,8 +9059,6 @@ var ProperSearch =
 	}(_react.Component);
 
 	FlexTable.propTypes = {
-	  'aria-label': _react.PropTypes.string,
-
 	  /** One or more FlexColumns describing the data displayed in this row */
 	  children: function children(props, propName, componentName) {
 	    var children = _react2.default.Children.toArray(props.children);
@@ -8656,6 +9165,12 @@ var ProperSearch =
 	  disableHeader: false,
 	  headerHeight: 0,
 	  noRowsRenderer: function noRowsRenderer() {
+	    return null;
+	  },
+	  onHeaderClick: function onHeaderClick() {
+	    return null;
+	  },
+	  onRowClick: function onRowClick() {
 	    return null;
 	  },
 	  onRowsRendered: function onRowsRendered() {
@@ -8778,9 +9293,6 @@ var ProperSearch =
 	  headerRenderer: defaultHeaderRenderer
 	};
 	Column.propTypes = {
-	  /** Optional aria-label value to set on the column header */
-	  'aria-label': _react.PropTypes.string,
-
 	  /** Optional CSS class to apply to cell */
 	  cellClassName: _react.PropTypes.string,
 
@@ -9384,7 +9896,6 @@ var ProperSearch =
 
 	      return _react2.default.createElement(_Grid2.default, {
 	        ref: 'Grid',
-	        'aria-label': this.props['aria-label'],
 	        className: classNames,
 	        columnWidth: width,
 	        columnsCount: 1,
@@ -9432,8 +9943,6 @@ var ProperSearch =
 	}(_react.Component);
 
 	VirtualScroll.propTypes = {
-	  'aria-label': _react.PropTypes.string,
-
 	  /** Optional CSS class name */
 	  className: _react.PropTypes.string,
 
@@ -11140,9 +11649,7 @@ var ProperSearch =
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _underscore = __webpack_require__(4);
-
-	var _underscore2 = _interopRequireDefault(_underscore);
+	var _reactImmutableRenderMixin = __webpack_require__(6);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
@@ -11152,6 +11659,7 @@ var ProperSearch =
 
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+	// For more info about this read ReadMe.md
 	function getDefaultProps() {
 		return {
 			clearable: true,
@@ -11163,9 +11671,23 @@ var ProperSearch =
 			onEnter: null,
 			throttle: 160, // milliseconds
 			sendEmpty: true,
-			minLength: 3
+			minLength: 3,
+			autoComplete: 'off'
 		};
 	}
+
+	/**
+	 * A Component that render a search field which return the written string every props.trottle miliseconds as a parameter
+	 * in a function of onSearch, only if the length is bigger than props.minlength. Get clean each time the Scape key is down/up or the
+	 * clear button is cliked.
+	 *
+	 * Simple example usage:
+	 *
+	 * 	<SeachField
+	 *		onSearch={value => console.log(value)}
+	 *	/>
+	 * ```
+	 */
 
 	var SearchField = function (_React$Component) {
 		_inherits(SearchField, _React$Component);
@@ -11177,10 +11699,8 @@ var ProperSearch =
 
 			_this.state = {
 				showClear: false,
-				inputValue: _this.props.defaultValue
+				inputValue: ''
 			};
-
-			_this.clearField = _this.clearField.bind(_this);
 			return _this;
 		}
 
@@ -11194,19 +11714,22 @@ var ProperSearch =
 
 					e.preventDefault();
 
+					// Scape key
 					if (e.keyCode == 27) {
 						_this2.clearField(e);
 						return;
 					}
 
+					// Enter key
 					if (e.keyCode == 13) {
 						if (typeof _this2.props.onEnter == 'function') {
-							_this2.onEnter.call(_this2);
+							_this2.props.onEnter.call(_this2);
 						}
 					}
 
+					// If there is a call to the update functions and to send the search filter then reset it.
 					if (_this2.tout) {
-						clearInterval(_this2.tout);
+						clearTimeout(_this2.tout);
 					}
 
 					value = _this2.getInputValue();
@@ -11221,14 +11744,56 @@ var ProperSearch =
 				};
 			}
 		}, {
+			key: 'shouldComponentUpdate',
+			value: function shouldComponentUpdate(nextProps, nextState) {
+				var stateChanged = !(0, _reactImmutableRenderMixin.shallowEqualImmutable)(this.state, nextState);
+				var propsChanged = !(0, _reactImmutableRenderMixin.shallowEqualImmutable)(this.props, nextProps);
+				var somethingChanged = propsChanged || stateChanged;
+
+				if (propsChanged) {
+					if (nextProps.defaultValue != this.props.defaultValue) {
+						this.updateClear(nextProps.defaultValue);
+						this.setState({ inputValue: nextProps.defaultValue });
+						this.getInput().value = nextProps.defaultValue;
+
+						return false;
+					}
+				}
+
+				if (stateChanged) {
+					if (nextState.inputValue != this.state.inputValue) {
+						this.sendFilter(nextState.inputValue);
+						return false;
+					}
+				}
+
+				return somethingChanged;
+			}
+		}, {
 			key: 'componentDidUpdate',
-			value: function componentDidUpdate() {
+			value: function componentDidUpdate(prevProps, prevState) {
 				var el = this.getInput();
 
 				if (el) {
 					el.focus();
 				}
 			}
+		}, {
+			key: 'componentDidMount',
+			value: function componentDidMount() {
+				if (this.props.defaultValue || this.props.sendEmpty) {
+					this.sendFilter(this.props.defaultValue);
+				}
+
+				this.updateClear(this.props.defaultValue);
+			}
+
+			/**
+	   * Get the value of the search input field.
+	   *
+	   * @return (String)	searchValue 	Search field value
+	   */
+
 		}, {
 			key: 'getInputValue',
 			value: function getInputValue() {
@@ -11240,32 +11805,34 @@ var ProperSearch =
 
 				return this.props.defaultValue;
 			}
+
+			/**
+	   * Get a ref to the search field input
+	   *
+	   * @return (object)	el 	A ref to the search field input
+	   */
+
 		}, {
 			key: 'getInput',
 			value: function getInput() {
 				var el = this.el || null;
 
 				if (!el) {
-					this.el = this.refs.searchfield;
+					this.el = this.refs.propersearch_field;
 					return this.el;
 				}
 
 				return el;
 			}
-		}, {
-			key: 'componentDidMount',
-			value: function componentDidMount() {
-				if (this.props.defaultValue || this.props.sendEmpty) {
-					this.sendFilter(this.props.defaultValue);
-				}
 
-				this.updateClear(this.props.defaultValue);
-			}
+			/**
+	   * Clear the search field
+	   */
+
 		}, {
 			key: 'clearField',
 			value: function clearField(e) {
 				e.preventDefault();
-
 				var el = this.getInput();
 
 				if (el) {
@@ -11275,6 +11842,13 @@ var ProperSearch =
 				this.sendFilter(null);
 				this.updateClear(null);
 			}
+
+			/**
+	   * Update the show state of the component to show / hide the clear button.
+	   *
+	   * @param (String)	value 	Search field value
+	   */
+
 		}, {
 			key: 'updateClear',
 			value: function updateClear(value) {
@@ -11290,6 +11864,13 @@ var ProperSearch =
 					});
 				}
 			}
+
+			/**
+	   * Send the value in the search field to the function onSearch if this was set up in the props.
+	   *
+	   * @param (String)	value 	Search field value
+	   */
+
 		}, {
 			key: 'sendFilter',
 			value: function sendFilter(value) {
@@ -11301,7 +11882,7 @@ var ProperSearch =
 			key: 'render',
 			value: function render() {
 				var className = 'proper-search-field',
-				    uniqueId = _underscore2['default'].uniqueId('search-'),
+				    uniqueId = _.uniqueId('search-'),
 				    clearBtn = null;
 
 				if (this.props.className) {
@@ -11315,7 +11896,7 @@ var ProperSearch =
 				if (this.state.showClear) {
 					clearBtn = _react2['default'].createElement(
 						'button',
-						{ className: 'btn btn-clear btn-small btn-xs', onClick: this.clearField, ref: 'clear' },
+						{ className: 'btn btn-clear btn-small btn-xs', onClick: this.clearField.bind(this), ref: 'clear' },
 						' ',
 						_react2['default'].createElement('i', { className: this.props.clearIcon })
 					);
@@ -11326,13 +11907,12 @@ var ProperSearch =
 					{ className: className, id: uniqueId },
 					_react2['default'].createElement(
 						'div',
-						{ className: 'search-input' },
+						{ className: 'proper-search-input' },
 						_react2['default'].createElement('i', { className: this.props.searchIcon + ' ' + 'proper-search-field-icon' }),
 						_react2['default'].createElement('input', {
-							ref: 'searchfield',
-							checkAll: false,
+							ref: 'propersearch_field',
 							type: 'text',
-							autoComplete: 'off',
+							autoComplete: this.props.autoComplete,
 							placeholder: this.props.placeholder,
 							defaultValue: this.props.defaultValue,
 							onKeyUp: this.onChange
@@ -11355,6 +11935,135 @@ var ProperSearch =
 
 /***/ },
 /* 96 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var charMap = exports.charMap = __webpack_require__(97);
+
+	var normalize = exports.normalize = function(origString, keepCase){
+		var newString = origString;
+		
+		for(var char in charMap){
+			var rex = new RegExp('[' + charMap[char].toString() + ']', 'g');
+			try{
+				origString = origString.replace(rex, char);
+			} catch(e) {
+				console.log('error', origString);
+			}
+		}
+		return keepCase? origString : origString.toLowerCase();
+	};
+
+	var normalizeFilter = exports.normalizeFilter = function(origFilter, model, wholeString, keepCase){
+		var schema = model.schema? model.schema.tree.normalized : model;
+		var newFilter = {};
+		var finalFilter = {};
+
+		var getFilterResult = function(string){
+			return wholeString? 
+				normalize(string, keepCase) : 
+					new RegExp(normalize(string, keepCase), 'i');
+		};
+
+		var recurse = function(filter, path, schema){
+			for(var key in filter){
+				var filterResult;
+				if(key in schema){
+					var normalized = getPathString(key, path);
+					if(typeof filter[key] === 'string'){
+						filterResult = getFilterResult(filter[key]);
+						newFilter[getPathString(key, path) + key] = filterResult;
+					} else{
+						path.push(key);
+						recurse(filter[key], path, schema[key]);
+					}
+
+				} else {
+					newFilter[key] = typeof filter[key] === 'string'? filterResult : filter[key];
+				}
+			}
+			return newFilter;
+		};
+		finalFilter = recurse(origFilter, [], schema);
+		return finalFilter;	
+	};
+
+	var normalizeSort = exports.normalizeSort = function(origSort, model){
+		var schema = model.schema? model.schema.tree.normalized : model;
+		var newSort = {};
+		var finalSort = {};
+
+		var recurse = function(sort, path, schema){
+			for(var key in sort){
+				if(key in schema && !(key in newSort)){
+					if(typeof sort[key] !== 'object'){
+						newSort[getPathString(key, path) + key] = sort[key];
+					} else{
+						path.push(key);
+						recurse(sort[key], path, schema[key]);
+					}
+
+				} else {
+					newSort[key] = sort[key];
+				}
+			}
+			return newSort;
+		};
+		finalSort = recurse(origSort, [], schema);
+		return finalSort;	
+	};
+
+	var normalizeSearchFields = exports.normalizeSearchFields = function(doc, model, keepCase){
+		var schema = model.schema? model.schema.tree.normalized : model;
+		var recurse = function(doc, normalized, schema){
+			var newDoc = {};
+			for(var key in doc){
+				if(key in schema){
+					if(typeof doc[key] === 'object'){
+						var normal = newDoc[key] = {};
+						newDoc[key] = recurse(doc[key], normal , schema[key]);
+					} else {
+						newDoc[key] = typeof doc[key] === 'string'? normalize(doc[key], keepCase) : doc[key];
+					}
+				}
+			}
+			return newDoc;
+		};
+
+		var finalDoc = {normalized: {}};
+		for(var key in doc){
+			finalDoc[key] = doc[key];
+		}
+		finalDoc.normalized = recurse(doc, finalDoc.normalized, schema);
+		return finalDoc;
+	};
+
+
+	var getPathString = function(key, path){
+		var pathString = 'normalized';
+		if(path.length > 0){
+			pathString += '.' +  path.join('.');
+		}
+		pathString += '.';
+		return pathString;
+	};
+
+/***/ },
+/* 97 */
+/***/ function(module, exports) {
+
+	module.exports = {
+		'a': ['á','Á','à','À','ã','Ã','â','Â','ä','Ä','å','Å','ā','Ā'],
+		'e': ['é','É','è','È','ê','Ê','ë','Ë','ē','Ē','ė','Ė','ę','Ę'],
+		'i': ['î','Î','í','Í','ì','Ì','ï','Ï','ī','Ī','į','Į'],
+		'o': ['ô','Ô','ò','Ò','ø','Ø','ō','Ō','ó','Ó','õ','Õ','ö','Ö'],
+		'u': ['û','Û','ú','Ú','ù','Ù','ü','Ü','ū','Ū'],
+		'c': ['ç','Ç','č','Č'],
+		's': ['ś','Ś','š','Š'],
+	};
+
+
+/***/ },
+/* 98 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -11363,7 +12072,7 @@ var ProperSearch =
 		value: true
 	});
 	exports['default'] = {
-		'SPA': {
+		'ESP': {
 			all: 'Seleccionar Todo',
 			none: 'Deseleccionar Todo',
 			loading: 'Cargando...',
@@ -11379,7 +12088,7 @@ var ProperSearch =
 	module.exports = exports['default'];
 
 /***/ },
-/* 97 */
+/* 99 */
 /***/ function(module, exports) {
 
 	// removed by extract-text-webpack-plugin

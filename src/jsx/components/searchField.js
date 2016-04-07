@@ -1,6 +1,9 @@
 import React from 'react';
 import _ from 'underscore';
+import {shallowEqualImmutable} from 'react-immutable-render-mixin';
 
+
+// For more info about this read ReadMe.md
 function getDefaultProps() {
 	return {
 		clearable: true,
@@ -12,10 +15,23 @@ function getDefaultProps() {
 		onEnter: null,
 		throttle: 160, // milliseconds
 		sendEmpty: true,
-		minLength: 3
+		minLength: 3,
+		autoComplete: 'off'
 	}
 }
 
+/**
+ * A Component that render a search field which return the written string every props.trottle miliseconds as a parameter
+ * in a function of onSearch, only if the length is bigger than props.minlength. Get clean each time the Scape key is down/up or the
+ * clear button is cliked.
+ *
+ * Simple example usage:
+ *
+ * 	<SeachField
+ *		onSearch={value => console.log(value)}
+ *	/>
+ * ```
+ */
 class SearchField extends React.Component {
 
 	constructor(props) {
@@ -23,10 +39,8 @@ class SearchField extends React.Component {
 
 		this.state = {
 			showClear: false,
-			inputValue: this.props.defaultValue
+			inputValue: ''
 		};
-
-		this.clearField = this.clearField.bind(this);
 	}
 
 	componentWillMount() {
@@ -35,19 +49,22 @@ class SearchField extends React.Component {
 
 			e.preventDefault();
 
+			// Scape key
 			if (e.keyCode==27) {
 				this.clearField(e);
 				return;
 			}
 
+			// Enter key
 			if (e.keyCode == 13) {
 				if (typeof this.props.onEnter == 'function') {
-					this.onEnter.call(this);
+					this.props.onEnter.call(this);
 				}
 			}
 
+			// If there is a call to the update functions and to send the search filter then reset it.
 			if (this.tout) {
-				clearInterval(this.tout);
+				clearTimeout(this.tout);
 			}
 
 			value = this.getInputValue();
@@ -57,38 +74,44 @@ class SearchField extends React.Component {
 					value = this.getInputValue();
 					this.updateClear(value);
 					this.sendFilter(value);
+
 				}, this.props.throttle);
 			}
 		});
 	}
 
-	componentDidUpdate() {
+	shouldComponentUpdate(nextProps, nextState){
+		let stateChanged = !shallowEqualImmutable(this.state, nextState);
+		let propsChanged = !shallowEqualImmutable(this.props, nextProps);
+		let somethingChanged = propsChanged || stateChanged;
+
+		if (propsChanged) {
+			if (nextProps.defaultValue != this.props.defaultValue) {
+				this.updateClear(nextProps.defaultValue);
+				this.setState({inputValue: nextProps.defaultValue});
+				this.getInput().value = nextProps.defaultValue;
+
+				return false;
+			}
+		}
+
+		if (stateChanged) {
+			if (nextState.inputValue != this.state.inputValue) {
+				this.sendFilter(nextState.inputValue);
+				return false;
+			}
+		}
+
+
+		return somethingChanged;
+	}
+
+	componentDidUpdate(prevProps, prevState) {
 		let el = this.getInput();
 
 		if (el) {
 			el.focus();
 		}
-	}
-
-	getInputValue() {
-		let el = this.getInput();
-
-		if (el) {
-			return el.value;
-		}
-
-		return this.props.defaultValue;
-	}
-
-	getInput() {
-		let el = this.el || null;
-
-		if (!el) {
-			this.el = this.refs.searchfield;
-			return this.el;
-		}
-
-		return el;
 	}
 
 	componentDidMount() {
@@ -99,9 +122,42 @@ class SearchField extends React.Component {
 		this.updateClear(this.props.defaultValue);
 	}
 
+/**
+ * Get the value of the search input field.
+ *
+ * @return (String)	searchValue 	Search field value
+ */
+	getInputValue() {
+		let el = this.getInput();
+
+		if (el) {
+			return el.value;
+		}
+
+		return this.props.defaultValue;
+	}
+
+/**
+ * Get a ref to the search field input
+ *
+ * @return (object)	el 	A ref to the search field input
+ */
+	getInput() {
+		let el = this.el || null;
+
+		if (!el) {
+			this.el = this.refs.propersearch_field;
+			return this.el;
+		}
+
+		return el;
+	}
+
+/**
+ * Clear the search field
+ */
 	clearField(e) {
 		e.preventDefault();
-
 		let el = this.getInput();
 
 		if (el) {
@@ -112,6 +168,11 @@ class SearchField extends React.Component {
 		this.updateClear(null)
 	}
 
+/**
+ * Update the show state of the component to show / hide the clear button.
+ *
+ * @param (String)	value 	Search field value
+ */
 	updateClear(value) {
 		let show = false;
 
@@ -126,6 +187,11 @@ class SearchField extends React.Component {
 		}
 	}
 
+/**
+ * Send the value in the search field to the function onSearch if this was set up in the props.
+ *
+ * @param (String)	value 	Search field value
+ */
 	sendFilter(value) {
 		if (typeof this.props.onSearch == 'function') {
 			this.props.onSearch.call(this, value);
@@ -144,18 +210,17 @@ class SearchField extends React.Component {
 		}
 
 		if (this.state.showClear) {
-			clearBtn = <button className="btn btn-clear btn-small btn-xs" onClick={this.clearField} ref="clear"> <i className={this.props.clearIcon} /></button>;
+			clearBtn = <button className="btn btn-clear btn-small btn-xs" onClick={this.clearField.bind(this)} ref="clear"> <i className={this.props.clearIcon} /></button>;
 		}
 
 		return (
 			<div className={className} id={uniqueId}>
-				<div className="search-input">
+				<div className="proper-search-input">
 					<i className={this.props.searchIcon + ' ' + 'proper-search-field-icon'} />
 					<input
-						ref="searchfield"
-						checkAll={false}
+						ref="propersearch_field"
 						type="text"
-						autoComplete="off"
+						autoComplete={this.props.autoComplete}
 						placeholder={this.props.placeholder}
 						defaultValue={this.props.defaultValue}
 						onKeyUp={this.onChange}

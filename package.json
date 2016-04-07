@@ -65,6 +65,7 @@
   "dependencies": {
     "es6-set": "^0.1.4",
     "immutable": "^3.7.6",
+    "normalizer": "^1.2.7",
     "react": "^0.14.7",
     "react-dimensions": "^1.0.2",
     "react-dom": "^0.14.7",
