@@ -71,7 +71,7 @@ class Search extends React.Component {
 	constructor(props) {
 		super(props);
 
-		let preparedData = this.prepareData();
+		let preparedData = this.prepareData(null, this.props.idField);
 
 		this.state = {
 			data: preparedData.data, // Data to work with (Inmutable)
@@ -79,6 +79,8 @@ class Search extends React.Component {
 			rawData: preparedData.rawdata, // Received data without any modfication (Inmutable)
 			indexedData: preparedData.indexed, // Received data indexed (No Inmutable)
 			initialIndexed: preparedData.indexed, // When data get filtered keep the full indexed
+			idField: this.props.idField, // To don't update the idField if that field doesn't exist in the fields of data array
+			displayField: this.props.displayField, // same
 			selection: new Set(),
 			allSelected: false,
 			ready: false
@@ -116,7 +118,58 @@ class Search extends React.Component {
 
 		if (propsChanged) {
 			let dataChanged = !shallowEqualImmutable(this.props.data, nextProps.data);
-			let selectionChanged = !shallowEqualImmutable(this.props.defaultSelection, nextProps.defaultSelection);
+			let selectionChanged = !shallowEqualImmutable(this.state.selection, nextProps.defaultSelection);
+			let idFieldChanged = this.props.idField != nextProps.idField, displayFieldChanged = this.props.displayField != nextProps.displayField;
+
+			if (idFieldChanged || displayFieldChanged) {
+				let fieldsSet = new Set(_.keys(nextProps.data[0]));
+				let messages = this.props.messages[this.props.lang];
+
+				// Change idField / displayField but that field doesn't exist in the data
+				if (!fieldsSet.has(nextProps.idField) || !fieldsSet.has(nextProps.displayField)) {
+					if (!fieldsSet.has(nextProps.idField)) console.error(messages.errorIdField + ' ' + nextProps.idField + ' ' + messages.errorData);
+					else console.error(messages.errorDisplayField + ' ' + nextProps.idField + ' ' + messages.errorData);
+
+					return false;
+				} else { // New idField &&//|| displayField exist in data array fields
+					if (dataChanged){
+						let preparedData = this.prepareData(Immutable.fromJS(nextProps.data), nextProps.idField);
+						let selection = null;
+
+						if (selectionChanged) selection = nextProps.defaultSelection;
+
+						this.setState({
+							data: preparedData.data,
+							initialData: preparedData.data,
+							rawData: preparedData.rawdata,
+							indexedData: preparedData.indexed,
+							initialIndexed: preparedData.indexed,
+							idField: nextProps.idField,
+							displayField: nextProps.displayField
+						}, this.setDefaultSelection(selection));
+
+					} else {
+						let initialIndexed = null, indexed = null;
+
+						// If the id field change then the indexed data has to be changed but not for display
+						if (displayFieldChanged) {
+							initialIndexed = this.state.initialIndexed;
+							indexed = this.state.indexedData;
+						} else {
+							initialIndexed = _.indexBy(this.state.initialData.toJSON(), nextProps.idField);
+							indexed = _.indexBy(this.state.data.toJSON(), nextProps.idField);
+						}
+
+						this.setState({
+							indexedData: indexed,
+							initialIndexed: initialIndexed,
+							idField: nextProps.idField,
+							displayField: nextProps.displayField
+						});
+					}
+					return false;
+				}
+			}
 
 			if (dataChanged){
 				let preparedData = this.prepareData(Immutable.fromJS(nextProps.data), nextProps.idField);
@@ -136,7 +189,15 @@ class Search extends React.Component {
 			}
 
 			if (selectionChanged) {
-				this.setDefaultSelection(selection);
+				// Default selection does nothing if the selection is null so in that case update the state to restart selection
+				if (!_.isNull(nextProps.defaultSelection)) {
+					this.setDefaultSelection(nextProps.defaultSelection);
+				} else {
+					this.setState({
+						selection: new Set(),
+						allSelected: false
+					});
+				}
 
 				return false;
 			}
@@ -162,8 +223,9 @@ class Search extends React.Component {
 		} else {
 			let next = nextState.selection.values().next().value || null;
 			let old = this.state.selection.values().next().value || null;
+			let oldSize = !_.isNull(this.state.selection) ? this.state.selection.size : 0;
 
-			if (next !== old){
+			if (next !== old || oldSize > 1){
 				this.updateSelectionData(next);
 			}
 		}
@@ -180,8 +242,11 @@ class Search extends React.Component {
 		let newIndexed = _.clone(this.state.indexedData);
 		let oldSelection = this.state.selection;
 		let rowid = null, selected = null, rdata = null, curIndex = null, newData = this.state.data, rowIndex = null;
+		let newSelectionSize = !_.isNull(newSelection) ? newSelection.size : 0;
 
-		if (!this.props.multiSelect) { // Single select
+		// If oldSelection size is bigger than 1 that mean's the props has changed from multiselect to single select so if there is some list items with the selected class
+		// if should be reset.
+		if (!this.props.multiSelect && oldSelection.size <= 1) { // Single select
 			let oldId = oldSelection.values().next().value || null;
 
 			if (!_.isNull(oldId)) {
@@ -200,7 +265,7 @@ class Search extends React.Component {
 				newData = newData.set(rowIndex, rdata); // Set that row in the data object
 			}
 
-		} else if (!newAllSelected && this.isSingleChange(newSelection.size)) { // Change one row data at a time
+		} else if (!newAllSelected && this.isSingleChange(newSelectionSize)) { // Change one row data at a time
 			let changedId = null, selected = null;
 
 			// If the new selection has not one of the ids of the old selection that means an selected element has been unselected.
@@ -229,8 +294,11 @@ class Search extends React.Component {
 			newData = newData.set(rowIndex, rdata); // Set that row in the data object
 
 		} else { // Change all data
+			if (_.isNull(newSelection)) newSelection = new Set();
+			else if (!_.isObject(newSelection)) newSelection = new Set([newSelection]);
+
 			newData = newData.map((row) => {
-				rowid = row.get(this.props.idField);
+				rowid = row.get(this.state.idField);
 				selected = newSelection.has(rowid.toString());
 				rdata = row.set('_selected', selected);
 				curIndex = newIndexed[rowid];
@@ -286,7 +354,7 @@ class Search extends React.Component {
 		if (data.size > selection.size) return false;
 
 		data.forEach((item, index) => {
-			if (!selection.has(item.get(this.props.idField, null))) { // Some data not in selection
+			if (!selection.has(item.get(this.state.idField, null))) { // Some data not in selection
 				result = false;
 				return false;
 			}
@@ -326,7 +394,7 @@ class Search extends React.Component {
  */
 	prepareData(newData = null, idField = null) {
 		// The data will be inmutable inside the component
-		let data = newData || Immutable.fromJS(this.props.data), index = 0, field = idField || this.props.idField;
+		let data = newData || Immutable.fromJS(this.props.data), index = 0, field = idField || this.state.idField;
 		let indexed = [], parsed = [];
 
 		// Parsing data to add new fields (selected or not, field, rowIndex)
@@ -372,7 +440,7 @@ class Search extends React.Component {
 	handleSearch(value) {
 		let lValue = value ? value.toLowerCase() : null, filter = null;
 		let data = this.state.initialData, filteredData = data, selection = this.state.selection;
-		let displayField = this.props.displayField, idField = this.props.idField;
+		let displayField = this.state.displayField, idField = this.state.idField;
 		let hasFilter = (typeof this.props.filter == 'function');
 
 		// When the search field has been clear then the value will be null and the data will be the same as initialData, otherwise
@@ -435,11 +503,11 @@ class Search extends React.Component {
 			let {indexedData, initialData, rawData, data, selection} = this.state;
 
 			// Get the data (initialData) that match with the selection
-			filteredData = initialData.filter(element => selection.has(element.get(this.props.idField, null)));
+			filteredData = initialData.filter(element => selection.has(element.get(this.state.idField, null)));
 
 			// Then from the filtered data get the raw data that match with the selection
 			selectedData = filteredData.map(row => {
-				properId = row.get(this.props.idField, 0);
+				properId = row.get(this.state.idField, 0);
 				rowIndex = _.isUndefined(indexedData[properId]) ? this.state.initialIndexed[properId]._rowIndex : indexedData[properId]._rowIndex;
 
 				return rawData.get(rowIndex);
@@ -501,8 +569,8 @@ class Search extends React.Component {
 						rawData={this.state.rawData}
 						indexedData={this.state.initialIndexed}
 						className={this.props.listClass}
-						idField={this.props.idField}
-						displayField={this.props.displayField}
+						idField={this.state.idField}
+						displayField={this.state.displayField}
 						onSelectionChange={this.handleSelectionChange.bind(this)}
 						messages={messages}
 						selection={selection}
