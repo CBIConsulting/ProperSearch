@@ -3,8 +3,8 @@
 [![Build Status](https://travis-ci.org/CBIConsulting/ProperSearch.svg)](https://travis-ci.org/CBIConsulting/ProperSearch)
 
 A proper search component for react. With a search field and a list of items allows the user to filter that list and select the items. The component return the
-selected data when it's selected. Allows multi and single selection. The list is virtual rendered, was designed to handle thousands items without sacrificing
-performance, only render the items in the view. Used react-virtualized to render the list items. This component has a lot of configurable settings, read the
+selected data when it get selected. Allows multi and single selection. The list is virtual rendered, was designed to handle thousands of items without sacrificing
+performance, only render the items in the view. Use react-virtualized to render the list items. This component has a lot of configurable settings, read the
 component properties section for more info.
 
 Used technologies:

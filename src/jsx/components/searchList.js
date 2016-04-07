@@ -9,7 +9,6 @@ const Set = require('es6-set');
 function getDefaultProps() {
 	return {
 		data: null,
-		rawData: null, // Just when you use a function as a display field. (Inmutable same as received by the main component)
 		indexedData: null, // Just when you use a function as a display field. (array) (Full indexed data not filted)
 		onSelectionChange: null,
 		multiSelect: false,
@@ -57,7 +56,6 @@ class SearchList extends React.Component {
 
 		if (propschanged) {
 			let nothingSelected = false;
-			propschanged = shallowEqualImmutable(this.props.selection, nextProps.selection); // If selection change don't render
 
 			if (!nextProps.allSelected) nothingSelected = this.isNothingSelected(nextProps.data, nextProps.selection);
 
@@ -67,8 +65,6 @@ class SearchList extends React.Component {
 					allSelected: nextProps.allSelected,
 					nothingSelected: nothingSelected,
 				});
-
-				return true;
 			}
 		}
 
