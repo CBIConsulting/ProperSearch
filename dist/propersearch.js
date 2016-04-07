@@ -7640,10 +7640,12 @@ var ProperSearch =
 	        'div',
 	        {
 	          ref: 'scrollingContainer',
+	          'aria-label': this.props['aria-label'],
 	          className: (0, _classnames2.default)('Grid', className),
 	          onScroll: this._onScroll,
-	          tabIndex: 0,
-	          style: gridStyle
+	          role: 'grid',
+	          style: gridStyle,
+	          tabIndex: 0
 	        },
 	        childrenToDisplay.length > 0 && _react2.default.createElement(
 	          'div',
@@ -7941,6 +7943,8 @@ var ProperSearch =
 	}(_react.Component);
 
 	Grid.propTypes = {
+	  'aria-label': _react.PropTypes.string,
+
 	  /**
 	   * Optional custom CSS class name to attach to root Grid element.
 	   */
@@ -8031,6 +8035,7 @@ var ProperSearch =
 	  width: _react.PropTypes.number.isRequired
 	};
 	Grid.defaultProps = {
+	  'aria-label': 'grid',
 	  noContentRenderer: function noContentRenderer() {
 	    return null;
 	  },
@@ -8703,6 +8708,8 @@ var ProperSearch =
 	  value: true
 	});
 
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 	var _classnames = __webpack_require__(25);
@@ -8831,6 +8838,7 @@ var ProperSearch =
 	          this._getRenderedHeaderRow()
 	        ),
 	        _react2.default.createElement(_Grid2.default, {
+	          'aria-label': this.props['aria-label'],
 	          ref: 'Grid',
 	          className: 'FlexTable__Grid',
 	          columnWidth: width,
@@ -8935,7 +8943,7 @@ var ProperSearch =
 	      var newSortDirection = sortBy !== dataKey || sortDirection === _SortDirection2.default.DESC ? _SortDirection2.default.ASC : _SortDirection2.default.DESC;
 	      var onClick = function onClick() {
 	        sortEnabled && sort(dataKey, newSortDirection);
-	        onHeaderClick(dataKey, columnData);
+	        onHeaderClick && onHeaderClick(dataKey, columnData);
 	      };
 
 	      var renderedHeader = headerRenderer({
@@ -8947,14 +8955,22 @@ var ProperSearch =
 	        sortDirection: sortDirection
 	      });
 
+	      var a11yProps = {};
+
+	      if (sortEnabled || onHeaderClick) {
+	        a11yProps['aria-label'] = column.props['aria-label'] || label || dataKey;
+	        a11yProps.role = 'rowheader';
+	        a11yProps.tabIndex = 0;
+	        a11yProps.onClick = onClick;
+	      }
+
 	      return _react2.default.createElement(
 	        'div',
-	        {
+	        _extends({}, a11yProps, {
 	          key: 'Header-Col' + columnIndex,
 	          className: classNames,
-	          style: style,
-	          onClick: onClick
-	        },
+	          style: style
+	        }),
 	        renderedHeader
 	      );
 	    }
@@ -8978,19 +8994,27 @@ var ProperSearch =
 	        return _this3._createColumn(column, columnIndex, rowData, rowIndex);
 	      });
 
+	      var a11yProps = {};
+
+	      if (onRowClick) {
+	        a11yProps['aria-label'] = 'row';
+	        a11yProps.role = 'row';
+	        a11yProps.tabIndex = 0;
+	        a11yProps.onClick = function () {
+	          return onRowClick(rowIndex);
+	        };
+	      }
+
 	      return _react2.default.createElement(
 	        'div',
-	        {
+	        _extends({}, a11yProps, {
 	          key: rowIndex,
 	          className: (0, _classnames2.default)('FlexTable__row', rowClass),
-	          onClick: function onClick() {
-	            return onRowClick(rowIndex);
-	          },
 	          style: {
 	            height: this._getRowHeight(rowIndex),
 	            paddingRight: scrollbarWidth
 	          }
-	        },
+	        }),
 	        renderedRow
 	      );
 	    }
@@ -9059,6 +9083,8 @@ var ProperSearch =
 	}(_react.Component);
 
 	FlexTable.propTypes = {
+	  'aria-label': _react.PropTypes.string,
+
 	  /** One or more FlexColumns describing the data displayed in this row */
 	  children: function children(props, propName, componentName) {
 	    var children = _react2.default.Children.toArray(props.children);
@@ -9165,12 +9191,6 @@ var ProperSearch =
 	  disableHeader: false,
 	  headerHeight: 0,
 	  noRowsRenderer: function noRowsRenderer() {
-	    return null;
-	  },
-	  onHeaderClick: function onHeaderClick() {
-	    return null;
-	  },
-	  onRowClick: function onRowClick() {
 	    return null;
 	  },
 	  onRowsRendered: function onRowsRendered() {
@@ -9293,6 +9313,9 @@ var ProperSearch =
 	  headerRenderer: defaultHeaderRenderer
 	};
 	Column.propTypes = {
+	  /** Optional aria-label value to set on the column header */
+	  'aria-label': _react.PropTypes.string,
+
 	  /** Optional CSS class to apply to cell */
 	  cellClassName: _react.PropTypes.string,
 
@@ -9896,6 +9919,7 @@ var ProperSearch =
 
 	      return _react2.default.createElement(_Grid2.default, {
 	        ref: 'Grid',
+	        'aria-label': this.props['aria-label'],
 	        className: classNames,
 	        columnWidth: width,
 	        columnsCount: 1,
@@ -9943,6 +9967,8 @@ var ProperSearch =
 	}(_react.Component);
 
 	VirtualScroll.propTypes = {
+	  'aria-label': _react.PropTypes.string,
+
 	  /** Optional CSS class name */
 	  className: _react.PropTypes.string,
 
@@ -11649,6 +11675,10 @@ var ProperSearch =
 
 	var _react2 = _interopRequireDefault(_react);
 
+	var _underscore = __webpack_require__(4);
+
+	var _underscore2 = _interopRequireDefault(_underscore);
+
 	var _reactImmutableRenderMixin = __webpack_require__(6);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
@@ -11882,7 +11912,7 @@ var ProperSearch =
 			key: 'render',
 			value: function render() {
 				var className = 'proper-search-field',
-				    uniqueId = _.uniqueId('search-'),
+				    uniqueId = _underscore2['default'].uniqueId('search-'),
 				    clearBtn = null;
 
 				if (this.props.className) {
@@ -12072,7 +12102,7 @@ var ProperSearch =
 		value: true
 	});
 	exports['default'] = {
-		'ESP': {
+		'SPA': {
 			all: 'Seleccionar Todo',
 			none: 'Deseleccionar Todo',
 			loading: 'Cargando...',
