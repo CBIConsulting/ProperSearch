@@ -2,7 +2,7 @@ import SearchField from '../searchField';
 import TestUtils from "react-addons-test-utils";
 import React from 'react';
 import ReactDOM from 'react-dom';
-import $ from 'jquery';
+import {Deferred} from 'jquery';
 
 describe('SearchField', () => {
 
@@ -12,7 +12,7 @@ describe('SearchField', () => {
 
 	it('throttles', (done) => {
 		let called = 0;
-		let def = $.Deferred();
+		let def = Deferred();
 		let props = {
 			onSearch: q => {
 				if (q !== '') {
@@ -33,6 +33,32 @@ describe('SearchField', () => {
 		TestUtils.Simulate.keyUp(node, {key: 'o'});
 		node.value = 'foo';
 		TestUtils.Simulate.keyUp(node, {key: 'o'});
+
+		def.done((q) => {
+			expect(called).toBe(1);
+			expect(q).toBe('foo');
+		}).always(done);
+	});
+
+	it('handles enter', (done) => {
+		let called = 0;
+		let def = Deferred();
+		let props = {
+			onSearch: q => {
+				if (q !== '') {
+					called++;
+					if (q == 'foo') {
+						def.resolve(q);
+					}
+				}
+			}
+		};
+
+		let component = prepare(props);
+		let node = component.refs.propersearch_field;
+
+		node.value = 'foo';
+		TestUtils.Simulate.keyUp(node, {key: "Enter", keyCode: 13, which: 13});
 
 		def.done((q) => {
 			expect(called).toBe(1);
