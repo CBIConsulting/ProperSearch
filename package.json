@@ -1,5 +1,5 @@
 {
-  "name": "propersearch",
+  "name": "react-propersearch",
   "version": "0.1.4",
   "description": "A react component that render a search field with a list of items, allows the user to filter that list and select the items. The component return the selected data when it get selected",
   "main": "index.js",
