@@ -98,9 +98,9 @@ var ProperSearch =
 
 	var _normalizer2 = _interopRequireDefault(_normalizer);
 
-	var _messages = __webpack_require__(98);
+	var _messages2 = __webpack_require__(98);
 
-	var _messages2 = _interopRequireDefault(_messages);
+	var _messages3 = _interopRequireDefault(_messages2);
 
 	var _reactImmutableRenderMixin = __webpack_require__(6);
 
@@ -118,7 +118,7 @@ var ProperSearch =
 	function getDefaultProps() {
 		return {
 			data: [],
-			messages: _messages2['default'],
+			messages: _messages3['default'],
 			lang: 'ENG',
 			defaultSelection: null,
 			multiSelect: false,
@@ -181,7 +181,7 @@ var ProperSearch =
 
 			var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Search).call(this, props));
 
-			var preparedData = _this.prepareData();
+			var preparedData = _this.prepareData(null, _this.props.idField);
 
 			_this.state = {
 				data: preparedData.data, // Data to work with (Inmutable)
@@ -189,6 +189,8 @@ var ProperSearch =
 				rawData: preparedData.rawdata, // Received data without any modfication (Inmutable)
 				indexedData: preparedData.indexed, // Received data indexed (No Inmutable)
 				initialIndexed: preparedData.indexed, // When data get filtered keep the full indexed
+				idField: _this.props.idField, // To don't update the idField if that field doesn't exist in the fields of data array
+				displayField: _this.props.displayField, // same
 				selection: new Set(),
 				allSelected: false,
 				ready: false
@@ -231,27 +233,87 @@ var ProperSearch =
 
 				if (propsChanged) {
 					var dataChanged = !(0, _reactImmutableRenderMixin.shallowEqualImmutable)(this.props.data, nextProps.data);
-					var selectionChanged = !(0, _reactImmutableRenderMixin.shallowEqualImmutable)(this.props.defaultSelection, nextProps.defaultSelection);
+					var selectionChanged = !(0, _reactImmutableRenderMixin.shallowEqualImmutable)(this.state.selection, nextProps.defaultSelection);
+					var idFieldChanged = this.props.idField != nextProps.idField,
+					    displayFieldChanged = this.props.displayField != nextProps.displayField;
+
+					if (idFieldChanged || displayFieldChanged) {
+						var fieldsSet = new Set(_underscore2['default'].keys(nextProps.data[0]));
+						var _messages = this.props.messages[this.props.lang];
+
+						// Change idField / displayField but that field doesn't exist in the data
+						if (!fieldsSet.has(nextProps.idField) || !fieldsSet.has(nextProps.displayField)) {
+							if (!fieldsSet.has(nextProps.idField)) console.error(_messages.errorIdField + ' ' + nextProps.idField + ' ' + _messages.errorData);else console.error(_messages.errorDisplayField + ' ' + nextProps.idField + ' ' + _messages.errorData);
+
+							return false;
+						} else {
+							// New idField &&//|| displayField exist in data array fields
+							if (dataChanged) {
+								var preparedData = this.prepareData(_immutable2['default'].fromJS(nextProps.data), nextProps.idField);
+								var selection = null;
+
+								if (selectionChanged) selection = nextProps.defaultSelection;
+
+								this.setState({
+									data: preparedData.data,
+									initialData: preparedData.data,
+									rawData: preparedData.rawdata,
+									indexedData: preparedData.indexed,
+									initialIndexed: preparedData.indexed,
+									idField: nextProps.idField,
+									displayField: nextProps.displayField
+								}, this.setDefaultSelection(selection));
+							} else {
+								var initialIndexed = null,
+								    _indexed = null;
+
+								// If the id field change then the indexed data has to be changed but not for display
+								if (displayFieldChanged) {
+									initialIndexed = this.state.initialIndexed;
+									_indexed = this.state.indexedData;
+								} else {
+									initialIndexed = _underscore2['default'].indexBy(this.state.initialData.toJSON(), nextProps.idField);
+									_indexed = _underscore2['default'].indexBy(this.state.data.toJSON(), nextProps.idField);
+								}
+
+								this.setState({
+									indexedData: _indexed,
+									initialIndexed: initialIndexed,
+									idField: nextProps.idField,
+									displayField: nextProps.displayField
+								});
+							}
+							return false;
+						}
+					}
 
 					if (dataChanged) {
-						var preparedData = this.prepareData(_immutable2['default'].fromJS(nextProps.data), nextProps.idField);
+						var _preparedData = this.prepareData(_immutable2['default'].fromJS(nextProps.data), nextProps.idField);
 						var _selection = null;
 
 						if (selectionChanged) _selection = nextProps.defaultSelection;
 
 						this.setState({
-							data: preparedData.data,
-							initialData: preparedData.data,
-							rawData: preparedData.rawdata,
-							indexedData: preparedData.indexed,
-							initialIndexed: preparedData.indexed
+							data: _preparedData.data,
+							initialData: _preparedData.data,
+							rawData: _preparedData.rawdata,
+							indexedData: _preparedData.indexed,
+							initialIndexed: _preparedData.indexed
 						}, this.setDefaultSelection(_selection));
 
 						return false;
 					}
 
 					if (selectionChanged) {
-						this.setDefaultSelection(selection);
+						// Default selection does nothing if the selection is null so in that case update the state to restart selection
+						if (!_underscore2['default'].isNull(nextProps.defaultSelection)) {
+							this.setDefaultSelection(nextProps.defaultSelection);
+						} else {
+							this.setState({
+								selection: new Set(),
+								allSelected: false
+							});
+						}
 
 						return false;
 					}
@@ -280,8 +342,9 @@ var ProperSearch =
 				} else {
 					var next = nextState.selection.values().next().value || null;
 					var old = this.state.selection.values().next().value || null;
+					var oldSize = !_underscore2['default'].isNull(this.state.selection) ? this.state.selection.size : 0;
 
-					if (next !== old) {
+					if (next !== old || oldSize > 1) {
 						this.updateSelectionData(next);
 					}
 				}
@@ -309,8 +372,11 @@ var ProperSearch =
 				    curIndex = null,
 				    newData = this.state.data,
 				    rowIndex = null;
+				var newSelectionSize = !_underscore2['default'].isNull(newSelection) ? newSelection.size : 0;
 
-				if (!this.props.multiSelect) {
+				// If oldSelection size is bigger than 1 that mean's the props has changed from multiselect to single select so if there is some list items with the selected class
+				// if should be reset.
+				if (!this.props.multiSelect && oldSelection.size <= 1) {
 					// Single select
 					var oldId = oldSelection.values().next().value || null;
 
@@ -329,7 +395,7 @@ var ProperSearch =
 						rdata = newData.get(rowIndex).set('_selected', true); // Change the row in that index
 						newData = newData.set(rowIndex, rdata); // Set that row in the data object
 					}
-				} else if (!newAllSelected && this.isSingleChange(newSelection.size)) {
+				} else if (!newAllSelected && this.isSingleChange(newSelectionSize)) {
 						// Change one row data at a time
 						var changedId = null,
 						    _selected = null;
@@ -360,8 +426,10 @@ var ProperSearch =
 						newData = newData.set(rowIndex, rdata); // Set that row in the data object
 					} else {
 							// Change all data
+							if (_underscore2['default'].isNull(newSelection)) newSelection = new Set();else if (!_underscore2['default'].isObject(newSelection)) newSelection = new Set([newSelection]);
+
 							newData = newData.map(function (row) {
-								rowid = row.get(_this2.props.idField);
+								rowid = row.get(_this2.state.idField);
 								selected = newSelection.has(rowid.toString());
 								rdata = row.set('_selected', selected);
 								curIndex = newIndexed[rowid];
@@ -430,7 +498,7 @@ var ProperSearch =
 				if (data.size > selection.size) return false;
 
 				data.forEach(function (item, index) {
-					if (!selection.has(item.get(_this3.props.idField, null))) {
+					if (!selection.has(item.get(_this3.state.idField, null))) {
 						// Some data not in selection
 						result = false;
 						return false;
@@ -450,15 +518,15 @@ var ProperSearch =
 			key: 'setDefaultSelection',
 			value: function setDefaultSelection(defSelection) {
 				if (defSelection) {
-					var _selection2 = null;
+					var selection = null;
 
 					if (!_underscore2['default'].isArray(defSelection)) {
-						_selection2 = new Set([defSelection]);
+						selection = new Set([defSelection]);
 					} else if (defSelection !== new Set()) {
-						_selection2 = new Set(defSelection);
+						selection = new Set(defSelection);
 					}
 
-					this.triggerSelection(_selection2);
+					this.triggerSelection(selection);
 				}
 			}
 
@@ -482,7 +550,7 @@ var ProperSearch =
 				// The data will be inmutable inside the component
 				var data = newData || _immutable2['default'].fromJS(this.props.data),
 				    index = 0,
-				    field = idField || this.props.idField;
+				    field = idField || this.state.idField;
 				var indexed = [],
 				    parsed = [];
 
@@ -540,8 +608,8 @@ var ProperSearch =
 				var data = this.state.initialData,
 				    filteredData = data,
 				    selection = this.state.selection;
-				var displayField = this.props.displayField,
-				    idField = this.props.idField;
+				var displayField = this.state.displayField,
+				    idField = this.state.idField;
 				var hasFilter = typeof this.props.filter == 'function';
 
 				// When the search field has been clear then the value will be null and the data will be the same as initialData, otherwise
@@ -624,12 +692,12 @@ var ProperSearch =
 						// Get the data (initialData) that match with the selection
 
 						filteredData = initialData.filter(function (element) {
-							return selection.has(element.get(_this5.props.idField, null));
+							return selection.has(element.get(_this5.state.idField, null));
 						});
 
 						// Then from the filtered data get the raw data that match with the selection
 						selectedData = filteredData.map(function (row) {
-							properId = row.get(_this5.props.idField, 0);
+							properId = row.get(_this5.state.idField, 0);
 							rowIndex = _underscore2['default'].isUndefined(indexedData[properId]) ? _this5.state.initialIndexed[properId]._rowIndex : indexedData[properId]._rowIndex;
 
 							return rawData.get(rowIndex);
@@ -697,8 +765,8 @@ var ProperSearch =
 							rawData: this.state.rawData,
 							indexedData: this.state.initialIndexed,
 							className: this.props.listClass,
-							idField: this.props.idField,
-							displayField: this.props.displayField,
+							idField: this.state.idField,
+							displayField: this.state.displayField,
 							onSelectionChange: this.handleSelectionChange.bind(this),
 							messages: messages,
 							selection: selection,
@@ -1132,7 +1200,7 @@ var ProperSearch =
 	      var array = this._array;
 	      var maxIndex = array.length - 1;
 	      var ii = 0;
-	      return new Iterator(function()
+	      return new Iterator(function() 
 	        {return ii > maxIndex ?
 	          iteratorDone() :
 	          iteratorValue(type, ii, array[reverse ? maxIndex - ii++ : ii++])}
@@ -1603,7 +1671,7 @@ var ProperSearch =
 
 	    Repeat.prototype.__iterator = function(type, reverse) {var this$0 = this;
 	      var ii = 0;
-	      return new Iterator(function()
+	      return new Iterator(function() 
 	        {return ii < this$0.size ? iteratorValue(type, ii++, this$0._value) : iteratorDone()}
 	      );
 	    };
@@ -3787,7 +3855,7 @@ var ProperSearch =
 	        return flipSequence;
 	      };
 	    }
-	    reversedSequence.get = function(key, notSetValue)
+	    reversedSequence.get = function(key, notSetValue) 
 	      {return iterable.get(useKeys ? key : -1 - key, notSetValue)};
 	    reversedSequence.has = function(key )
 	      {return iterable.has(useKeys ? key : -1 - key)};
@@ -3982,7 +4050,7 @@ var ProperSearch =
 	        return this.cacheResult().__iterate(fn, reverse);
 	      }
 	      var iterations = 0;
-	      iterable.__iterate(function(v, k, c)
+	      iterable.__iterate(function(v, k, c) 
 	        {return predicate.call(context, v, k, c) && ++iterations && fn(v, k, this$0)}
 	      );
 	      return iterations;
@@ -4173,7 +4241,7 @@ var ProperSearch =
 	    interposedSequence.size = iterable.size && iterable.size * 2 -1;
 	    interposedSequence.__iterateUncached = function(fn, reverse) {var this$0 = this;
 	      var iterations = 0;
-	      iterable.__iterate(function(v, k)
+	      iterable.__iterate(function(v, k) 
 	        {return (!iterations || fn(separator, iterations++, this$0) !== false) &&
 	        fn(v, iterations++, this$0) !== false},
 	        reverse
@@ -5778,7 +5846,6 @@ var ProperSearch =
 	function getDefaultProps() {
 		return {
 			data: null,
-			rawData: null, // Just when you use a function as a display field. (Inmutable same as received by the main component)
 			indexedData: null, // Just when you use a function as a display field. (array) (Full indexed data not filted)
 			onSelectionChange: null,
 			multiSelect: false,
@@ -5834,7 +5901,6 @@ var ProperSearch =
 
 				if (propschanged) {
 					var nothingSelected = false;
-					propschanged = (0, _reactImmutableRenderMixin.shallowEqualImmutable)(this.props.selection, nextProps.selection); // If selection change don't render
 
 					if (!nextProps.allSelected) nothingSelected = this.isNothingSelected(nextProps.data, nextProps.selection);
 
@@ -5844,8 +5910,6 @@ var ProperSearch =
 							allSelected: nextProps.allSelected,
 							nothingSelected: nothingSelected
 						});
-
-						return true;
 					}
 				}
 
@@ -6662,7 +6726,7 @@ var ProperSearch =
 	 *
 	 * @providesModule shallowEqual
 	 * @typechecks
-	 *
+	 * 
 	 */
 
 	'use strict';
@@ -11971,7 +12035,7 @@ var ProperSearch =
 
 	var normalize = exports.normalize = function(origString, keepCase){
 		var newString = origString;
-
+		
 		for(var char in charMap){
 			var rex = new RegExp('[' + charMap[char].toString() + ']', 'g');
 			try{
@@ -11989,8 +12053,8 @@ var ProperSearch =
 		var finalFilter = {};
 
 		var getFilterResult = function(string){
-			return wholeString?
-				normalize(string, keepCase) :
+			return wholeString? 
+				normalize(string, keepCase) : 
 					new RegExp(normalize(string, keepCase), 'i');
 		};
 
@@ -12014,7 +12078,7 @@ var ProperSearch =
 			return newFilter;
 		};
 		finalFilter = recurse(origFilter, [], schema);
-		return finalFilter;
+		return finalFilter;	
 	};
 
 	var normalizeSort = exports.normalizeSort = function(origSort, model){
@@ -12039,7 +12103,7 @@ var ProperSearch =
 			return newSort;
 		};
 		finalSort = recurse(origSort, [], schema);
-		return finalSort;
+		return finalSort;	
 	};
 
 	var normalizeSearchFields = exports.normalizeSearchFields = function(doc, model, keepCase){
@@ -12106,13 +12170,19 @@ var ProperSearch =
 			all: 'Seleccionar Todo',
 			none: 'Deseleccionar Todo',
 			loading: 'Cargando...',
-			noData: 'No se encontró ningún elemento'
+			noData: 'No se encontró ningún elemento',
+			errorIdField: 'No se pudo cambiar el `idField´, el campo',
+			errorDisplayField: 'No se pudo cambiar el `displayField´, el campo',
+			errorData: 'no existe en el array de datos o no ha cambiado'
 		},
 		'ENG': {
 			all: 'Select All',
 			none: 'Unselect All',
 			loading: 'Loading...',
-			noData: 'No data found'
+			noData: 'No data found',
+			errorIdField: "Couldn\'t change the `idField´, the field",
+			errorDisplayField: "Couldn\'t change the `displayField´, the field",
+			errorData: 'doesn\'t exist in the data array or has no changes'
 		}
 	};
 	module.exports = exports['default'];
