@@ -1,7 +1,8 @@
 {
   "name": "propersearch",
   "version": "0.1.4",
-  "description": "A proper search component",
+  "description": "A react component that render a search field with a list of items, allows the user to filter that list and select the items. The component return the
+selected data when it get selected",
   "main": "index.js",
   "scripts": {
     "test": "webpack && karma start --single-run --no-auto-watch karma.conf.js",
@@ -17,6 +18,7 @@
   "keywords": [
     "react-component",
     "search",
+    "filter",
     "ui"
   ],
   "author": "cbi",
