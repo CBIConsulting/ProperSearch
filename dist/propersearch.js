@@ -57,7 +57,7 @@ var ProperSearch =
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
-	__webpack_require__(97);
+	__webpack_require__(99);
 
 	exports["default"] = _search2["default"];
 	module.exports = exports['default'];
@@ -94,7 +94,11 @@ var ProperSearch =
 
 	var _searchField2 = _interopRequireDefault(_searchField);
 
-	var _messages = __webpack_require__(96);
+	var _normalizer = __webpack_require__(96);
+
+	var _normalizer2 = _interopRequireDefault(_normalizer);
+
+	var _messages = __webpack_require__(98);
 
 	var _messages2 = _interopRequireDefault(_messages);
 
@@ -137,7 +141,9 @@ var ProperSearch =
 			autoComplete: 'off',
 			idField: 'value',
 			displayField: 'label',
-			listShowIcon: true
+			listShowIcon: true,
+			filter: null, // Optional function (to be used when the displayField is an function too)
+			filterField: null // By default it will be the displayField
 		};
 	}
 
@@ -529,23 +535,57 @@ var ProperSearch =
 			value: function handleSearch(value) {
 				var _this4 = this;
 
+				var lValue = value ? value.toLowerCase() : null,
+				    filter = null;
 				var data = this.state.initialData,
 				    filteredData = data,
-				    selection = this.state.selection,
-				    displayField = this.props.displayField;
+				    selection = this.state.selection;
+				var displayField = this.props.displayField,
+				    idField = this.props.idField;
+				var hasFilter = typeof this.props.filter == 'function';
 
 				// When the search field has been clear then the value will be null and the data will be the same as initialData, otherwise
 				// the data will be filtered using the .filter() function of Inmutable lib. It return a Inmutable obj with the elements that
 				// match the expresion in the parameter.
 				if (value) {
-					filteredData = data.filter(function (element) {
-						return element.get(displayField, null).toLowerCase().indexOf(value.toLowerCase()) >= 0;
-					});
+					lValue = _normalizer2['default'].normalize(lValue);
+
+					// If the prop `filter´ has a function then use if to filter as an interator over the indexed data.
+					if (hasFilter) {
+						(function () {
+							var filtered = null,
+							    filteredIndexes = new Set();
+
+							// Filter indexed data using the funtion
+							_underscore2['default'].each(_this4.state.initialIndexed, function (element) {
+								if (_this4.props.filter(element, lValue)) {
+									filteredIndexes.add(element._rowIndex);
+								}
+							});
+
+							// Then get the data that match with that indexed data
+							filteredData = data.filter(function (element) {
+								return filteredIndexes.has(element.get('_rowIndex'));
+							});
+						})();
+					} else {
+						filteredData = data.filter(function (element) {
+							filter = element.get(_this4.props.filterField, null) || element.get(displayField);
+
+							// When it's a function then use the field in filterField to search, if this field doesn't exist then use the field name or then idField.
+							if (typeof filter == 'function') {
+								filter = element.get('name', null) || element.get(idField);
+							}
+
+							filter = _normalizer2['default'].normalize(filter);
+							return filter.toLowerCase().indexOf(lValue) >= 0;
+						});
+					}
 				}
 
 				// Apply selection
 				filteredData = filteredData.map(function (element) {
-					if (selection.has(element.get(_this4.props.idField, null))) {
+					if (selection.has(element.get(idField, null))) {
 						element = element.set('_selected', true);
 					}
 
@@ -554,7 +594,7 @@ var ProperSearch =
 
 				this.setState({
 					data: filteredData
-				}, this.sendSearch(value));
+				}, this.sendSearch(lValue));
 			}
 
 			/**
@@ -6038,8 +6078,7 @@ var ProperSearch =
 
 					if (typeof element == 'function') {
 						var id = item.get(field);
-						var rowIndex = _this4.props.indexedData[id]._rowIndex;
-						element = element(_this4.props.rawData.get(rowIndex));
+						element = element(_this4.props.indexedData[id]);
 					}
 
 					content = _react2['default'].createElement(
@@ -11896,6 +11935,135 @@ var ProperSearch =
 
 /***/ },
 /* 96 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var charMap = exports.charMap = __webpack_require__(97);
+
+	var normalize = exports.normalize = function(origString, keepCase){
+		var newString = origString;
+		
+		for(var char in charMap){
+			var rex = new RegExp('[' + charMap[char].toString() + ']', 'g');
+			try{
+				origString = origString.replace(rex, char);
+			} catch(e) {
+				console.log('error', origString);
+			}
+		}
+		return keepCase? origString : origString.toLowerCase();
+	};
+
+	var normalizeFilter = exports.normalizeFilter = function(origFilter, model, wholeString, keepCase){
+		var schema = model.schema? model.schema.tree.normalized : model;
+		var newFilter = {};
+		var finalFilter = {};
+
+		var getFilterResult = function(string){
+			return wholeString? 
+				normalize(string, keepCase) : 
+					new RegExp(normalize(string, keepCase), 'i');
+		};
+
+		var recurse = function(filter, path, schema){
+			for(var key in filter){
+				var filterResult;
+				if(key in schema){
+					var normalized = getPathString(key, path);
+					if(typeof filter[key] === 'string'){
+						filterResult = getFilterResult(filter[key]);
+						newFilter[getPathString(key, path) + key] = filterResult;
+					} else{
+						path.push(key);
+						recurse(filter[key], path, schema[key]);
+					}
+
+				} else {
+					newFilter[key] = typeof filter[key] === 'string'? filterResult : filter[key];
+				}
+			}
+			return newFilter;
+		};
+		finalFilter = recurse(origFilter, [], schema);
+		return finalFilter;	
+	};
+
+	var normalizeSort = exports.normalizeSort = function(origSort, model){
+		var schema = model.schema? model.schema.tree.normalized : model;
+		var newSort = {};
+		var finalSort = {};
+
+		var recurse = function(sort, path, schema){
+			for(var key in sort){
+				if(key in schema && !(key in newSort)){
+					if(typeof sort[key] !== 'object'){
+						newSort[getPathString(key, path) + key] = sort[key];
+					} else{
+						path.push(key);
+						recurse(sort[key], path, schema[key]);
+					}
+
+				} else {
+					newSort[key] = sort[key];
+				}
+			}
+			return newSort;
+		};
+		finalSort = recurse(origSort, [], schema);
+		return finalSort;	
+	};
+
+	var normalizeSearchFields = exports.normalizeSearchFields = function(doc, model, keepCase){
+		var schema = model.schema? model.schema.tree.normalized : model;
+		var recurse = function(doc, normalized, schema){
+			var newDoc = {};
+			for(var key in doc){
+				if(key in schema){
+					if(typeof doc[key] === 'object'){
+						var normal = newDoc[key] = {};
+						newDoc[key] = recurse(doc[key], normal , schema[key]);
+					} else {
+						newDoc[key] = typeof doc[key] === 'string'? normalize(doc[key], keepCase) : doc[key];
+					}
+				}
+			}
+			return newDoc;
+		};
+
+		var finalDoc = {normalized: {}};
+		for(var key in doc){
+			finalDoc[key] = doc[key];
+		}
+		finalDoc.normalized = recurse(doc, finalDoc.normalized, schema);
+		return finalDoc;
+	};
+
+
+	var getPathString = function(key, path){
+		var pathString = 'normalized';
+		if(path.length > 0){
+			pathString += '.' +  path.join('.');
+		}
+		pathString += '.';
+		return pathString;
+	};
+
+/***/ },
+/* 97 */
+/***/ function(module, exports) {
+
+	module.exports = {
+		'a': ['á','Á','à','À','ã','Ã','â','Â','ä','Ä','å','Å','ā','Ā'],
+		'e': ['é','É','è','È','ê','Ê','ë','Ë','ē','Ē','ė','Ė','ę','Ę'],
+		'i': ['î','Î','í','Í','ì','Ì','ï','Ï','ī','Ī','į','Į'],
+		'o': ['ô','Ô','ò','Ò','ø','Ø','ō','Ō','ó','Ó','õ','Õ','ö','Ö'],
+		'u': ['û','Û','ú','Ú','ù','Ù','ü','Ü','ū','Ū'],
+		'c': ['ç','Ç','č','Č'],
+		's': ['ś','Ś','š','Š'],
+	};
+
+
+/***/ },
+/* 98 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -11920,7 +12088,7 @@ var ProperSearch =
 	module.exports = exports['default'];
 
 /***/ },
-/* 97 */
+/* 99 */
 /***/ function(module, exports) {
 
 	// removed by extract-text-webpack-plugin
