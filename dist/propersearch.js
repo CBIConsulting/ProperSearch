@@ -57,7 +57,7 @@ var ProperSearch =
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
-	__webpack_require__(99);
+	__webpack_require__(98);
 
 	exports["default"] = _search2["default"];
 	module.exports = exports['default'];
@@ -94,13 +94,13 @@ var ProperSearch =
 
 	var _searchField2 = _interopRequireDefault(_searchField);
 
-	var _normalizer = __webpack_require__(96);
-
-	var _normalizer2 = _interopRequireDefault(_normalizer);
-
-	var _messages2 = __webpack_require__(98);
+	var _messages2 = __webpack_require__(96);
 
 	var _messages3 = _interopRequireDefault(_messages2);
+
+	var _normalize = __webpack_require__(97);
+
+	var _normalize2 = _interopRequireDefault(_normalize);
 
 	var _reactImmutableRenderMixin = __webpack_require__(6);
 
@@ -603,7 +603,7 @@ var ProperSearch =
 			value: function handleSearch(value) {
 				var _this4 = this;
 
-				var lValue = value ? value.toLowerCase() : null,
+				var lValue = value ? value : null,
 				    filter = null;
 				var data = this.state.initialData,
 				    filteredData = data,
@@ -616,7 +616,7 @@ var ProperSearch =
 				// the data will be filtered using the .filter() function of Inmutable lib. It return a Inmutable obj with the elements that
 				// match the expresion in the parameter.
 				if (value) {
-					lValue = _normalizer2['default'].normalize(lValue);
+					lValue = _normalize2['default'].normalize(lValue);
 
 					// If the prop `filter´ has a function then use if to filter as an interator over the indexed data.
 					if (hasFilter) {
@@ -645,8 +645,8 @@ var ProperSearch =
 								filter = element.get('name', null) || element.get(idField);
 							}
 
-							filter = _normalizer2['default'].normalize(filter);
-							return filter.toLowerCase().indexOf(lValue) >= 0;
+							filter = _normalize2['default'].normalize(filter);
+							return filter.indexOf(lValue) >= 0;
 						});
 					}
 				}
@@ -7704,12 +7704,10 @@ var ProperSearch =
 	        'div',
 	        {
 	          ref: 'scrollingContainer',
-	          'aria-label': this.props['aria-label'],
 	          className: (0, _classnames2.default)('Grid', className),
 	          onScroll: this._onScroll,
-	          role: 'grid',
-	          style: gridStyle,
-	          tabIndex: 0
+	          tabIndex: 0,
+	          style: gridStyle
 	        },
 	        childrenToDisplay.length > 0 && _react2.default.createElement(
 	          'div',
@@ -8007,8 +8005,6 @@ var ProperSearch =
 	}(_react.Component);
 
 	Grid.propTypes = {
-	  'aria-label': _react.PropTypes.string,
-
 	  /**
 	   * Optional custom CSS class name to attach to root Grid element.
 	   */
@@ -8099,7 +8095,6 @@ var ProperSearch =
 	  width: _react.PropTypes.number.isRequired
 	};
 	Grid.defaultProps = {
-	  'aria-label': 'grid',
 	  noContentRenderer: function noContentRenderer() {
 	    return null;
 	  },
@@ -8772,8 +8767,6 @@ var ProperSearch =
 	  value: true
 	});
 
-	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 	var _classnames = __webpack_require__(25);
@@ -8902,7 +8895,6 @@ var ProperSearch =
 	          this._getRenderedHeaderRow()
 	        ),
 	        _react2.default.createElement(_Grid2.default, {
-	          'aria-label': this.props['aria-label'],
 	          ref: 'Grid',
 	          className: 'FlexTable__Grid',
 	          columnWidth: width,
@@ -9007,7 +8999,7 @@ var ProperSearch =
 	      var newSortDirection = sortBy !== dataKey || sortDirection === _SortDirection2.default.DESC ? _SortDirection2.default.ASC : _SortDirection2.default.DESC;
 	      var onClick = function onClick() {
 	        sortEnabled && sort(dataKey, newSortDirection);
-	        onHeaderClick && onHeaderClick(dataKey, columnData);
+	        onHeaderClick(dataKey, columnData);
 	      };
 
 	      var renderedHeader = headerRenderer({
@@ -9019,22 +9011,14 @@ var ProperSearch =
 	        sortDirection: sortDirection
 	      });
 
-	      var a11yProps = {};
-
-	      if (sortEnabled || onHeaderClick) {
-	        a11yProps['aria-label'] = column.props['aria-label'] || label || dataKey;
-	        a11yProps.role = 'rowheader';
-	        a11yProps.tabIndex = 0;
-	        a11yProps.onClick = onClick;
-	      }
-
 	      return _react2.default.createElement(
 	        'div',
-	        _extends({}, a11yProps, {
+	        {
 	          key: 'Header-Col' + columnIndex,
 	          className: classNames,
-	          style: style
-	        }),
+	          style: style,
+	          onClick: onClick
+	        },
 	        renderedHeader
 	      );
 	    }
@@ -9058,27 +9042,19 @@ var ProperSearch =
 	        return _this3._createColumn(column, columnIndex, rowData, rowIndex);
 	      });
 
-	      var a11yProps = {};
-
-	      if (onRowClick) {
-	        a11yProps['aria-label'] = 'row';
-	        a11yProps.role = 'row';
-	        a11yProps.tabIndex = 0;
-	        a11yProps.onClick = function () {
-	          return onRowClick(rowIndex);
-	        };
-	      }
-
 	      return _react2.default.createElement(
 	        'div',
-	        _extends({}, a11yProps, {
+	        {
 	          key: rowIndex,
 	          className: (0, _classnames2.default)('FlexTable__row', rowClass),
+	          onClick: function onClick() {
+	            return onRowClick(rowIndex);
+	          },
 	          style: {
 	            height: this._getRowHeight(rowIndex),
 	            paddingRight: scrollbarWidth
 	          }
-	        }),
+	        },
 	        renderedRow
 	      );
 	    }
@@ -9147,8 +9123,6 @@ var ProperSearch =
 	}(_react.Component);
 
 	FlexTable.propTypes = {
-	  'aria-label': _react.PropTypes.string,
-
 	  /** One or more FlexColumns describing the data displayed in this row */
 	  children: function children(props, propName, componentName) {
 	    var children = _react2.default.Children.toArray(props.children);
@@ -9255,6 +9229,12 @@ var ProperSearch =
 	  disableHeader: false,
 	  headerHeight: 0,
 	  noRowsRenderer: function noRowsRenderer() {
+	    return null;
+	  },
+	  onHeaderClick: function onHeaderClick() {
+	    return null;
+	  },
+	  onRowClick: function onRowClick() {
 	    return null;
 	  },
 	  onRowsRendered: function onRowsRendered() {
@@ -9377,9 +9357,6 @@ var ProperSearch =
 	  headerRenderer: defaultHeaderRenderer
 	};
 	Column.propTypes = {
-	  /** Optional aria-label value to set on the column header */
-	  'aria-label': _react.PropTypes.string,
-
 	  /** Optional CSS class to apply to cell */
 	  cellClassName: _react.PropTypes.string,
 
@@ -9983,7 +9960,6 @@ var ProperSearch =
 
 	      return _react2.default.createElement(_Grid2.default, {
 	        ref: 'Grid',
-	        'aria-label': this.props['aria-label'],
 	        className: classNames,
 	        columnWidth: width,
 	        columnsCount: 1,
@@ -10031,8 +10007,6 @@ var ProperSearch =
 	}(_react.Component);
 
 	VirtualScroll.propTypes = {
-	  'aria-label': _react.PropTypes.string,
-
 	  /** Optional CSS class name */
 	  className: _react.PropTypes.string,
 
@@ -12029,135 +12003,6 @@ var ProperSearch =
 
 /***/ },
 /* 96 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var charMap = exports.charMap = __webpack_require__(97);
-
-	var normalize = exports.normalize = function(origString, keepCase){
-		var newString = origString;
-		
-		for(var char in charMap){
-			var rex = new RegExp('[' + charMap[char].toString() + ']', 'g');
-			try{
-				origString = origString.replace(rex, char);
-			} catch(e) {
-				console.log('error', origString);
-			}
-		}
-		return keepCase? origString : origString.toLowerCase();
-	};
-
-	var normalizeFilter = exports.normalizeFilter = function(origFilter, model, wholeString, keepCase){
-		var schema = model.schema? model.schema.tree.normalized : model;
-		var newFilter = {};
-		var finalFilter = {};
-
-		var getFilterResult = function(string){
-			return wholeString? 
-				normalize(string, keepCase) : 
-					new RegExp(normalize(string, keepCase), 'i');
-		};
-
-		var recurse = function(filter, path, schema){
-			for(var key in filter){
-				var filterResult;
-				if(key in schema){
-					var normalized = getPathString(key, path);
-					if(typeof filter[key] === 'string'){
-						filterResult = getFilterResult(filter[key]);
-						newFilter[getPathString(key, path) + key] = filterResult;
-					} else{
-						path.push(key);
-						recurse(filter[key], path, schema[key]);
-					}
-
-				} else {
-					newFilter[key] = typeof filter[key] === 'string'? filterResult : filter[key];
-				}
-			}
-			return newFilter;
-		};
-		finalFilter = recurse(origFilter, [], schema);
-		return finalFilter;	
-	};
-
-	var normalizeSort = exports.normalizeSort = function(origSort, model){
-		var schema = model.schema? model.schema.tree.normalized : model;
-		var newSort = {};
-		var finalSort = {};
-
-		var recurse = function(sort, path, schema){
-			for(var key in sort){
-				if(key in schema && !(key in newSort)){
-					if(typeof sort[key] !== 'object'){
-						newSort[getPathString(key, path) + key] = sort[key];
-					} else{
-						path.push(key);
-						recurse(sort[key], path, schema[key]);
-					}
-
-				} else {
-					newSort[key] = sort[key];
-				}
-			}
-			return newSort;
-		};
-		finalSort = recurse(origSort, [], schema);
-		return finalSort;	
-	};
-
-	var normalizeSearchFields = exports.normalizeSearchFields = function(doc, model, keepCase){
-		var schema = model.schema? model.schema.tree.normalized : model;
-		var recurse = function(doc, normalized, schema){
-			var newDoc = {};
-			for(var key in doc){
-				if(key in schema){
-					if(typeof doc[key] === 'object'){
-						var normal = newDoc[key] = {};
-						newDoc[key] = recurse(doc[key], normal , schema[key]);
-					} else {
-						newDoc[key] = typeof doc[key] === 'string'? normalize(doc[key], keepCase) : doc[key];
-					}
-				}
-			}
-			return newDoc;
-		};
-
-		var finalDoc = {normalized: {}};
-		for(var key in doc){
-			finalDoc[key] = doc[key];
-		}
-		finalDoc.normalized = recurse(doc, finalDoc.normalized, schema);
-		return finalDoc;
-	};
-
-
-	var getPathString = function(key, path){
-		var pathString = 'normalized';
-		if(path.length > 0){
-			pathString += '.' +  path.join('.');
-		}
-		pathString += '.';
-		return pathString;
-	};
-
-/***/ },
-/* 97 */
-/***/ function(module, exports) {
-
-	module.exports = {
-		'a': ['á','Á','à','À','ã','Ã','â','Â','ä','Ä','å','Å','ā','Ā'],
-		'e': ['é','É','è','È','ê','Ê','ë','Ë','ē','Ē','ė','Ė','ę','Ę'],
-		'i': ['î','Î','í','Í','ì','Ì','ï','Ï','ī','Ī','į','Į'],
-		'o': ['ô','Ô','ò','Ò','ø','Ø','ō','Ō','ó','Ó','õ','Õ','ö','Ö'],
-		'u': ['û','Û','ú','Ú','ù','Ù','ü','Ü','ū','Ū'],
-		'c': ['ç','Ç','č','Č'],
-		's': ['ś','Ś','š','Š'],
-	};
-
-
-/***/ },
-/* 98 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -12188,7 +12033,49 @@ var ProperSearch =
 	module.exports = exports['default'];
 
 /***/ },
-/* 99 */
+/* 97 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+	var charMap = {
+		'a': ['á', 'Á', 'à', 'À', 'ã', 'Ã', 'â', 'Â', 'ä', 'Ä', 'å', 'Å', 'ā', 'Ā', 'ą', 'Ą'],
+		'e': ['é', 'É', 'è', 'È', 'ê', 'Ê', 'ë', 'Ë', 'ē', 'Ē', 'ė', 'Ė', 'ę', 'Ę'],
+		'i': ['î', 'Î', 'í', 'Í', 'ì', 'Ì', 'ï', 'Ï', 'ī', 'Ī', 'į', 'Į'],
+		'l': ['ł', 'Ł'],
+		'o': ['ô', 'Ô', 'ò', 'Ò', 'ø', 'Ø', 'ō', 'Ō', 'ó', 'Ó', 'õ', 'Õ', 'ö', 'Ö'],
+		'u': ['û', 'Û', 'ú', 'Ú', 'ù', 'Ù', 'ü', 'Ü', 'ū', 'Ū'],
+		'c': ['ç', 'Ç', 'č', 'Č', 'ć', 'Ć'],
+		's': ['ś', 'Ś', 'š', 'Š'],
+		'z': ['ź', 'Ź', 'ż', 'Ż'],
+		'': ['@', '#', '~', '$', '!', 'º', '|', '"', '·', '%', '&', '¬', '/', '(', ')', '=', '?', '¿', '¡', '*', '+', '^', '`', '-', '´', '{', '}', 'ç', ';', ':', '.']
+	};
+
+	exports['default'] = {
+		normalize: function normalize(value) {
+			var parseToLower = arguments.length <= 1 || arguments[1] === undefined ? true : arguments[1];
+
+			var rex = null;
+
+			for (var char in charMap) {
+				rex = new RegExp('[' + charMap[char].toString() + ']', 'g');
+
+				try {
+					value = value.replace(rex, char);
+				} catch (e) {
+					console.log('error', value);
+				}
+			}
+			return parseToLower ? value.toLowerCase() : value;
+		}
+	};
+	module.exports = exports['default'];
+
+/***/ },
+/* 98 */
 /***/ function(module, exports) {
 
 	// removed by extract-text-webpack-plugin

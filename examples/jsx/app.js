@@ -1,6 +1,6 @@
 import React from 'react';
 import Search from "../../src/jsx/propersearch";
-import Normalizer from "normalizer";
+import Normalizer from "../../src/jsx/utils/normalize";
 import {shallowEqualImmutable} from 'react-immutable-render-mixin';
 
 function getDefaultProps() {
@@ -116,7 +116,7 @@ class App extends React.Component {
 	}
 
 	filter(listElement, value) {
-		let data = listElement.name.toLowerCase();
+		let data = listElement.name;
 		data = Normalizer.normalize(data);
 		return data.indexOf(value) >= 0;
 	}
