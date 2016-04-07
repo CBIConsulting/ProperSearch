@@ -1132,7 +1132,7 @@ var ProperSearch =
 	      var array = this._array;
 	      var maxIndex = array.length - 1;
 	      var ii = 0;
-	      return new Iterator(function() 
+	      return new Iterator(function()
 	        {return ii > maxIndex ?
 	          iteratorDone() :
 	          iteratorValue(type, ii, array[reverse ? maxIndex - ii++ : ii++])}
@@ -1603,7 +1603,7 @@ var ProperSearch =
 
 	    Repeat.prototype.__iterator = function(type, reverse) {var this$0 = this;
 	      var ii = 0;
-	      return new Iterator(function() 
+	      return new Iterator(function()
 	        {return ii < this$0.size ? iteratorValue(type, ii++, this$0._value) : iteratorDone()}
 	      );
 	    };
@@ -3787,7 +3787,7 @@ var ProperSearch =
 	        return flipSequence;
 	      };
 	    }
-	    reversedSequence.get = function(key, notSetValue) 
+	    reversedSequence.get = function(key, notSetValue)
 	      {return iterable.get(useKeys ? key : -1 - key, notSetValue)};
 	    reversedSequence.has = function(key )
 	      {return iterable.has(useKeys ? key : -1 - key)};
@@ -3982,7 +3982,7 @@ var ProperSearch =
 	        return this.cacheResult().__iterate(fn, reverse);
 	      }
 	      var iterations = 0;
-	      iterable.__iterate(function(v, k, c) 
+	      iterable.__iterate(function(v, k, c)
 	        {return predicate.call(context, v, k, c) && ++iterations && fn(v, k, this$0)}
 	      );
 	      return iterations;
@@ -4173,7 +4173,7 @@ var ProperSearch =
 	    interposedSequence.size = iterable.size && iterable.size * 2 -1;
 	    interposedSequence.__iterateUncached = function(fn, reverse) {var this$0 = this;
 	      var iterations = 0;
-	      iterable.__iterate(function(v, k) 
+	      iterable.__iterate(function(v, k)
 	        {return (!iterations || fn(separator, iterations++, this$0) !== false) &&
 	        fn(v, iterations++, this$0) !== false},
 	        reverse
@@ -6662,7 +6662,7 @@ var ProperSearch =
 	 *
 	 * @providesModule shallowEqual
 	 * @typechecks
-	 * 
+	 *
 	 */
 
 	'use strict';
@@ -11971,7 +11971,7 @@ var ProperSearch =
 
 	var normalize = exports.normalize = function(origString, keepCase){
 		var newString = origString;
-		
+
 		for(var char in charMap){
 			var rex = new RegExp('[' + charMap[char].toString() + ']', 'g');
 			try{
@@ -11989,8 +11989,8 @@ var ProperSearch =
 		var finalFilter = {};
 
 		var getFilterResult = function(string){
-			return wholeString? 
-				normalize(string, keepCase) : 
+			return wholeString?
+				normalize(string, keepCase) :
 					new RegExp(normalize(string, keepCase), 'i');
 		};
 
@@ -12014,7 +12014,7 @@ var ProperSearch =
 			return newFilter;
 		};
 		finalFilter = recurse(origFilter, [], schema);
-		return finalFilter;	
+		return finalFilter;
 	};
 
 	var normalizeSort = exports.normalizeSort = function(origSort, model){
@@ -12039,7 +12039,7 @@ var ProperSearch =
 			return newSort;
 		};
 		finalSort = recurse(origSort, [], schema);
-		return finalSort;	
+		return finalSort;
 	};
 
 	var normalizeSearchFields = exports.normalizeSearchFields = function(doc, model, keepCase){

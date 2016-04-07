@@ -6,7 +6,7 @@ import {shallowEqualImmutable} from 'react-immutable-render-mixin';
 function getDefaultProps() {
 	return {
 		listHeight: 200,
-		listRowHeight: 26
+		listRowHeight: 35
 	}
 }
 
@@ -186,6 +186,7 @@ class App extends React.Component {
 				idField: newIdField
 			});
 		} else {
+			console.error('The data has no field with the name ' + newIdField + '. The fields of the data are: ', fieldsSet);
 			this.refs.idField.value = this.state.idField;
 		}
 	}
@@ -201,6 +202,7 @@ class App extends React.Component {
 				displayField: newDisplayField
 			});
 		} else {
+			console.error('The data has no field with the name ' + newDisplayField + '. The fields of the data are: ', fieldsSet);
 			this.refs.displayField.value = this.state.displayField;
 		}
 	}
