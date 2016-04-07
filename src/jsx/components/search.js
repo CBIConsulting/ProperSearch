@@ -1,0 +1,533 @@
+import React from 'react';
+import Immutable from 'immutable';
+import _ from 'underscore';
+import SearchList from './searchList';
+import SeachField from './searchField';
+import Normalizer from 'normalizer';
+import messages from "../lang/messages";
+import {shallowEqualImmutable} from 'react-immutable-render-mixin';
+const Set = require('es6-set');
+
+// For more info about this read ReadMe.md
+function getDefaultProps() {
+	return {
+		data: [],
+		messages: messages,
+		lang: 'ENG',
+		defaultSelection: null,
+		multiSelect: false,
+		listWidth: null,
+		listHeight: 200,
+		listRowHeight: 26,
+		afterSelect: null,
+		afterSearch: null,
+		onEnter: null, // Optional - To do when key down Enter - SearchField
+		fieldClass: null,
+		listClass: null,
+		listElementClass: null,
+		className: null,
+		placeholder: 'Search...',
+		searchIcon: 'fa fa-search fa-fw',
+		clearIcon: 'fa fa-times fa-fw',
+		throttle: 160, // milliseconds
+		minLength: 3,
+		defaultSearch: null,
+		autoComplete: 'off',
+		idField: 'value',
+		displayField: 'label',
+		listShowIcon: true,
+		filter: null, // Optional function (to be used when the displayField is an function too)
+		filterField: null // By default it will be the displayField
+	}
+}
+
+
+/**
+ * A proper search component for react. With a search field and a list of items allows the user to filter that list and select the items.
+ * The component return the selected data when it's selected. Allows multi and single selection. The list is virtual rendered, was designed
+ * to handle thousands of elements without sacrificing performance, just render the elements in the view. Used react-virtualized to render the list items.
+ *
+ * Simple example usage:
+ *
+ * 	let data = [];
+ * 	data.push({
+ *	  	value: 1,
+ *	  	label: 'Apple'
+ * 	});
+ *
+ *	let afterSelect = (data, selection) => {
+ *		console.info(data);
+ *		console.info(selection);
+ *	}
+ *
+ * 	<Search
+ *		data={data}
+ *		multiSelect={true}
+ *		afterSelect={afterSelect}
+ *	/>
+ * ```
+ */
+class Search extends React.Component {
+	constructor(props) {
+		super(props);
+
+		let preparedData = this.prepareData();
+
+		this.state = {
+			data: preparedData.data, // Data to work with (Inmutable)
+			initialData: preparedData.data, // Same data as state.data but this data never changes. (Inmutable)
+			rawData: preparedData.rawdata, // Received data without any modfication (Inmutable)
+			indexedData: preparedData.indexed, // Received data indexed (No Inmutable)
+			initialIndexed: preparedData.indexed, // When data get filtered keep the full indexed
+			selection: new Set(),
+			allSelected: false,
+			ready: false
+		}
+	}
+
+	componentDidMount() {
+		this.setDefaultSelection(this.props.defaultSelection);
+
+		this.setState({
+			ready: true
+		});
+	}
+
+	shouldComponentUpdate(nextProps, nextState){
+		let stateChanged = !shallowEqualImmutable(this.state, nextState);
+		let propsChanged = !shallowEqualImmutable(this.props, nextProps);
+		let somethingChanged = propsChanged || stateChanged;
+
+		// Update row indexes when data get filtered
+		if (this.state.data.size != nextState.data.size) {
+			let parsed = null, indexed = null;
+
+			parsed = this.prepareData(nextState.data);
+			indexed = parsed.indexed;
+
+			this.setState({
+				data: parsed.data,
+				indexedData: parsed.indexed,
+				allSelected: this.isAllSelected(parsed.data, nextState.selection)
+			});
+
+			return false;
+		}
+
+		if (propsChanged) {
+			let dataChanged = !shallowEqualImmutable(this.props.data, nextProps.data);
+			let selectionChanged = !shallowEqualImmutable(this.props.defaultSelection, nextProps.defaultSelection);
+
+			if (dataChanged){
+				let preparedData = this.prepareData(Immutable.fromJS(nextProps.data), nextProps.idField);
+				let selection = null;
+
+				if (selectionChanged) selection = nextProps.defaultSelection;
+
+				this.setState({
+					data: preparedData.data,
+					initialData: preparedData.data,
+					rawData: preparedData.rawdata,
+					indexedData: preparedData.indexed,
+					initialIndexed: preparedData.indexed
+				}, this.setDefaultSelection(selection));
+
+				return false;
+			}
+
+			if (selectionChanged) {
+				this.setDefaultSelection(selection);
+
+				return false;
+			}
+		}
+
+		return somethingChanged;
+	}
+
+/**
+ * Before the components update set the updated selection data to the components state.
+ *
+ * @param {object}	nextProps	The props that will be set for the updated component
+ * @param {object}	nextState	The state that will be set for the updated component
+ */
+	componentWillUpdate(nextProps, nextState) {
+		let dataChangedProps = !shallowEqualImmutable(this.props.data, nextProps.data);
+
+		// Selection
+		if (this.props.multiSelect) {
+			if (nextState.selection.size !== this.state.selection.size) {
+				this.updateSelectionData(nextState.selection, nextState.allSelected);
+			}
+		} else {
+			let next = nextState.selection.values().next().value || null;
+			let old = this.state.selection.values().next().value || null;
+
+			if (next !== old){
+				this.updateSelectionData(next);
+			}
+		}
+
+	}
+
+/**
+ * Method called before the components update to set the new selection to states component and update the data
+ *
+ * @param {array}	newSelection	The new selected rows (Set object)
+ * @param {array}	newAllSelected	If the new state has all the rows selected
+ */
+	updateSelectionData(newSelection, newAllSelected = false) {
+		let newIndexed = _.clone(this.state.indexedData);
+		let oldSelection = this.state.selection;
+		let rowid = null, selected = null, rdata = null, curIndex = null, newData = this.state.data, rowIndex = null;
+
+		if (!this.props.multiSelect) { // Single select
+			let oldId = oldSelection.values().next().value || null;
+
+			if (!_.isNull(oldId)) {
+				newIndexed[oldId]._selected = false; // Update indexed data
+				rowIndex =  newIndexed[oldId]._rowIndex; // Get data index
+				if (newData.get(rowIndex)) {
+					rdata = newData.get(rowIndex).set('_selected', false); // Change the row in that index
+					newData = newData.set(rowIndex, rdata); // Set that row in the data object
+				}
+			}
+
+			if (!_.isNull(newSelection)) {
+				newIndexed[newSelection]._selected = true; // Update indexed data
+				rowIndex =  newIndexed[newSelection]._rowIndex; // Get data index
+				rdata = newData.get(rowIndex).set('_selected', true); // Change the row in that index
+				newData = newData.set(rowIndex, rdata); // Set that row in the data object
+			}
+
+		} else if (!newAllSelected && this.isSingleChange(newSelection.size)) { // Change one row data at a time
+			let changedId = null, selected = null;
+
+			// If the new selection has not one of the ids of the old selection that means an selected element has been unselected.
+			oldSelection.forEach(id => {
+				if (!newSelection.has(id)) {
+					changedId = id;
+					selected = false;
+					return false;
+				}
+			});
+
+			// Otherwise a new row has been selected. Look through the new selection for the new element.
+			if (!changedId) {
+				selected = true;
+				newSelection.forEach(id => {
+					if (!oldSelection.has(id)) {
+						changedId = id;
+						return false;
+					}
+				});
+			}
+
+			newIndexed[changedId]._selected = selected; // Update indexed data
+			rowIndex =  newIndexed[changedId]._rowIndex; // Get data index
+			rdata = newData.get(rowIndex).set('_selected', selected); // Change the row in that index
+			newData = newData.set(rowIndex, rdata); // Set that row in the data object
+
+		} else { // Change all data
+			newData = newData.map((row) => {
+				rowid = row.get(this.props.idField);
+				selected = newSelection.has(rowid.toString());
+				rdata = row.set('_selected', selected);
+				curIndex = newIndexed[rowid];
+
+				if (curIndex._selected != selected) { // update indexed data
+					curIndex._selected = selected;
+					newIndexed[rowid] = curIndex;
+				}
+
+				return rdata;
+			});
+		}
+
+		this.setState({
+			data: newData,
+			indexed: newIndexed
+		});
+	}
+
+/**
+ * Check if the selection has more than 1 change.
+ *
+ * @param {integer}	newSize		Size of the new selection
+ */
+	isSingleChange(newSize) {
+		let oldSize = this.state.selection.size;
+
+		if (oldSize - 1 == newSize || oldSize + 1 == newSize) return true;
+		else return false;
+	}
+
+/**
+ * In case that the new selection array be different than the selection array in the components state, then update
+ * the components state with the new data.
+ *
+ * @param {array}	newSelection	The selected rows
+ */
+	triggerSelection(newSelection = new Set()) {
+		this.setState({
+			selection: newSelection,
+			allSelected: this.isAllSelected(this.state.data, newSelection)
+		}, this.sendSelection);
+	}
+
+/**
+ * Check if all the current data are selected.
+ *
+ * @param {array}	data		The data to compare with selection
+ * @param {object}	selection	The current selection Set of values (idField)
+ */
+	isAllSelected(data, selection) {
+		let result = true;
+		if (data.size > selection.size) return false;
+
+		data.forEach((item, index) => {
+			if (!selection.has(item.get(this.props.idField, null))) { // Some data not in selection
+				result = false;
+				return false;
+			}
+		});
+
+		return result;
+	}
+
+/**
+ * Set up the default selection if exist
+ *
+ * @param {array || string ... number} defSelection 	Default selection to be applied to the list
+ */
+	setDefaultSelection(defSelection) {
+		if (defSelection) {
+			let selection = null;
+
+			if (!_.isArray(defSelection)) {
+				selection = new Set([defSelection]);
+			} else if (defSelection !== new Set()){
+				selection = new Set(defSelection);
+			}
+
+			this.triggerSelection(selection);
+		}
+	}
+
+/**
+ * Prepare the data received by the component for the internal working.
+ *
+ * @param (object)	newData 	New data for rebuild. (filtering || props changed)
+ * @param (string)	idField 	New idField if it has been changed. (props changed)
+ *
+ * @return (array)	-rawdata: 	The same data as the props.
+ *					-indexed: 	Same as rawdata but indexed by the idField
+ *					-data: 		Parsed data to add some fields necesary to internal working.
+ */
+	prepareData(newData = null, idField = null) {
+		// The data will be inmutable inside the component
+		let data = newData || Immutable.fromJS(this.props.data), index = 0, field = idField || this.props.idField;
+		let indexed = [], parsed = [];
+
+		// Parsing data to add new fields (selected or not, field, rowIndex)
+		parsed = data.map(row => {
+			if (!row.get(field, false)) {
+				row = row.set(field, _.uniqueId());
+			}
+
+			if (!row.get('_selected', false)) {
+				row = row.set('_selected', false);
+			}
+
+			row = row.set('_rowIndex', index++);
+
+			return row;
+		});
+
+		// Prepare indexed data.
+		indexed = _.indexBy(parsed.toJSON(), field);
+
+		return {
+			rawdata: data,
+			data: parsed,
+			indexed: indexed
+		};
+	}
+
+/**
+ * Function called each time the selection has changed. Apply an update in the components state selection then render again an update the child
+ * list.
+ *
+ * @param (Set)	selection The selected values using the values of the selected data.
+ */
+	handleSelectionChange(selection) {
+		this.triggerSelection(selection);
+	}
+
+/**
+ * Function called each time the search field has changed. Filter the data by using the received search field value.
+ *
+ * @param (String)	value 	String written in the search field
+ */
+	handleSearch(value) {
+		let lValue = value ? value.toLowerCase() : null, filter = null;
+		let data = this.state.initialData, filteredData = data, selection = this.state.selection;
+		let displayField = this.props.displayField, idField = this.props.idField;
+		let hasFilter = (typeof this.props.filter == 'function');
+
+		// When the search field has been clear then the value will be null and the data will be the same as initialData, otherwise
+		// the data will be filtered using the .filter() function of Inmutable lib. It return a Inmutable obj with the elements that
+		// match the expresion in the parameter.
+		if (value) {
+			lValue = Normalizer.normalize(lValue);
+
+			// If the prop `filter´ has a function then use if to filter as an interator over the indexed data.
+			if (hasFilter) {
+				let filtered = null, filteredIndexes = new Set();
+
+				// Filter indexed data using the funtion
+				_.each(this.state.initialIndexed, element => {
+					if (this.props.filter(element, lValue)) {
+						filteredIndexes.add(element._rowIndex);
+					}
+				});
+
+				// Then get the data that match with that indexed data
+				filteredData = data.filter(element => {
+					return filteredIndexes.has(element.get('_rowIndex'));
+				});
+			} else {
+				filteredData = data.filter(element => {
+					filter = element.get(this.props.filterField, null) || element.get(displayField);
+
+					// When it's a function then use the field in filterField to search, if this field doesn't exist then use the field name or then idField.
+					if (typeof filter == 'function') {
+						filter = element.get('name', null) || element.get(idField);
+					}
+
+					filter = Normalizer.normalize(filter);
+					return filter.toLowerCase().indexOf(lValue) >= 0;
+				});
+			}
+		}
+
+		// Apply selection
+		filteredData = filteredData.map(element => {
+			if (selection.has(element.get(idField, null))) {
+				element = element.set('_selected', true);
+			}
+
+			return element;
+		});
+
+		this.setState({
+			data: filteredData
+		}, this.sendSearch(lValue));
+	}
+
+/**
+ * Get the data that match with the selection in params and send the data and the selection to a function whichs name is afterSelect
+ * if this function was set up in the component props
+ */
+	sendSelection() {
+		if (typeof this.props.afterSelect == 'function') {
+			let selectionArray = [], selectedData = [], properId = null, rowIndex = null, filteredData = null;
+			let {indexedData, initialData, rawData, data, selection} = this.state;
+
+			// Get the data (initialData) that match with the selection
+			filteredData = initialData.filter(element => selection.has(element.get(this.props.idField, null)));
+
+			// Then from the filtered data get the raw data that match with the selection
+			selectedData = filteredData.map(row => {
+				properId = row.get(this.props.idField, 0);
+				rowIndex = _.isUndefined(indexedData[properId]) ? this.state.initialIndexed[properId]._rowIndex : indexedData[properId]._rowIndex;
+
+				return rawData.get(rowIndex);
+			});
+
+			// Parse the selection to return it as an array instead of a Set obj
+			selection.forEach(item => {
+				selectionArray.push(item);
+			});
+
+			this.props.afterSelect.call(this, selectedData.toJSON(), selectionArray);
+		}
+	}
+
+/**
+ * Send the written string in the search field to the afterSearch function if it was set up in the components props
+ *
+ * @param (String)	searchValue 	String written in the search field
+ */
+	sendSearch(searchValue) {
+		if (typeof this.props.afterSearch == 'function') {
+			this.props.afterSearch.call(this, searchValue);
+		}
+	}
+
+	render() {
+		let messages = this.props.messages[this.props.lang],
+		content = null,
+		data = this.state.data,
+		selection = new Set(),
+		allSelected = this.state.allSelected,
+		className = "proper-search";
+
+		if (this.props.className) {
+			className += ' '+this.props.className;
+		}
+
+		if (this.state.ready) {
+			this.state.selection.forEach( element => {
+				selection.add(element);
+			});
+
+			content = (
+				<div>
+					<SeachField
+						onSearch={this.handleSearch.bind(this)}
+						onEnter={this.props.onEnter}
+						className={this.props.fieldClass}
+						placeholder={this.props.placeholder}
+						defaultValue={this.props.defaultSearch}
+						searchIcon={this.props.searchIcon}
+						clearIcon={this.props.clearIcon}
+						throttle={this.props.throttle}
+						minLength={this.props.minLength}
+						autoComplete={this.props.autoComplete}
+					/>
+					<SearchList
+						data={data}
+						rawData={this.state.rawData}
+						indexedData={this.state.initialIndexed}
+						className={this.props.listClass}
+						idField={this.props.idField}
+						displayField={this.props.displayField}
+						onSelectionChange={this.handleSelectionChange.bind(this)}
+						messages={messages}
+						selection={selection}
+						allSelected={allSelected}
+						multiSelect={this.props.multiSelect}
+						listHeight={this.props.listHeight}
+						listWidth={this.props.listWidth}
+						listRowHeight={this.props.listRowHeight}
+						listElementClass={this.props.listElementClass}
+						showIcon={this.props.listShowIcon}
+					/>
+				</div>
+			);
+		} else {
+			content = <div className="proper-search-loading">{messages.loading}</div>
+		}
+
+		return (
+			<div className={"proper-search " + className}>
+				{content}
+			</div>
+		);
+	}
+};
+
+Search.defaultProps = getDefaultProps();
+
+export default Search;
