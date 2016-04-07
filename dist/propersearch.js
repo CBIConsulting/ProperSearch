@@ -6789,7 +6789,8 @@ var ProperSearch =
 	    _this._onScrollMemoizer = (0, _GridUtils.createCallbackMemoizer)(false);
 
 	    // Bind functions to instance so they don't lose context when passed around
-	    _this._computeGridMetadata = _this._computeGridMetadata.bind(_this);
+	    _this._computeColumnMetadata = _this._computeColumnMetadata.bind(_this);
+	    _this._computeRowMetadata = _this._computeRowMetadata.bind(_this);
 	    _this._invokeOnGridRenderedHelper = _this._invokeOnGridRenderedHelper.bind(_this);
 	    _this._onScroll = _this._onScroll.bind(_this);
 	    _this._updateScrollLeftForScrollToColumn = _this._updateScrollLeftForScrollToColumn.bind(_this);
@@ -6916,7 +6917,8 @@ var ProperSearch =
 	  }, {
 	    key: 'componentWillMount',
 	    value: function componentWillMount() {
-	      this._computeGridMetadata(this.props);
+	      this._computeColumnMetadata(this.props);
+	      this._computeRowMetadata(this.props);
 	    }
 	  }, {
 	    key: 'componentWillUnmount',
@@ -6957,7 +6959,7 @@ var ProperSearch =
 	      (0, _GridUtils.computeCellMetadataAndUpdateScrollOffsetHelper)({
 	        cellsCount: this.props.columnsCount,
 	        cellSize: this.props.columnWidth,
-	        computeMetadataCallback: this._computeGridMetadata,
+	        computeMetadataCallback: this._computeColumnMetadata,
 	        computeMetadataCallbackProps: nextProps,
 	        computeMetadataOnNextUpdate: nextState.computeGridMetadataOnNextUpdate,
 	        nextCellsCount: nextProps.columnsCount,
@@ -6969,7 +6971,7 @@ var ProperSearch =
 	      (0, _GridUtils.computeCellMetadataAndUpdateScrollOffsetHelper)({
 	        cellsCount: this.props.rowsCount,
 	        cellSize: this.props.rowHeight,
-	        computeMetadataCallback: this._computeGridMetadata,
+	        computeMetadataCallback: this._computeRowMetadata,
 	        computeMetadataCallbackProps: nextProps,
 	        computeMetadataOnNextUpdate: nextState.computeGridMetadataOnNextUpdate,
 	        nextCellsCount: nextProps.rowsCount,
@@ -7066,10 +7068,10 @@ var ProperSearch =
 	                key: key,
 	                className: 'Grid__cell',
 	                style: {
-	                  height: this._getRowHeight(rowIndex),
-	                  left: columnDatum.offset + 'px',
-	                  top: rowDatum.offset + 'px',
-	                  width: this._getColumnWidth(columnIndex)
+	                  height: rowDatum.size,
+	                  left: columnDatum.offset,
+	                  top: rowDatum.offset,
+	                  width: columnDatum.size
 	                }
 	              },
 	              renderedCell
@@ -7103,10 +7105,12 @@ var ProperSearch =
 	        'div',
 	        {
 	          ref: 'scrollingContainer',
+	          'aria-label': this.props['aria-label'],
 	          className: (0, _classnames2.default)('Grid', className),
 	          onScroll: this._onScroll,
-	          tabIndex: 0,
-	          style: gridStyle
+	          role: 'grid',
+	          style: gridStyle,
+	          tabIndex: 0
 	        },
 	        childrenToDisplay.length > 0 && _react2.default.createElement(
 	          'div',
@@ -7134,18 +7138,24 @@ var ProperSearch =
 	    /* ---------------------------- Helper methods ---------------------------- */
 
 	  }, {
-	    key: '_computeGridMetadata',
-	    value: function _computeGridMetadata(props) {
+	    key: '_computeColumnMetadata',
+	    value: function _computeColumnMetadata(props) {
 	      var columnsCount = props.columnsCount;
 	      var columnWidth = props.columnWidth;
-	      var rowHeight = props.rowHeight;
-	      var rowsCount = props.rowsCount;
 
 
 	      this._columnMetadata = (0, _GridUtils.initCellMetadata)({
 	        cellsCount: columnsCount,
 	        size: columnWidth
 	      });
+	    }
+	  }, {
+	    key: '_computeRowMetadata',
+	    value: function _computeRowMetadata(props) {
+	      var rowHeight = props.rowHeight;
+	      var rowsCount = props.rowsCount;
+
+
 	      this._rowMetadata = (0, _GridUtils.initCellMetadata)({
 	        cellsCount: rowsCount,
 	        size: rowHeight
@@ -7173,22 +7183,6 @@ var ProperSearch =
 	          isScrolling: false
 	        });
 	      }, IS_SCROLLING_TIMEOUT);
-	    }
-	  }, {
-	    key: '_getColumnWidth',
-	    value: function _getColumnWidth(index) {
-	      var columnWidth = this.props.columnWidth;
-
-
-	      return columnWidth instanceof Function ? columnWidth(index) : columnWidth;
-	    }
-	  }, {
-	    key: '_getRowHeight',
-	    value: function _getRowHeight(index) {
-	      var rowHeight = this.props.rowHeight;
-
-
-	      return rowHeight instanceof Function ? rowHeight(index) : rowHeight;
 	    }
 	  }, {
 	    key: '_getTotalColumnsWidth',
@@ -7414,6 +7408,8 @@ var ProperSearch =
 	}(_react.Component);
 
 	Grid.propTypes = {
+	  'aria-label': _react.PropTypes.string,
+
 	  /**
 	   * Optional custom CSS class name to attach to root Grid element.
 	   */
@@ -7504,6 +7500,7 @@ var ProperSearch =
 	  width: _react.PropTypes.number.isRequired
 	};
 	Grid.defaultProps = {
+	  'aria-label': 'grid',
 	  noContentRenderer: function noContentRenderer() {
 	    return null;
 	  },
@@ -8176,6 +8173,8 @@ var ProperSearch =
 	  value: true
 	});
 
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 	var _classnames = __webpack_require__(25);
@@ -8304,6 +8303,7 @@ var ProperSearch =
 	          this._getRenderedHeaderRow()
 	        ),
 	        _react2.default.createElement(_Grid2.default, {
+	          'aria-label': this.props['aria-label'],
 	          ref: 'Grid',
 	          className: 'FlexTable__Grid',
 	          columnWidth: width,
@@ -8408,7 +8408,7 @@ var ProperSearch =
 	      var newSortDirection = sortBy !== dataKey || sortDirection === _SortDirection2.default.DESC ? _SortDirection2.default.ASC : _SortDirection2.default.DESC;
 	      var onClick = function onClick() {
 	        sortEnabled && sort(dataKey, newSortDirection);
-	        onHeaderClick(dataKey, columnData);
+	        onHeaderClick && onHeaderClick(dataKey, columnData);
 	      };
 
 	      var renderedHeader = headerRenderer({
@@ -8420,14 +8420,22 @@ var ProperSearch =
 	        sortDirection: sortDirection
 	      });
 
+	      var a11yProps = {};
+
+	      if (sortEnabled || onHeaderClick) {
+	        a11yProps['aria-label'] = column.props['aria-label'] || label || dataKey;
+	        a11yProps.role = 'rowheader';
+	        a11yProps.tabIndex = 0;
+	        a11yProps.onClick = onClick;
+	      }
+
 	      return _react2.default.createElement(
 	        'div',
-	        {
+	        _extends({}, a11yProps, {
 	          key: 'Header-Col' + columnIndex,
 	          className: classNames,
-	          style: style,
-	          onClick: onClick
-	        },
+	          style: style
+	        }),
 	        renderedHeader
 	      );
 	    }
@@ -8445,24 +8453,33 @@ var ProperSearch =
 
 
 	      var rowClass = rowClassName instanceof Function ? rowClassName(rowIndex) : rowClassName;
+	      var rowData = rowGetter(rowIndex);
 
 	      var renderedRow = _react2.default.Children.map(children, function (column, columnIndex) {
-	        return _this3._createColumn(column, columnIndex, rowGetter(rowIndex), rowIndex);
+	        return _this3._createColumn(column, columnIndex, rowData, rowIndex);
 	      });
+
+	      var a11yProps = {};
+
+	      if (onRowClick) {
+	        a11yProps['aria-label'] = 'row';
+	        a11yProps.role = 'row';
+	        a11yProps.tabIndex = 0;
+	        a11yProps.onClick = function () {
+	          return onRowClick(rowIndex);
+	        };
+	      }
 
 	      return _react2.default.createElement(
 	        'div',
-	        {
+	        _extends({}, a11yProps, {
 	          key: rowIndex,
 	          className: (0, _classnames2.default)('FlexTable__row', rowClass),
-	          onClick: function onClick() {
-	            return onRowClick(rowIndex);
-	          },
 	          style: {
 	            height: this._getRowHeight(rowIndex),
 	            paddingRight: scrollbarWidth
 	          }
-	        },
+	        }),
 	        renderedRow
 	      );
 	    }
@@ -8531,6 +8548,8 @@ var ProperSearch =
 	}(_react.Component);
 
 	FlexTable.propTypes = {
+	  'aria-label': _react.PropTypes.string,
+
 	  /** One or more FlexColumns describing the data displayed in this row */
 	  children: function children(props, propName, componentName) {
 	    var children = _react2.default.Children.toArray(props.children);
@@ -8637,12 +8656,6 @@ var ProperSearch =
 	  disableHeader: false,
 	  headerHeight: 0,
 	  noRowsRenderer: function noRowsRenderer() {
-	    return null;
-	  },
-	  onHeaderClick: function onHeaderClick() {
-	    return null;
-	  },
-	  onRowClick: function onRowClick() {
 	    return null;
 	  },
 	  onRowsRendered: function onRowsRendered() {
@@ -8765,6 +8778,9 @@ var ProperSearch =
 	  headerRenderer: defaultHeaderRenderer
 	};
 	Column.propTypes = {
+	  /** Optional aria-label value to set on the column header */
+	  'aria-label': _react.PropTypes.string,
+
 	  /** Optional CSS class to apply to cell */
 	  cellClassName: _react.PropTypes.string,
 
@@ -9368,6 +9384,7 @@ var ProperSearch =
 
 	      return _react2.default.createElement(_Grid2.default, {
 	        ref: 'Grid',
+	        'aria-label': this.props['aria-label'],
 	        className: classNames,
 	        columnWidth: width,
 	        columnsCount: 1,
@@ -9415,6 +9432,8 @@ var ProperSearch =
 	}(_react.Component);
 
 	VirtualScroll.propTypes = {
+	  'aria-label': _react.PropTypes.string,
+
 	  /** Optional CSS class name */
 	  className: _react.PropTypes.string,
 
@@ -11121,6 +11140,10 @@ var ProperSearch =
 
 	var _react2 = _interopRequireDefault(_react);
 
+	var _underscore = __webpack_require__(4);
+
+	var _underscore2 = _interopRequireDefault(_underscore);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -11278,7 +11301,7 @@ var ProperSearch =
 			key: 'render',
 			value: function render() {
 				var className = 'proper-search-field',
-				    uniqueId = _.uniqueId('search-'),
+				    uniqueId = _underscore2['default'].uniqueId('search-'),
 				    clearBtn = null;
 
 				if (this.props.className) {
@@ -11340,7 +11363,7 @@ var ProperSearch =
 		value: true
 	});
 	exports['default'] = {
-		'ESP': {
+		'SPA': {
 			all: 'Seleccionar Todo',
 			none: 'Deseleccionar Todo',
 			loading: 'Cargando...',

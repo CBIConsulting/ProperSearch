@@ -1,5 +1,5 @@
 export default {
-	'ESP': {
+	'SPA': {
 		all: 'Seleccionar Todo',
 		none: 'Deseleccionar Todo',
 		loading: 'Cargando...',
