@@ -48,7 +48,7 @@ var ProperSearch =
 	"use strict";
 
 	Object.defineProperty(exports, "__esModule", {
-	  value: true
+		value: true
 	});
 
 	var _search = __webpack_require__(1);
@@ -57,7 +57,9 @@ var ProperSearch =
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
-	__webpack_require__(98);
+	if (true) {
+		__webpack_require__(98);
+	}
 
 	exports["default"] = _search2["default"];
 	module.exports = exports['default'];
