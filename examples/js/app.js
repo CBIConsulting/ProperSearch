@@ -486,7 +486,7 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 						React.createElement(
 							'div',
 							{ id: 'canvas', style: { position: 'absolute', top: 0, bottom: 0, width: ' 75%' } },
-							React.createElement(Search, {
+							React.createElement(ProperSearch, {
 								data: this.state.data,
 								idField: this.state.idField,
 								displayField: this.state.displayField,
