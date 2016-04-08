@@ -1,13 +1,13 @@
 {
   "name": "react-propersearch",
-  "version": "0.1.7",
+  "version": "0.1.6",
   "description": "A react component that render a search field with a list of items, allows the user to filter that list and select the items. The component return the selected data when it get selected",
   "main": "lib/propersearch.js",
   "scripts": {
     "test": "webpack && karma start --single-run --no-auto-watch karma.conf.js",
     "watch": "karma start --auto-watch --no-single-run karma.conf.js",
     "start": "webpack-dev-server --hot --inline --config webpack.config.example.js",
-    "build": "babel src/jsx --out-dir lib && webpack && babel examples/jsx --out-dir examples/js && cp -rvf src/css/* css/",
+    "build": "babel src/jsx --out-dir lib && webpack && cp -rvf src/css/* css/",
     "release": "webpack --config webpack.config.min.js"
   },
   "repository": {
