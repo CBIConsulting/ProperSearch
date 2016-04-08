@@ -4,3 +4,5 @@ webpack.config.js
 webpack.config.min.js
 examples/*
 dist/*.html
+dist/*.js
+src/**/__tests__/
