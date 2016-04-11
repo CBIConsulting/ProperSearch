@@ -259,12 +259,13 @@ var App =
 				    language = '',
 				    random = Math.floor(Math.random() * 10);
 				var selection = ['item-' + random, 'item-' + (random + 1)];
-				var defaultSearch = 'Item ' + random;
+				var defaultSearch = 'Item ' + random,
+				    placeholder = 'Search Placeholder ' + random;
 				var listHeight = this.props.listHeight + random,
 				    listRowHeight = this.props.listRowHeight + random;
 				var multiSelect = !this.state.multiSelect;
 
-				if (random % 2 == 0) language = 'ENG';else language = 'ESP';
+				if (random % 2 == 0) language = 'ENG';else language = 'SPA';
 
 				for (var i = Math.floor(Math.random() * 1000) + 10; i >= 0; i--) {
 					data.push({ value: 'item-' + i, label: 'Item ' + i, name: 'Teeést ' + i, fieldx: 'xxx ' + i, fieldy: 'yyy ' + i });
@@ -278,12 +279,15 @@ var App =
 					idField: 'value',
 					displayField: 'label',
 					language: language,
-					selection: selection,
+					defaultSelection: selection,
 					defaultSearch: defaultSearch,
 					listHeight: listHeight,
 					listRowHeight: listRowHeight,
 					multiSelect: multiSelect,
-					filterOff: true
+					filter: null,
+					placeholder: placeholder,
+					afterSelect: this.afterSelect.bind(this),
+					afterSearch: this.afterSearch.bind(this)
 				});
 			}
 		}, {

@@ -133,12 +133,12 @@ class App extends React.Component {
 		e.preventDefault();
 		let data = [], fieldsSet = null, language = '', random = Math.floor(Math.random()* 10);
 		let selection = ['item-'+ random,'item-' + (random+1)];
-		let defaultSearch = 'Item '+ random;
+		let defaultSearch = 'Item '+ random, placeholder = 'Search Placeholder ' + random;
 		let listHeight = this.props.listHeight + random, listRowHeight = this.props.listRowHeight + random;
 		let multiSelect = !this.state.multiSelect;
 
 		if (random % 2 == 0) language = 'ENG';
-		else language = 'ESP';
+		else language = 'SPA';
 
 		for (let i = (Math.floor(Math.random()* 1000) + 10); i >= 0; i--) {
 			data.push({value: 'item-' + i, label: 'Item ' + i, name: 'Teeést ' + i, fieldx: 'xxx ' + i, fieldy: 'yyy ' + i});
@@ -152,13 +152,17 @@ class App extends React.Component {
 			idField: 'value',
 			displayField: 'label',
 			language: language,
-			selection: selection,
+			defaultSelection: selection,
 			defaultSearch: defaultSearch,
 			listHeight: listHeight,
 			listRowHeight: listRowHeight,
 			multiSelect: multiSelect,
-			filterOff: true,
+			filter: null,
+			placeholder: placeholder,
+			afterSelect: this.afterSelect.bind(this),
+			afterSearch: this.afterSearch.bind(this)
 		});
+
 	}
 
 	onChangeSize(e) {
