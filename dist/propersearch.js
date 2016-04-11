@@ -560,6 +560,8 @@ var ProperSearch =
 				parsed = data.map(function (row) {
 					if (!row.get(field, false)) {
 						row = row.set(field, _underscore2['default'].uniqueId());
+					} else {
+						row = row.set(field, row.get(field).toString());
 					}
 
 					if (!row.get('_selected', false)) {
