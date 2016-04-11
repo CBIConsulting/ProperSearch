@@ -401,6 +401,8 @@ class Search extends React.Component {
 		parsed = data.map(row => {
 			if (!row.get(field, false)) {
 				row = row.set(field, _.uniqueId());
+			} else {
+				row = row.set(field, row.get(field).toString());
 			}
 
 			if (!row.get('_selected', false)) {
