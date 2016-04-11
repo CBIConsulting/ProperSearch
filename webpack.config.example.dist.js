@@ -29,6 +29,11 @@ module.exports = {
       }
     ],
   },
+  externals: {
+    'react': 'React',
+    'react-dom': 'ReactDOM',
+    'underscore': '_'
+  },
   output: {
     libraryTarget: "var",
     library: "App",
