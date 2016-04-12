@@ -74,6 +74,8 @@ var ProperSearch =
 		value: true
 	});
 
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
+
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 	var _react = __webpack_require__(2);
@@ -212,6 +214,8 @@ var ProperSearch =
 		}, {
 			key: 'shouldComponentUpdate',
 			value: function shouldComponentUpdate(nextProps, nextState) {
+				var _this2 = this;
+
 				var stateChanged = !(0, _reactImmutableRenderMixin.shallowEqualImmutable)(this.state, nextState);
 				var propsChanged = !(0, _reactImmutableRenderMixin.shallowEqualImmutable)(this.props, nextProps);
 				var somethingChanged = propsChanged || stateChanged;
@@ -221,100 +225,142 @@ var ProperSearch =
 					var parsed = null,
 					    indexed = null;
 
-					parsed = this.prepareData(nextState.data);
-					indexed = parsed.indexed;
+					if (nextState.ready) {
+						parsed = this.prepareData(nextState.data);
+						indexed = parsed.indexed;
 
-					this.setState({
-						data: parsed.data,
-						indexedData: parsed.indexed,
-						allSelected: this.isAllSelected(parsed.data, nextState.selection)
-					});
+						this.setState({
+							data: parsed.data,
+							indexedData: parsed.indexed,
+							allSelected: this.isAllSelected(parsed.data, nextState.selection)
+						});
+					} else {
+						var selection = nextProps.defaultSelection;
+						if (!nextProps.multiSelect) selection = nextState.selection.values().next().value || null;
+
+						// props data has been changed in the last call to this method
+						this.setState({
+							ready: true
+						}, this.setDefaultSelection(selection));
+					}
 
 					return false;
 				}
 
 				if (propsChanged) {
-					var dataChanged = !(0, _reactImmutableRenderMixin.shallowEqualImmutable)(this.props.data, nextProps.data);
-					var selectionChanged = !(0, _reactImmutableRenderMixin.shallowEqualImmutable)(this.state.selection, new Set(nextProps.defaultSelection));
-					var selection = selectionChanged ? nextProps.defaultSelection : null; // With null null the method setDefaultSelection does nothing
-					var idFieldChanged = this.props.idField != nextProps.idField,
-					    displayFieldChanged = this.props.displayField != nextProps.displayField;
+					var _ret = function () {
+						var dataChanged = !(0, _reactImmutableRenderMixin.shallowEqualImmutable)(_this2.props.data, nextProps.data);
+						var idFieldChanged = _this2.props.idField != nextProps.idField,
+						    displayFieldChanged = _this2.props.displayField != nextProps.displayField;
+						var selectionChanged = false,
+						    nextSelection = new Set(nextProps.defaultSelection),
+						    selection = null;
 
-					if (idFieldChanged || displayFieldChanged) {
-						var fieldsSet = new Set(_underscore2['default'].keys(nextProps.data[0]));
-						var _messages = this.props.messages[this.props.lang];
-
-						// Change idField / displayField but that field doesn't exist in the data
-						if (!fieldsSet.has(nextProps.idField) || !fieldsSet.has(nextProps.displayField)) {
-							if (!fieldsSet.has(nextProps.idField)) console.error(_messages.errorIdField + ' ' + nextProps.idField + ' ' + _messages.errorData);else console.error(_messages.errorDisplayField + ' ' + nextProps.idField + ' ' + _messages.errorData);
-
-							return false;
+						if (_this2.state.selection.size != nextSelection.size) {
+							selectionChanged = true;
+							selection = nextProps.defaultSelection;
 						} else {
-							// New idField &&//|| displayField exist in data array fields
-
-							if (dataChanged) {
-								var preparedData = this.prepareData(_immutable2['default'].fromJS(nextProps.data), nextProps.idField);
-
-								this.setState({
-									data: preparedData.data,
-									initialData: preparedData.data,
-									rawData: preparedData.rawdata,
-									indexedData: preparedData.indexed,
-									initialIndexed: preparedData.indexed,
-									idField: nextProps.idField,
-									displayField: nextProps.displayField
-								}, this.setDefaultSelection(selection));
-							} else {
-								var initialIndexed = null,
-								    _indexed = null;
-
-								// If the id field change then the indexed data has to be changed but not for display
-								if (displayFieldChanged) {
-									initialIndexed = this.state.initialIndexed;
-									_indexed = this.state.indexedData;
-								} else {
-									initialIndexed = _underscore2['default'].indexBy(this.state.initialData.toJSON(), nextProps.idField);
-									_indexed = _underscore2['default'].indexBy(this.state.data.toJSON(), nextProps.idField);
+							_this2.state.selection.forEach(function (element) {
+								if (!nextSelection.has(element)) {
+									selectionChanged = true;
+									selection = nextProps.defaultSelection;
+									return true;
 								}
-
-								this.setState({
-									indexedData: _indexed,
-									initialIndexed: initialIndexed,
-									idField: nextProps.idField,
-									displayField: nextProps.displayField
-								}, this.setDefaultSelection(selection));
-							}
-							return false;
-						}
-					}
-
-					if (dataChanged) {
-						var _preparedData = this.prepareData(_immutable2['default'].fromJS(nextProps.data), nextProps.idField);
-
-						this.setState({
-							data: _preparedData.data,
-							initialData: _preparedData.data,
-							rawData: _preparedData.rawdata,
-							indexedData: _preparedData.indexed,
-							initialIndexed: _preparedData.indexed
-						}, this.setDefaultSelection(selection));
-
-						return false;
-					}
-
-					if (selectionChanged) {
-						// Default selection does nothing if the selection is null so in that case update the state to restart selection
-						if (!_underscore2['default'].isNull(nextProps.defaultSelection)) {
-							this.setDefaultSelection(nextProps.defaultSelection);
-						} else {
-							this.setState({
-								selection: new Set(),
-								allSelected: false
 							});
 						}
 
-						return false;
-					}
+						if (!nextProps.multiselect && (nextSelection.size > 1 || _this2.state.selection.size > 1)) {
+							selection = nextSelection.size > 1 ? nextProps.defaultSelection[0] : _this2.state.selection.values().next().value;
+						}
+
+						if (idFieldChanged || displayFieldChanged) {
+							var fieldsSet = new Set(_underscore2['default'].keys(nextProps.data[0]));
+							var _messages = _this2.props.messages[_this2.props.lang];
+
+							// Change idField / displayField but that field doesn't exist in the data
+							if (!fieldsSet.has(nextProps.idField) || !fieldsSet.has(nextProps.displayField)) {
+								if (!fieldsSet.has(nextProps.idField)) console.error(_messages.errorIdField + ' ' + nextProps.idField + ' ' + _messages.errorData);else console.error(_messages.errorDisplayField + ' ' + nextProps.idField + ' ' + _messages.errorData);
+
+								return {
+									v: false
+								};
+							} else {
+								// New idField &&//|| displayField exist in data array fields
+								if (dataChanged) {
+									var preparedData = _this2.prepareData(_immutable2['default'].fromJS(nextProps.data), nextProps.idField);
+
+									_this2.setState({
+										data: preparedData.data,
+										initialData: preparedData.data,
+										rawData: preparedData.rawdata,
+										indexedData: preparedData.indexed,
+										initialIndexed: preparedData.indexed,
+										idField: nextProps.idField,
+										displayField: nextProps.displayField,
+										ready: false
+									}, _this2.setDefaultSelection(selection));
+								} else {
+									var initialIndexed = null,
+									    _indexed = null;
+
+									// If the id field change then the indexed data has to be changed but not for display
+									if (displayFieldChanged) {
+										initialIndexed = _this2.state.initialIndexed;
+										_indexed = _this2.state.indexedData;
+									} else {
+										initialIndexed = _underscore2['default'].indexBy(_this2.state.initialData.toJSON(), nextProps.idField);
+										_indexed = _underscore2['default'].indexBy(_this2.state.data.toJSON(), nextProps.idField);
+									}
+
+									_this2.setState({
+										indexedData: _indexed,
+										initialIndexed: initialIndexed,
+										idField: nextProps.idField,
+										displayField: nextProps.displayField,
+										ready: false
+									});
+								}
+								return {
+									v: false
+								};
+							}
+						}
+
+						if (dataChanged) {
+							var _preparedData = _this2.prepareData(_immutable2['default'].fromJS(nextProps.data), nextProps.idField);
+
+							_this2.setState({
+								data: _preparedData.data,
+								initialData: _preparedData.data,
+								rawData: _preparedData.rawdata,
+								indexedData: _preparedData.indexed,
+								initialIndexed: _preparedData.indexed,
+								ready: false
+							}, _this2.setDefaultSelection(selection));
+
+							return {
+								v: false
+							};
+						}
+
+						if (selectionChanged) {
+							// Default selection does nothing if the selection is null so in that case update the state to restart selection
+							if (!_underscore2['default'].isNull(selection)) {
+								_this2.setDefaultSelection(selection);
+							} else {
+								_this2.setState({
+									selection: new Set(),
+									allSelected: false
+								});
+							}
+
+							return {
+								v: false
+							};
+						}
+					}();
+
+					if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
 				}
 
 				return somethingChanged;
@@ -330,8 +376,6 @@ var ProperSearch =
 		}, {
 			key: 'componentWillUpdate',
 			value: function componentWillUpdate(nextProps, nextState) {
-				var dataChangedProps = !(0, _reactImmutableRenderMixin.shallowEqualImmutable)(this.props.data, nextProps.data);
-
 				// Selection
 				if (this.props.multiSelect) {
 					if (nextState.selection.size !== this.state.selection.size) {
@@ -341,7 +385,7 @@ var ProperSearch =
 					var next = nextState.selection.values().next().value || null;
 					var old = this.state.selection.values().next().value || null;
 					var oldSize = !_underscore2['default'].isNull(this.state.selection) ? this.state.selection.size : 0;
-
+					console.log(oldSize);
 					if (next !== old || oldSize > 1) {
 						this.updateSelectionData(next);
 					}
@@ -358,7 +402,7 @@ var ProperSearch =
 		}, {
 			key: 'updateSelectionData',
 			value: function updateSelectionData(newSelection) {
-				var _this2 = this;
+				var _this3 = this;
 
 				var newAllSelected = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
 
@@ -427,7 +471,7 @@ var ProperSearch =
 							if (_underscore2['default'].isNull(newSelection)) newSelection = new Set();else if (!_underscore2['default'].isObject(newSelection)) newSelection = new Set([newSelection]);
 
 							newData = newData.map(function (row) {
-								rowid = row.get(_this2.state.idField);
+								rowid = row.get(_this3.state.idField);
 								selected = newSelection.has(rowid.toString());
 								rdata = row.set('_selected', selected);
 								curIndex = newIndexed[rowid];
@@ -444,7 +488,7 @@ var ProperSearch =
 
 				this.setState({
 					data: newData,
-					indexed: newIndexed
+					indexedData: newIndexed
 				});
 			}
 
@@ -490,13 +534,13 @@ var ProperSearch =
 		}, {
 			key: 'isAllSelected',
 			value: function isAllSelected(data, selection) {
-				var _this3 = this;
+				var _this4 = this;
 
 				var result = true;
 				if (data.size > selection.size) return false;
 
 				data.forEach(function (item, index) {
-					if (!selection.has(item.get(_this3.state.idField, null))) {
+					if (!selection.has(item.get(_this4.state.idField, null))) {
 						// Some data not in selection
 						result = false;
 						return false;
@@ -523,6 +567,7 @@ var ProperSearch =
 					} else if (defSelection !== new Set()) {
 						selection = new Set(defSelection);
 					}
+					console.log('ei selection dsdasdsad', selection);
 
 					this.triggerSelection(selection);
 				}
@@ -601,7 +646,7 @@ var ProperSearch =
 		}, {
 			key: 'handleSearch',
 			value: function handleSearch(value) {
-				var _this4 = this;
+				var _this5 = this;
 
 				var lValue = value ? value : null,
 				    filter = null;
@@ -625,8 +670,8 @@ var ProperSearch =
 							    filteredIndexes = new Set();
 
 							// Filter indexed data using the funtion
-							_underscore2['default'].each(_this4.state.initialIndexed, function (element) {
-								if (_this4.props.filter(element, lValue)) {
+							_underscore2['default'].each(_this5.state.initialIndexed, function (element) {
+								if (_this5.props.filter(element, lValue)) {
 									filteredIndexes.add(element._rowIndex);
 								}
 							});
@@ -638,7 +683,7 @@ var ProperSearch =
 						})();
 					} else {
 						filteredData = data.filter(function (element) {
-							filter = element.get(_this4.props.filterField, null) || element.get(displayField);
+							filter = element.get(_this5.props.filterField, null) || element.get(displayField);
 
 							// When it's a function then use the field in filterField to search, if this field doesn't exist then use the field name or then idField.
 							if (typeof filter == 'function') {
@@ -673,7 +718,7 @@ var ProperSearch =
 		}, {
 			key: 'sendSelection',
 			value: function sendSelection() {
-				var _this5 = this;
+				var _this6 = this;
 
 				if (typeof this.props.afterSelect == 'function') {
 					(function () {
@@ -682,7 +727,7 @@ var ProperSearch =
 						    properId = null,
 						    rowIndex = null,
 						    filteredData = null;
-						var _state = _this5.state;
+						var _state = _this6.state;
 						var indexedData = _state.indexedData;
 						var initialData = _state.initialData;
 						var rawData = _state.rawData;
@@ -692,13 +737,13 @@ var ProperSearch =
 						// Get the data (initialData) that match with the selection
 
 						filteredData = initialData.filter(function (element) {
-							return selection.has(element.get(_this5.state.idField, null));
+							return selection.has(element.get(_this6.state.idField, null));
 						});
 
 						// Then from the filtered data get the raw data that match with the selection
 						selectedData = filteredData.map(function (row) {
-							properId = row.get(_this5.state.idField, 0);
-							rowIndex = _underscore2['default'].isUndefined(indexedData[properId]) ? _this5.state.initialIndexed[properId]._rowIndex : indexedData[properId]._rowIndex;
+							properId = row.get(_this6.state.idField, 0);
+							rowIndex = _underscore2['default'].isUndefined(indexedData[properId]) ? _this6.state.initialIndexed[properId]._rowIndex : indexedData[properId]._rowIndex;
 
 							return rawData.get(rowIndex);
 						});
@@ -708,7 +753,7 @@ var ProperSearch =
 							selectionArray.push(item);
 						});
 
-						_this5.props.afterSelect.call(_this5, selectedData.toJSON(), selectionArray);
+						_this6.props.afterSelect.call(_this6, selectedData.toJSON(), selectionArray);
 					})();
 				}
 			}
