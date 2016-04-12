@@ -119,6 +119,7 @@ class Search extends React.Component {
 		if (propsChanged) {
 			let dataChanged = !shallowEqualImmutable(this.props.data, nextProps.data);
 			let selectionChanged = !shallowEqualImmutable(this.state.selection, new Set(nextProps.defaultSelection));
+			let selection = selectionChanged ? nextProps.defaultSelection : null; // With null null the method setDefaultSelection does nothing
 			let idFieldChanged = this.props.idField != nextProps.idField, displayFieldChanged = this.props.displayField != nextProps.displayField;
 
 			if (idFieldChanged || displayFieldChanged) {
@@ -132,11 +133,9 @@ class Search extends React.Component {
 
 					return false;
 				} else { // New idField &&//|| displayField exist in data array fields
+
 					if (dataChanged){
 						let preparedData = this.prepareData(Immutable.fromJS(nextProps.data), nextProps.idField);
-						let selection = null;
-
-						if (selectionChanged) selection = nextProps.defaultSelection;
 
 						this.setState({
 							data: preparedData.data,
@@ -165,7 +164,7 @@ class Search extends React.Component {
 							initialIndexed: initialIndexed,
 							idField: nextProps.idField,
 							displayField: nextProps.displayField
-						});
+						}, this.setDefaultSelection(selection));
 					}
 					return false;
 				}
@@ -173,9 +172,6 @@ class Search extends React.Component {
 
 			if (dataChanged){
 				let preparedData = this.prepareData(Immutable.fromJS(nextProps.data), nextProps.idField);
-				let selection = null;
-
-				if (selectionChanged) selection = nextProps.defaultSelection;
 
 				this.setState({
 					data: preparedData.data,

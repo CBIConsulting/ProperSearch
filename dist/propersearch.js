@@ -235,7 +235,8 @@ var ProperSearch =
 
 				if (propsChanged) {
 					var dataChanged = !(0, _reactImmutableRenderMixin.shallowEqualImmutable)(this.props.data, nextProps.data);
-					var selectionChanged = !(0, _reactImmutableRenderMixin.shallowEqualImmutable)(this.state.selection, nextProps.defaultSelection);
+					var selectionChanged = !(0, _reactImmutableRenderMixin.shallowEqualImmutable)(this.state.selection, new Set(nextProps.defaultSelection));
+					var selection = selectionChanged ? nextProps.defaultSelection : null; // With null null the method setDefaultSelection does nothing
 					var idFieldChanged = this.props.idField != nextProps.idField,
 					    displayFieldChanged = this.props.displayField != nextProps.displayField;
 
@@ -250,11 +251,9 @@ var ProperSearch =
 							return false;
 						} else {
 							// New idField &&//|| displayField exist in data array fields
+
 							if (dataChanged) {
 								var preparedData = this.prepareData(_immutable2['default'].fromJS(nextProps.data), nextProps.idField);
-								var selection = null;
-
-								if (selectionChanged) selection = nextProps.defaultSelection;
 
 								this.setState({
 									data: preparedData.data,
@@ -283,7 +282,7 @@ var ProperSearch =
 									initialIndexed: initialIndexed,
 									idField: nextProps.idField,
 									displayField: nextProps.displayField
-								});
+								}, this.setDefaultSelection(selection));
 							}
 							return false;
 						}
@@ -291,9 +290,6 @@ var ProperSearch =
 
 					if (dataChanged) {
 						var _preparedData = this.prepareData(_immutable2['default'].fromJS(nextProps.data), nextProps.idField);
-						var _selection = null;
-
-						if (selectionChanged) _selection = nextProps.defaultSelection;
 
 						this.setState({
 							data: _preparedData.data,
@@ -301,7 +297,7 @@ var ProperSearch =
 							rawData: _preparedData.rawdata,
 							indexedData: _preparedData.indexed,
 							initialIndexed: _preparedData.indexed
-						}, this.setDefaultSelection(_selection));
+						}, this.setDefaultSelection(selection));
 
 						return false;
 					}
