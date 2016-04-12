@@ -269,7 +269,7 @@ var ProperSearch =
 							});
 						}
 
-						if (!nextProps.multiselect && (nextSelection.size > 1 || _this2.state.selection.size > 1)) {
+						if (!nextProps.multiSelect && (nextSelection.size > 1 || _this2.state.selection.size > 1)) {
 							selection = nextSelection.size > 1 ? nextProps.defaultSelection : _this2.state.selection.values().next().value;
 							if (_underscore2['default'].isArray(selection)) selection = selection[0];
 						}
