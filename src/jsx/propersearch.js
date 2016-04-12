@@ -1,5 +1,7 @@
 import Search from "./components/search";
 
-require("../css/style.scss");
+if (process.env.APP_ENV === 'browser') {
+	require("../css/style.scss");
+}
 
 export default Search;

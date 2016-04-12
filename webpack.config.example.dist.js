@@ -3,9 +3,9 @@ const path = require('path');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 
 module.exports = {
-  context: path.join(__dirname, 'src'),
+  context: path.join(__dirname, 'examples'),
   entry: {
-    javascript: "./jsx/propersearch.js"
+    javascript: "./jsx/example.js"
   },
   module: {
     loaders: [
@@ -36,20 +36,14 @@ module.exports = {
   },
   output: {
     libraryTarget: "var",
-    library: "ProperSearch",
-    filename: "propersearch.js",
-    path: __dirname + "/dist"
+    library: "App",
+    filename: "app.js",
+    path: __dirname + "/examples/js"
   },
   plugins: [
     new ExtractTextPlugin('propersearch.css', {
       allChunks: true
     }),
-    new webpack.optimize.DedupePlugin(),
-    new webpack.DefinePlugin({
-        'process.env': {
-            NODE_ENV: JSON.stringify('production'),
-            APP_ENV: JSON.stringify('browser')
-        },
-    })
+    new webpack.optimize.DedupePlugin()
   ]
 }
