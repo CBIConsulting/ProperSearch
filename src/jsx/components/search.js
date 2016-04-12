@@ -144,7 +144,7 @@ class Search extends React.Component {
 				});
 			}
 
-			if (!nextProps.multiselect && (nextSelection.size > 1 || this.state.selection.size > 1)) {
+			if (!nextProps.multiSelect && (nextSelection.size > 1 || this.state.selection.size > 1)) {
 				selection = nextSelection.size > 1 ? nextProps.defaultSelection : this.state.selection.values().next().value;
 				if (_.isArray(selection)) selection = selection[0];
 			}
