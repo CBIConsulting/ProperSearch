@@ -118,7 +118,7 @@ class Search extends React.Component {
 
 		if (propsChanged) {
 			let dataChanged = !shallowEqualImmutable(this.props.data, nextProps.data);
-			let selectionChanged = !shallowEqualImmutable(this.state.selection, nextProps.defaultSelection);
+			let selectionChanged = !shallowEqualImmutable(this.state.selection, new Set(nextProps.defaultSelection));
 			let idFieldChanged = this.props.idField != nextProps.idField, displayFieldChanged = this.props.displayField != nextProps.displayField;
 
 			if (idFieldChanged || displayFieldChanged) {
