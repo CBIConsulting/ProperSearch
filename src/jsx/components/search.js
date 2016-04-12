@@ -104,23 +104,49 @@ class Search extends React.Component {
 		if (this.state.data.size != nextState.data.size) {
 			let parsed = null, indexed = null;
 
-			parsed = this.prepareData(nextState.data);
-			indexed = parsed.indexed;
+			if (nextState.ready) {
+				parsed = this.prepareData(nextState.data);
+				indexed = parsed.indexed;
 
-			this.setState({
-				data: parsed.data,
-				indexedData: parsed.indexed,
-				allSelected: this.isAllSelected(parsed.data, nextState.selection)
-			});
+				this.setState({
+					data: parsed.data,
+					indexedData: parsed.indexed,
+					allSelected: this.isAllSelected(parsed.data, nextState.selection)
+				});
+			} else {
+				let selection = nextProps.defaultSelection;
+				if (!nextProps.multiSelect) selection = nextState.selection.values().next().value || null;
+
+				// props data has been changed in the last call to this method
+				this.setState({
+					ready: true
+				}, this.setDefaultSelection(selection));
+			}
 
 			return false;
 		}
 
 		if (propsChanged) {
 			let dataChanged = !shallowEqualImmutable(this.props.data, nextProps.data);
-			let selectionChanged = !shallowEqualImmutable(this.state.selection, new Set(nextProps.defaultSelection));
-			let selection = selectionChanged ? nextProps.defaultSelection : null; // With null null the method setDefaultSelection does nothing
 			let idFieldChanged = this.props.idField != nextProps.idField, displayFieldChanged = this.props.displayField != nextProps.displayField;
+			let selectionChanged = false, nextSelection = new Set(nextProps.defaultSelection), selection = null;
+
+			if (this.state.selection.size != nextSelection.size) {
+				selectionChanged = true;
+				selection = nextProps.defaultSelection;
+			} else {
+				this.state.selection.forEach(element => {
+					if (!nextSelection.has(element)) {
+						selectionChanged = true;
+						selection = nextProps.defaultSelection;
+						return true;
+					}
+				});
+			}
+
+			if (!nextProps.multiselect && (nextSelection.size > 1 || this.state.selection.size > 1)) {
+				selection = nextSelection.size > 1 ? nextProps.defaultSelection[0] : this.state.selection.values().next().value;
+			}
 
 			if (idFieldChanged || displayFieldChanged) {
 				let fieldsSet = new Set(_.keys(nextProps.data[0]));
@@ -133,7 +159,6 @@ class Search extends React.Component {
 
 					return false;
 				} else { // New idField &&//|| displayField exist in data array fields
-
 					if (dataChanged){
 						let preparedData = this.prepareData(Immutable.fromJS(nextProps.data), nextProps.idField);
 
@@ -144,7 +169,8 @@ class Search extends React.Component {
 							indexedData: preparedData.indexed,
 							initialIndexed: preparedData.indexed,
 							idField: nextProps.idField,
-							displayField: nextProps.displayField
+							displayField: nextProps.displayField,
+							ready: false
 						}, this.setDefaultSelection(selection));
 
 					} else {
@@ -163,8 +189,9 @@ class Search extends React.Component {
 							indexedData: indexed,
 							initialIndexed: initialIndexed,
 							idField: nextProps.idField,
-							displayField: nextProps.displayField
-						}, this.setDefaultSelection(selection));
+							displayField: nextProps.displayField,
+							ready: false
+						});
 					}
 					return false;
 				}
@@ -178,7 +205,8 @@ class Search extends React.Component {
 					initialData: preparedData.data,
 					rawData: preparedData.rawdata,
 					indexedData: preparedData.indexed,
-					initialIndexed: preparedData.indexed
+					initialIndexed: preparedData.indexed,
+					ready: false
 				}, this.setDefaultSelection(selection));
 
 				return false;
@@ -186,8 +214,8 @@ class Search extends React.Component {
 
 			if (selectionChanged) {
 				// Default selection does nothing if the selection is null so in that case update the state to restart selection
-				if (!_.isNull(nextProps.defaultSelection)) {
-					this.setDefaultSelection(nextProps.defaultSelection);
+				if (!_.isNull(selection)) {
+					this.setDefaultSelection(selection);
 				} else {
 					this.setState({
 						selection: new Set(),
@@ -209,8 +237,6 @@ class Search extends React.Component {
  * @param {object}	nextState	The state that will be set for the updated component
  */
 	componentWillUpdate(nextProps, nextState) {
-		let dataChangedProps = !shallowEqualImmutable(this.props.data, nextProps.data);
-
 		// Selection
 		if (this.props.multiSelect) {
 			if (nextState.selection.size !== this.state.selection.size) {
@@ -220,7 +246,7 @@ class Search extends React.Component {
 			let next = nextState.selection.values().next().value || null;
 			let old = this.state.selection.values().next().value || null;
 			let oldSize = !_.isNull(this.state.selection) ? this.state.selection.size : 0;
-
+			console.log(oldSize)
 			if (next !== old || oldSize > 1){
 				this.updateSelectionData(next);
 			}
@@ -310,7 +336,7 @@ class Search extends React.Component {
 
 		this.setState({
 			data: newData,
-			indexed: newIndexed
+			indexedData: newIndexed
 		});
 	}
 
@@ -373,6 +399,7 @@ class Search extends React.Component {
 			} else if (defSelection !== new Set()){
 				selection = new Set(defSelection);
 			}
+			console.log('ei selection dsdasdsad', selection)
 
 			this.triggerSelection(selection);
 		}
