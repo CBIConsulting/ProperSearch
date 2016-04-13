@@ -98,6 +98,18 @@ class App extends React.Component {
 			return false;
 		}
 
+		// If something change update form
+		if (somethingChanged) {
+			this.refs.listHeight.value = nextState.listHeight;
+			this.refs.listElementHeight.value = nextState.listRowHeight;
+			this.refs.idField.value = nextState.idField;
+			this.refs.displayField.value = nextState.displayField;
+			this.refs.dataSize.value = nextState.dataSize;
+			this.refs.listElementHeight.value = nextState.listRowHeight;
+			this.refs.lang.value = nextState.language;
+			this.refs.multi.value = nextState.multiSelect;
+		}
+
 		return somethingChanged;
 	}
 
@@ -135,12 +147,12 @@ class App extends React.Component {
 		let selection = ['item-'+ random,'item-' + (random+1)];
 		let defaultSearch = 'Item '+ random, placeholder = 'Search Placeholder ' + random;
 		let listHeight = this.props.listHeight + random, listRowHeight = this.props.listRowHeight + random;
-		let multiSelect = !this.state.multiSelect;
+		let multiSelect = !this.state.multiSelect, dataSize = (Math.floor(Math.random()* 1000) + 10);
 
 		if (random % 2 == 0) language = 'ENG';
 		else language = 'SPA';
 
-		for (let i = (Math.floor(Math.random()* 1000) + 10); i >= 0; i--) {
+		for (let i = dataSize; i >= 0; i--) {
 			data.push({value: 'item-' + i, label: 'Item ' + i, name: 'Teeést ' + i, fieldx: 'xxx ' + i, fieldy: 'yyy ' + i});
 		}
 
@@ -160,7 +172,8 @@ class App extends React.Component {
 			filter: null,
 			placeholder: placeholder,
 			afterSelect: this.afterSelect.bind(this),
-			afterSearch: this.afterSearch.bind(this)
+			afterSearch: this.afterSearch.bind(this),
+			dataSize: dataSize
 		});
 
 	}

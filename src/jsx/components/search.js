@@ -220,12 +220,21 @@ class Search extends React.Component {
 				} else {
 					this.setState({
 						selection: new Set(),
-						allSelected: false
+						allSelected: false,
+						ready: true
 					});
 				}
 
 				return false;
 			}
+		}
+
+		if (!nextState.ready) {
+			this.setState({
+				ready: true
+			});
+
+			return false;
 		}
 
 		return somethingChanged;
