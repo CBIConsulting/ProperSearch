@@ -406,9 +406,9 @@ class Search extends React.Component {
 			let selection = null;
 
 			if (!_.isArray(defSelection)) {
-				selection = new Set([defSelection]);
+				selection = new Set([defSelection.toString()]);
 			} else if (defSelection !== new Set()){
-				selection = new Set(defSelection);
+				selection = new Set(defSelection.toString().split(','));
 			}
 
 			this.triggerSelection(selection);
@@ -619,6 +619,7 @@ class Search extends React.Component {
 					/>
 				</div>
 			);
+
 		} else {
 			content = <div className="proper-search-loading">{messages.loading}</div>
 		}

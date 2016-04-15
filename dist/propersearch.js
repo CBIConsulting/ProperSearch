@@ -834,6 +834,7 @@ var ProperSearch =
 							showIcon: this.props.listShowIcon
 						})
 					);
+					console.log(this.refs['element_item-1'], this.refs);
 				} else {
 					content = _react2['default'].createElement(
 						'div',
