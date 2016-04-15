@@ -277,89 +277,94 @@ class App extends React.Component {
 		let multiSelect = this.state.multiSelect, language = this.state.language;
 
 	    return (
-	    	<div style={{position: 'absolute', width: '100%', top: '20%'}}>
-		      <div style={{position: 'absolute', top: 0, left: '10%',  width: '20%'}}>
-		        <div style={{position: 'absolute', top: 0, bottom: 0, width: '100%'}}>
-		          	<form className="form-horizontal" role="form">
-		          		<div className="form-group">
-			                <label> List elements: </label>
-			                <div className="form-inline">
-			                	<input ref="dataSize" type="text" className="form-control" placeholder="Number of elements" defaultValue={this.state.dataSize} style={{marginRight: '30px'}}/>
-			            		<button className="btn btn-default" onClick={this.onChangeSize.bind(this)}>-></button>
-			            	</div>
-			            </div>
-		          		<div className="form-group">
-			                <label> Id-Field: </label>
-			                <div className="form-inline">
-			                	<input ref="idField" type="text" className="form-control" placeholder="Id Field" defaultValue={this.state.idField} style={{marginRight: '30px'}}/>
-			            		<button className="btn btn-default" onClick={this.onChangeIdField.bind(this)}>-></button>
-			            	</div>
-			            </div>
-			            <div className="form-group">
-			                <label> Display-Field: </label>
-			                <div className="form-inline">
-			                	<input ref="displayField" type="text" className="form-control" placeholder="Display Field" defaultValue={this.state.displayField} style={{marginRight: '30px'}}/>
-			            		<button className="btn btn-default" onClick={this.onChangeDisplay.bind(this)}>-></button>
-			            	</div>
-			            </div>
-			            <div className="form-group">
-			                <label> List Height: </label>
-			                <div className="form-inline">
-			                	<input ref="listHeight" type="text" className="form-control" placeholder="List Height" defaultValue={this.state.listHeight} style={{marginRight: '30px'}}/>
-			            		<button className="btn btn-default" onClick={this.onChangeListHeight.bind(this)}>-></button>
-			            	</div>
-			            </div>
-			            <div className="form-group">
-			                <label> List Element Height: </label>
-			                <div className="form-inline">
-			                	<input ref="listElementHeight" type="text" className="form-control" id="listElementHeight" placeholder="List Element Height" defaultValue={this.state.listRowHeight} style={{marginRight: '30px'}}/>
-			            		<button className="btn btn-default" onClick={this.onChangeElementHeight.bind(this)}>-></button>
-			            	</div>
-			            </div>
-			            <div className="form-group">
-			                <label> Multiselect </label>
-			                <div className="form-inline">
-			                  <select ref="multi" className="form-control" id="multiselect_id" defaultValue={multiSelect} onChange={this.onChangeMultiselect.bind(this)}>
-			                    <option value={true}>Yes</option>
-			                    <option value={false}>No</option>
-			                  </select>
-			                </div>
-			            </div>
-			            <div className="form-group">
-			                <label> Language: </label>
-			               	<div className="form-inline">
-			                  <select ref="lang" className="form-control input" id="language" defaultValue={language}  onChange={this.onChangeLang.bind(this)}>
-			                    <option value="SPA">Spanish</option>
-			                    <option value="ENG">English</option>
-			                  </select>
-			                </div>
-			            </div>
-		          </form>
-		        </div>
-		      </div>
-		      <div style={{position: 'absolute', top: 0, left: '33%',  width: '25%'}}>
-		        <div id="canvas" style={{position: 'absolute', top: 0, bottom: 0, width:' 75%'}}>
-		        	<Search
-						data={this.state.data}
-						idField={this.state.idField}
-						displayField={this.state.displayField}
-						listHeight={this.state.listHeight}
-						listRowHeight={this.state.listRowHeight}
-						lang={this.state.language}
-						filter={filter}
-						multiSelect={this.state.multiSelect}
-						defaultSelection={this.state.selection}
-						defaultSearch={this.state.defaultSearch}
-						placeholder={this.state.placeholder}
-						afterSelect={this.afterSelect.bind(this)}
-						afterSearch={this.afterSearch.bind(this)}
-					/>
-		        </div>
-		        <div id="canvas2" style={{position: 'absolute', top: 0, bottom: 0, right: 0, width: '20%'}}>
-		        	<button className="btn btn-default" onClick={this.onChangeData.bind(this)}> Random Data </button>
-		        </div>
-		      </div>
-		    </div>
+	    	<div>
+		    	<div style={{position: 'absolute', 'width': '100%',top: '5%', left: '40%'}}>
+	    			<h1><a href="https://github.com/CBIConsulting/ProperSearch/blob/dev/examples/jsx/app.js"> Code </a></h1>
+	    		</div>
+		    	<div style={{position: 'absolute', width: '100%', top: '20%'}}>
+				    <div style={{position: 'absolute', top: 0, left: '10%',  width: '20%'}}>
+				        <div style={{position: 'absolute', top: 0, bottom: 0, width: '100%'}}>
+				          	<form className="form-horizontal" role="form">
+				          		<div className="form-group">
+					                <label> List elements: </label>
+					                <div className="form-inline">
+					                	<input ref="dataSize" type="text" className="form-control" placeholder="Number of elements" defaultValue={this.state.dataSize} style={{marginRight: '30px'}}/>
+					            		<button className="btn btn-default" onClick={this.onChangeSize.bind(this)}>-></button>
+					            	</div>
+					            </div>
+				          		<div className="form-group">
+					                <label> Id-Field: </label>
+					                <div className="form-inline">
+					                	<input ref="idField" type="text" className="form-control" placeholder="Id Field" defaultValue={this.state.idField} style={{marginRight: '30px'}}/>
+					            		<button className="btn btn-default" onClick={this.onChangeIdField.bind(this)}>-></button>
+					            	</div>
+					            </div>
+					            <div className="form-group">
+					                <label> Display-Field: </label>
+					                <div className="form-inline">
+					                	<input ref="displayField" type="text" className="form-control" placeholder="Display Field" defaultValue={this.state.displayField} style={{marginRight: '30px'}}/>
+					            		<button className="btn btn-default" onClick={this.onChangeDisplay.bind(this)}>-></button>
+					            	</div>
+					            </div>
+					            <div className="form-group">
+					                <label> List Height: </label>
+					                <div className="form-inline">
+					                	<input ref="listHeight" type="text" className="form-control" placeholder="List Height" defaultValue={this.state.listHeight} style={{marginRight: '30px'}}/>
+					            		<button className="btn btn-default" onClick={this.onChangeListHeight.bind(this)}>-></button>
+					            	</div>
+					            </div>
+					            <div className="form-group">
+					                <label> List Element Height: </label>
+					                <div className="form-inline">
+					                	<input ref="listElementHeight" type="text" className="form-control" id="listElementHeight" placeholder="List Element Height" defaultValue={this.state.listRowHeight} style={{marginRight: '30px'}}/>
+					            		<button className="btn btn-default" onClick={this.onChangeElementHeight.bind(this)}>-></button>
+					            	</div>
+					            </div>
+					            <div className="form-group">
+					                <label> Multiselect </label>
+					                <div className="form-inline">
+					                  <select ref="multi" className="form-control" id="multiselect_id" defaultValue={multiSelect} onChange={this.onChangeMultiselect.bind(this)}>
+					                    <option value={true}>Yes</option>
+					                    <option value={false}>No</option>
+					                  </select>
+					                </div>
+					            </div>
+					            <div className="form-group">
+					                <label> Language: </label>
+					               	<div className="form-inline">
+					                  <select ref="lang" className="form-control input" id="language" defaultValue={language}  onChange={this.onChangeLang.bind(this)}>
+					                    <option value="SPA">Spanish</option>
+					                    <option value="ENG">English</option>
+					                  </select>
+					                </div>
+					            </div>
+				          </form>
+				        </div>
+				    </div>
+				    <div style={{position: 'absolute', top: 0, left: '33%',  width: '25%'}}>
+				        <div id="canvas" style={{position: 'absolute', top: 0, bottom: 0, width:' 75%'}}>
+				        	<Search
+								data={this.state.data}
+								idField={this.state.idField}
+								displayField={this.state.displayField}
+								listHeight={this.state.listHeight}
+								listRowHeight={this.state.listRowHeight}
+								lang={this.state.language}
+								filter={filter}
+								multiSelect={this.state.multiSelect}
+								defaultSelection={this.state.selection}
+								defaultSearch={this.state.defaultSearch}
+								placeholder={this.state.placeholder}
+								afterSelect={this.afterSelect.bind(this)}
+								afterSearch={this.afterSearch.bind(this)}
+							/>
+				        </div>
+				        <div id="canvas2" style={{position: 'absolute', top: 0, bottom: 0, right: 0, width: '20%'}}>
+				        	<button className="btn btn-default" onClick={this.onChangeData.bind(this)}> Random Data </button>
+				        </div>
+				    </div>
+				</div>
+			</div>
 	    );
 	}
 }
