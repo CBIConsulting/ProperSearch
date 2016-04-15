@@ -32,7 +32,9 @@ Features of ProperSearch:
 The compile and compressed ProperSearch distribution file can be found in the dist folder along with the css file. Add the default stylesheet `dist/propersearch.min.css`, then import it into any module.
 
 ## Live Demo
-http://cbiconsulting.github.io/ProperSearch/
+##### [Code](https://github.com/CBIConsulting/ProperSearch/tree/gh-pages/examples/jsx/app.js)
+##### [Demo](http://cbiconsulting.github.io/ProperSearch/)
+
 
 ## External dependencies
 * React and React DOM
