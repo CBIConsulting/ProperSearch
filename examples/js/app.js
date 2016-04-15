@@ -416,197 +416,214 @@ var App =
 
 				return _react2["default"].createElement(
 					"div",
-					{ style: { position: 'absolute', width: '100%', top: '20%' } },
+					null,
 					_react2["default"].createElement(
 						"div",
-						{ style: { position: 'absolute', top: 0, left: '10%', width: '20%' } },
+						{ style: { position: 'absolute', 'width': '100%', top: '5%', left: '40%' } },
 						_react2["default"].createElement(
-							"div",
-							{ style: { position: 'absolute', top: 0, bottom: 0, width: '100%' } },
+							"h1",
+							null,
 							_react2["default"].createElement(
-								"form",
-								{ className: "form-horizontal", role: "form" },
-								_react2["default"].createElement(
-									"div",
-									{ className: "form-group" },
-									_react2["default"].createElement(
-										"label",
-										null,
-										" List elements: "
-									),
-									_react2["default"].createElement(
-										"div",
-										{ className: "form-inline" },
-										_react2["default"].createElement("input", { ref: "dataSize", type: "text", className: "form-control", placeholder: "Number of elements", defaultValue: this.state.dataSize, style: { marginRight: '30px' } }),
-										_react2["default"].createElement(
-											"button",
-											{ className: "btn btn-default", onClick: this.onChangeSize.bind(this) },
-											"->"
-										)
-									)
-								),
-								_react2["default"].createElement(
-									"div",
-									{ className: "form-group" },
-									_react2["default"].createElement(
-										"label",
-										null,
-										" Id-Field: "
-									),
-									_react2["default"].createElement(
-										"div",
-										{ className: "form-inline" },
-										_react2["default"].createElement("input", { ref: "idField", type: "text", className: "form-control", placeholder: "Id Field", defaultValue: this.state.idField, style: { marginRight: '30px' } }),
-										_react2["default"].createElement(
-											"button",
-											{ className: "btn btn-default", onClick: this.onChangeIdField.bind(this) },
-											"->"
-										)
-									)
-								),
-								_react2["default"].createElement(
-									"div",
-									{ className: "form-group" },
-									_react2["default"].createElement(
-										"label",
-										null,
-										" Display-Field: "
-									),
-									_react2["default"].createElement(
-										"div",
-										{ className: "form-inline" },
-										_react2["default"].createElement("input", { ref: "displayField", type: "text", className: "form-control", placeholder: "Display Field", defaultValue: this.state.displayField, style: { marginRight: '30px' } }),
-										_react2["default"].createElement(
-											"button",
-											{ className: "btn btn-default", onClick: this.onChangeDisplay.bind(this) },
-											"->"
-										)
-									)
-								),
-								_react2["default"].createElement(
-									"div",
-									{ className: "form-group" },
-									_react2["default"].createElement(
-										"label",
-										null,
-										" List Height: "
-									),
-									_react2["default"].createElement(
-										"div",
-										{ className: "form-inline" },
-										_react2["default"].createElement("input", { ref: "listHeight", type: "text", className: "form-control", placeholder: "List Height", defaultValue: this.state.listHeight, style: { marginRight: '30px' } }),
-										_react2["default"].createElement(
-											"button",
-											{ className: "btn btn-default", onClick: this.onChangeListHeight.bind(this) },
-											"->"
-										)
-									)
-								),
-								_react2["default"].createElement(
-									"div",
-									{ className: "form-group" },
-									_react2["default"].createElement(
-										"label",
-										null,
-										" List Element Height: "
-									),
-									_react2["default"].createElement(
-										"div",
-										{ className: "form-inline" },
-										_react2["default"].createElement("input", { ref: "listElementHeight", type: "text", className: "form-control", id: "listElementHeight", placeholder: "List Element Height", defaultValue: this.state.listRowHeight, style: { marginRight: '30px' } }),
-										_react2["default"].createElement(
-											"button",
-											{ className: "btn btn-default", onClick: this.onChangeElementHeight.bind(this) },
-											"->"
-										)
-									)
-								),
-								_react2["default"].createElement(
-									"div",
-									{ className: "form-group" },
-									_react2["default"].createElement(
-										"label",
-										null,
-										" Multiselect "
-									),
-									_react2["default"].createElement(
-										"div",
-										{ className: "form-inline" },
-										_react2["default"].createElement(
-											"select",
-											{ ref: "multi", className: "form-control", id: "multiselect_id", defaultValue: multiSelect, onChange: this.onChangeMultiselect.bind(this) },
-											_react2["default"].createElement(
-												"option",
-												{ value: true },
-												"Yes"
-											),
-											_react2["default"].createElement(
-												"option",
-												{ value: false },
-												"No"
-											)
-										)
-									)
-								),
-								_react2["default"].createElement(
-									"div",
-									{ className: "form-group" },
-									_react2["default"].createElement(
-										"label",
-										null,
-										" Language: "
-									),
-									_react2["default"].createElement(
-										"div",
-										{ className: "form-inline" },
-										_react2["default"].createElement(
-											"select",
-											{ ref: "lang", className: "form-control input", id: "language", defaultValue: language, onChange: this.onChangeLang.bind(this) },
-											_react2["default"].createElement(
-												"option",
-												{ value: "SPA" },
-												"Spanish"
-											),
-											_react2["default"].createElement(
-												"option",
-												{ value: "ENG" },
-												"English"
-											)
-										)
-									)
-								)
+								"a",
+								{ href: "https://github.com/CBIConsulting/ProperSearch/blob/dev/examples/jsx/app.js" },
+								" Code "
 							)
 						)
 					),
 					_react2["default"].createElement(
 						"div",
-						{ style: { position: 'absolute', top: 0, left: '33%', width: '25%' } },
+						{ style: { position: 'absolute', width: '100%', top: '20%' } },
 						_react2["default"].createElement(
 							"div",
-							{ id: "canvas", style: { position: 'absolute', top: 0, bottom: 0, width: ' 75%' } },
-							_react2["default"].createElement(_propersearch2["default"], {
-								data: this.state.data,
-								idField: this.state.idField,
-								displayField: this.state.displayField,
-								listHeight: this.state.listHeight,
-								listRowHeight: this.state.listRowHeight,
-								lang: this.state.language,
-								filter: filter,
-								multiSelect: this.state.multiSelect,
-								defaultSelection: this.state.selection,
-								defaultSearch: this.state.defaultSearch,
-								placeholder: this.state.placeholder,
-								afterSelect: this.afterSelect.bind(this),
-								afterSearch: this.afterSearch.bind(this)
-							})
+							{ style: { position: 'absolute', top: 0, left: '10%', width: '20%' } },
+							_react2["default"].createElement(
+								"div",
+								{ style: { position: 'absolute', top: 0, bottom: 0, width: '100%' } },
+								_react2["default"].createElement(
+									"form",
+									{ className: "form-horizontal", role: "form" },
+									_react2["default"].createElement(
+										"div",
+										{ className: "form-group" },
+										_react2["default"].createElement(
+											"label",
+											null,
+											" List elements: "
+										),
+										_react2["default"].createElement(
+											"div",
+											{ className: "form-inline" },
+											_react2["default"].createElement("input", { ref: "dataSize", type: "text", className: "form-control", placeholder: "Number of elements", defaultValue: this.state.dataSize, style: { marginRight: '30px' } }),
+											_react2["default"].createElement(
+												"button",
+												{ className: "btn btn-default", onClick: this.onChangeSize.bind(this) },
+												"->"
+											)
+										)
+									),
+									_react2["default"].createElement(
+										"div",
+										{ className: "form-group" },
+										_react2["default"].createElement(
+											"label",
+											null,
+											" Id-Field: "
+										),
+										_react2["default"].createElement(
+											"div",
+											{ className: "form-inline" },
+											_react2["default"].createElement("input", { ref: "idField", type: "text", className: "form-control", placeholder: "Id Field", defaultValue: this.state.idField, style: { marginRight: '30px' } }),
+											_react2["default"].createElement(
+												"button",
+												{ className: "btn btn-default", onClick: this.onChangeIdField.bind(this) },
+												"->"
+											)
+										)
+									),
+									_react2["default"].createElement(
+										"div",
+										{ className: "form-group" },
+										_react2["default"].createElement(
+											"label",
+											null,
+											" Display-Field: "
+										),
+										_react2["default"].createElement(
+											"div",
+											{ className: "form-inline" },
+											_react2["default"].createElement("input", { ref: "displayField", type: "text", className: "form-control", placeholder: "Display Field", defaultValue: this.state.displayField, style: { marginRight: '30px' } }),
+											_react2["default"].createElement(
+												"button",
+												{ className: "btn btn-default", onClick: this.onChangeDisplay.bind(this) },
+												"->"
+											)
+										)
+									),
+									_react2["default"].createElement(
+										"div",
+										{ className: "form-group" },
+										_react2["default"].createElement(
+											"label",
+											null,
+											" List Height: "
+										),
+										_react2["default"].createElement(
+											"div",
+											{ className: "form-inline" },
+											_react2["default"].createElement("input", { ref: "listHeight", type: "text", className: "form-control", placeholder: "List Height", defaultValue: this.state.listHeight, style: { marginRight: '30px' } }),
+											_react2["default"].createElement(
+												"button",
+												{ className: "btn btn-default", onClick: this.onChangeListHeight.bind(this) },
+												"->"
+											)
+										)
+									),
+									_react2["default"].createElement(
+										"div",
+										{ className: "form-group" },
+										_react2["default"].createElement(
+											"label",
+											null,
+											" List Element Height: "
+										),
+										_react2["default"].createElement(
+											"div",
+											{ className: "form-inline" },
+											_react2["default"].createElement("input", { ref: "listElementHeight", type: "text", className: "form-control", id: "listElementHeight", placeholder: "List Element Height", defaultValue: this.state.listRowHeight, style: { marginRight: '30px' } }),
+											_react2["default"].createElement(
+												"button",
+												{ className: "btn btn-default", onClick: this.onChangeElementHeight.bind(this) },
+												"->"
+											)
+										)
+									),
+									_react2["default"].createElement(
+										"div",
+										{ className: "form-group" },
+										_react2["default"].createElement(
+											"label",
+											null,
+											" Multiselect "
+										),
+										_react2["default"].createElement(
+											"div",
+											{ className: "form-inline" },
+											_react2["default"].createElement(
+												"select",
+												{ ref: "multi", className: "form-control", id: "multiselect_id", defaultValue: multiSelect, onChange: this.onChangeMultiselect.bind(this) },
+												_react2["default"].createElement(
+													"option",
+													{ value: true },
+													"Yes"
+												),
+												_react2["default"].createElement(
+													"option",
+													{ value: false },
+													"No"
+												)
+											)
+										)
+									),
+									_react2["default"].createElement(
+										"div",
+										{ className: "form-group" },
+										_react2["default"].createElement(
+											"label",
+											null,
+											" Language: "
+										),
+										_react2["default"].createElement(
+											"div",
+											{ className: "form-inline" },
+											_react2["default"].createElement(
+												"select",
+												{ ref: "lang", className: "form-control input", id: "language", defaultValue: language, onChange: this.onChangeLang.bind(this) },
+												_react2["default"].createElement(
+													"option",
+													{ value: "SPA" },
+													"Spanish"
+												),
+												_react2["default"].createElement(
+													"option",
+													{ value: "ENG" },
+													"English"
+												)
+											)
+										)
+									)
+								)
+							)
 						),
 						_react2["default"].createElement(
 							"div",
-							{ id: "canvas2", style: { position: 'absolute', top: 0, bottom: 0, right: 0, width: '20%' } },
+							{ style: { position: 'absolute', top: 0, left: '33%', width: '25%' } },
 							_react2["default"].createElement(
-								"button",
-								{ className: "btn btn-default", onClick: this.onChangeData.bind(this) },
-								" Random Data "
+								"div",
+								{ id: "canvas", style: { position: 'absolute', top: 0, bottom: 0, width: ' 75%' } },
+								_react2["default"].createElement(_propersearch2["default"], {
+									data: this.state.data,
+									idField: this.state.idField,
+									displayField: this.state.displayField,
+									listHeight: this.state.listHeight,
+									listRowHeight: this.state.listRowHeight,
+									lang: this.state.language,
+									filter: filter,
+									multiSelect: this.state.multiSelect,
+									defaultSelection: this.state.selection,
+									defaultSearch: this.state.defaultSearch,
+									placeholder: this.state.placeholder,
+									afterSelect: this.afterSelect.bind(this),
+									afterSearch: this.afterSearch.bind(this)
+								})
+							),
+							_react2["default"].createElement(
+								"div",
+								{ id: "canvas2", style: { position: 'absolute', top: 0, bottom: 0, right: 0, width: '20%' } },
+								_react2["default"].createElement(
+									"button",
+									{ className: "btn btn-default", onClick: this.onChangeData.bind(this) },
+									" Random Data "
+								)
 							)
 						)
 					)
