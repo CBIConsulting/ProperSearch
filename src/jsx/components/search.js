@@ -599,7 +599,7 @@ class Search extends React.Component {
 						minLength={this.props.minLength}
 						autoComplete={this.props.autoComplete}
 					/>
-					<SearchList
+					<SearchList.List
 						data={data}
 						rawData={this.state.rawData}
 						indexedData={this.state.initialIndexed}

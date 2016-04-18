@@ -574,9 +574,9 @@ var ProperSearch =
 					var selection = null;
 
 					if (!_underscore2['default'].isArray(defSelection)) {
-						selection = new Set([defSelection]);
+						selection = new Set([defSelection.toString()]);
 					} else if (defSelection !== new Set()) {
-						selection = new Set(defSelection);
+						selection = new Set(defSelection.toString().split(','));
 					}
 
 					this.triggerSelection(selection);
@@ -834,7 +834,6 @@ var ProperSearch =
 							showIcon: this.props.listShowIcon
 						})
 					);
-					console.log(this.refs['element_item-1'], this.refs);
 				} else {
 					content = _react2['default'].createElement(
 						'div',

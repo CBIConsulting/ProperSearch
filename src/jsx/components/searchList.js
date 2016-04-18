@@ -17,11 +17,12 @@ function getDefaultProps() {
 		allSelected: false,
 		listRowHeight: 26,
 		listHeight: 200,
-		listWidth: null, // Container width by default
+		listWidth: 100, // Container width by default
 		idField: 'value',
 		displayField: 'label',
 		showIcon: true,
-		listElementClass: null
+		listElementClass: null,
+		uniqueID: _.uniqueId('search_list_'),
 	}
 }
 
@@ -81,7 +82,6 @@ class SearchList extends React.Component {
  */
 	handleElementClick(itemValue, e) {
 		e.preventDefault();
-
 		let data = this.props.data, selection = this.props.selection, nothingSelected = false, allSelected = false;
 
 		if (this.props.multiSelect) {
@@ -196,11 +196,11 @@ class SearchList extends React.Component {
 		return (
 			<div className="proper-search-list-bar">
 				<div className="btn-group form-inline">
-					<a id="proper-search-list-bar-check" className="btn" role="button" onClick={this.handleSelectAll.bind(this, true)}>
+					<a id="proper-search-list-bar-check" ref={this.props.uniqueID + '_all'} className="btn" role="button" onClick={this.handleSelectAll.bind(this, true)}>
 						<label>{this.props.messages.all}</label>
 					</a>
 					&nbsp;
-					<a id="proper-search-list-bar-unCheck" className="btn" role="button" onClick={this.handleSelectAll.bind(this, false)}>
+					<a id="proper-search-list-bar-unCheck" ref={this.props.uniqueID + '_none'} className="btn" role="button" onClick={this.handleSelectAll.bind(this, false)}>
 						<label>{this.props.messages.none}</label>
 					</a>
 				</div>
@@ -250,7 +250,7 @@ class SearchList extends React.Component {
 			}
 
 			content = (
-				<div key={'element-' + index} className={className} onClick={this.handleElementClick.bind(this, item.get(field))}>
+				<div key={'element-' + index} ref={this.props.uniqueID + '_' + index} className={className} onClick={this.handleElementClick.bind(this, item.get(field))}>
 					{icon}
 					{element}
 				</div>
@@ -295,6 +295,7 @@ class SearchList extends React.Component {
 			<div className={className}>
 				{toolbar}
 				<VirtualScroll
+					ref={this.props.uniqueID + '_virtual'}
 					className={"proper-search-list-virtual"}
 	                width={this.props.listWidth || this.props.containerWidth}
 	                height={this.props.listHeight}
@@ -310,4 +311,7 @@ class SearchList extends React.Component {
 }
 
 SearchList.defaultProps = getDefaultProps();
-export default Dimensions()(SearchList);
+export default {
+	List: Dimensions()(SearchList),
+	Test: SearchList,
+}
