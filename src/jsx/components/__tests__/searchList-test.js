@@ -73,7 +73,7 @@ describe('SearchList', function() {
 		}).always(done);
 	});
 
-	it('handleSelectAll all multiselect', (done) => {
+	it('handleSelectAll all', (done) => {
 		let def = Deferred();
 		let props = getPropsBigData();
 
@@ -92,7 +92,7 @@ describe('SearchList', function() {
 		}).always(done);
 	});
 
-	it('handleSelectAll none multiselect', (done) => {
+	it('handleSelectAll nothing', (done) => {
 		let def = Deferred();
 		let props = getPropsBigData();
 
@@ -113,7 +113,7 @@ describe('SearchList', function() {
 });
 
 function prepare(props) {
-	return TestUtils.renderIntoDocument(<SearchList.Test {...props} />);
+	return TestUtils.renderIntoDocument(<SearchList {...props} />);
 }
 
 function formater(listElement) {

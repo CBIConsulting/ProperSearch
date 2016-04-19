@@ -599,7 +599,7 @@ class Search extends React.Component {
 						minLength={this.props.minLength}
 						autoComplete={this.props.autoComplete}
 					/>
-					<SearchList.List
+					<SearchList
 						data={data}
 						rawData={this.state.rawData}
 						indexedData={this.state.initialIndexed}
@@ -633,5 +633,4 @@ class Search extends React.Component {
 };
 
 Search.defaultProps = getDefaultProps();
-
 export default Search;

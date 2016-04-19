@@ -45,7 +45,7 @@ describe('Search', () => {
 		def.done((data, selection) => {
 			expect(data.length).toBe(2);
 			expect(selection.length).toBe(2);
-			expect(data).toContain({itemID:'1', display: 'Test1', toFilter: 'fee'});
+			expect(data).toContain({itemID: 1, display: 'Test1', toFilter: 'fee'});
 			expect(data[2]).not.toBeDefined();
 			expect(selection).toContain('1');
 			expect(selection).toContain('2');
@@ -56,6 +56,7 @@ describe('Search', () => {
 		let def = Deferred();
 		let props = getPropsBigData();
 
+		props.multiSelect = true;
 		props.afterSelect = (data, selection) => {
 			if (data.length > 1) {
 				def.resolve(data, selection);
@@ -104,6 +105,79 @@ describe('Search', () => {
 			expect(selection.length).toBe(0);
 		}).always(done);
 	});
+
+	it('selectAll on filtered data', (done) => {
+		let def = Deferred();
+		let props = getPropsBigData();
+
+		props.multiSelect = true;
+		props.defaultSelection = null;
+		props.afterSelect = (data, selection) => {
+			if (data.length > 1) {
+				def.resolve(data, selection);
+			}
+		}
+
+		let component = prepare(props);
+		let node = TestUtils.findRenderedDOMComponentWithClass(component, "list-bar-check");
+
+		component.handleSearch('test 10'); // Filter
+		TestUtils.Simulate.click(node); // Select All
+		component.handleSearch(null); // Back to default
+
+		def.done((data, selection) => {
+			expect(selection.length).toBe(12);
+			expect(data.length).toBe(12);
+		}).always(done);
+	});
+
+	it('unSelectAll on filtered data && multiple operations', (done) => {
+		let def = Deferred();
+		let props = getPropsBigData();
+		let func = {
+			done: function() {
+				return;
+			}
+		}
+		spyOn(func, 'done');
+		props.multiSelect = true;
+		props.defaultSelection = null;
+		props.afterSelect = (data, selection) => {
+			if (func.done.calls.any()) {
+				def.resolve(data, selection);
+			}
+		}
+
+		let component = prepare(props);
+		let nodeCheckAll = TestUtils.findRenderedDOMComponentWithClass(component, "list-bar-check");
+		let nodeUnCheck = TestUtils.findRenderedDOMComponentWithClass(component, "list-bar-unCheck");
+		let nodeElements = TestUtils.scryRenderedDOMComponentsWithClass(component, "proper-search-list-element");
+
+		TestUtils.Simulate.click(nodeCheckAll); // Select All 1000
+		component.handleSearch('test 10'); // Filter (12 elements 1000 110 109... 100 10)
+		TestUtils.Simulate.click(nodeUnCheck); // UnSelect All (1000 - 12 => 988)
+		component.handleSearch(null); // Back to default
+		TestUtils.Simulate.click(nodeElements[3]); // Unselect element 997 (988 - 1 => 987)
+		component.handleSearch('test 11'); // Filter (11 elements 11 110 111... 116 117 118 119)
+		TestUtils.Simulate.click(nodeUnCheck); // UnSelect All (987 - 11 => 976)
+		TestUtils.Simulate.click(nodeCheckAll); // Select All (976 + 11 => 987)
+		func.done();
+		nodeElements = TestUtils.scryRenderedDOMComponentsWithClass(component, "proper-search-list-element"); // update nodeElement to current in view
+		TestUtils.Simulate.click(nodeElements[3]); // Click element 116 (unSelect) (987 - 1 => 986)
+
+		def.done((data, selection) => {
+			let set = new Set(selection);
+
+			expect(selection.length).toBe(986);
+			expect(data.length).toBe(986);
+			expect(set.has('item_997')).toBe(false);
+			expect(set.has('item_996')).toBe(true);
+			expect(set.has('item_116')).toBe(false);
+			expect(set.has('item_100')).toBe(false);
+			expect(func.done).toHaveBeenCalled();
+
+		}).always(done);
+	});
 });
 
 function prepare(props) {
@@ -112,7 +186,7 @@ function prepare(props) {
 
 function getProps() {
 	return {
-		data: [{itemID:'1', display: 'Test1', toFilter: 'fee'}, {itemID:'2', display: 'Test2', toFilter: 'fuu'}, {itemID:'3', display: 'Test3', toFilter: 'foo'}],
+		data: [{itemID:1, display: 'Test1', toFilter: 'fee'}, {itemID:2, display: 'Test2', toFilter: 'fuu'}, {itemID:3, display: 'Test3', toFilter: 'foo'}],
 		lang: 'SPA',
 		defaultSelection: [1],
 		multiSelect: true,
@@ -132,8 +206,8 @@ function formater(listElement) {
 function getPropsBigData(length = 1000) {
 	let data = [];
 
-	for (let i = length; i >= 0; i--) {
-		data.push({itemID: 'item_' + i, display: formater, name: 'Tést ' + i,moreFields: 'moreFields values'});
+	for (let i = length; i > 0; i--) {
+		data.push({itemID: 'item_' + i, display: formater, name: 'Tést ' + i, moreFields: 'moreFields values'});
 	};
 
 	return {

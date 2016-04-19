@@ -196,11 +196,11 @@ class SearchList extends React.Component {
 		return (
 			<div className="proper-search-list-bar">
 				<div className="btn-group form-inline">
-					<a id="proper-search-list-bar-check" ref={this.props.uniqueID + '_all'} className="btn" role="button" onClick={this.handleSelectAll.bind(this, true)}>
+					<a id="proper-search-list-bar-check" ref={this.props.uniqueID + '_all'} className="btn list-bar-check" role="button" onClick={this.handleSelectAll.bind(this, true)}>
 						<label>{this.props.messages.all}</label>
 					</a>
 					&nbsp;
-					<a id="proper-search-list-bar-unCheck" ref={this.props.uniqueID + '_none'} className="btn" role="button" onClick={this.handleSelectAll.bind(this, false)}>
+					<a id="proper-search-list-bar-unCheck" ref={this.props.uniqueID + '_none'} className="btn list-bar-unCheck" role="button" onClick={this.handleSelectAll.bind(this, false)}>
 						<label>{this.props.messages.none}</label>
 					</a>
 				</div>
@@ -311,7 +311,5 @@ class SearchList extends React.Component {
 }
 
 SearchList.defaultProps = getDefaultProps();
-export default {
-	List: Dimensions()(SearchList),
-	Test: SearchList,
-}
+let toExport = process.env.NODE_ENV === 'Test' ?  SearchList : Dimensions()(SearchList)
+export default toExport;
