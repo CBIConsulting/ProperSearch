@@ -856,7 +856,6 @@ var ProperSearch =
 	;
 
 	Search.defaultProps = getDefaultProps();
-
 	exports['default'] = Search;
 	module.exports = exports['default'];
 
@@ -5909,11 +5908,12 @@ var ProperSearch =
 			allSelected: false,
 			listRowHeight: 26,
 			listHeight: 200,
-			listWidth: null, // Container width by default
+			listWidth: 100, // Container width by default
 			idField: 'value',
 			displayField: 'label',
 			showIcon: true,
-			listElementClass: null
+			listElementClass: null,
+			uniqueID: _underscore2['default'].uniqueId('search_list_')
 		};
 	}
 
@@ -5984,7 +5984,6 @@ var ProperSearch =
 			key: 'handleElementClick',
 			value: function handleElementClick(itemValue, e) {
 				e.preventDefault();
-
 				var data = this.props.data,
 				    selection = this.props.selection,
 				    nothingSelected = false,
@@ -6126,7 +6125,7 @@ var ProperSearch =
 						{ className: 'btn-group form-inline' },
 						_react2['default'].createElement(
 							'a',
-							{ id: 'proper-search-list-bar-check', className: 'btn', role: 'button', onClick: this.handleSelectAll.bind(this, true) },
+							{ id: 'proper-search-list-bar-check', ref: this.props.uniqueID + '_all', className: 'btn list-bar-check', role: 'button', onClick: this.handleSelectAll.bind(this, true) },
 							_react2['default'].createElement(
 								'label',
 								null,
@@ -6136,7 +6135,7 @@ var ProperSearch =
 						' ',
 						_react2['default'].createElement(
 							'a',
-							{ id: 'proper-search-list-bar-unCheck', className: 'btn', role: 'button', onClick: this.handleSelectAll.bind(this, false) },
+							{ id: 'proper-search-list-bar-unCheck', ref: this.props.uniqueID + '_none', className: 'btn list-bar-unCheck', role: 'button', onClick: this.handleSelectAll.bind(this, false) },
 							_react2['default'].createElement(
 								'label',
 								null,
@@ -6202,7 +6201,7 @@ var ProperSearch =
 
 					content = _react2['default'].createElement(
 						'div',
-						{ key: 'element-' + index, className: className, onClick: _this4.handleElementClick.bind(_this4, item.get(field)) },
+						{ key: 'element-' + index, ref: _this4.props.uniqueID + '_' + index, className: className, onClick: _this4.handleElementClick.bind(_this4, item.get(field)) },
 						icon,
 						element
 					);
@@ -6261,6 +6260,7 @@ var ProperSearch =
 					{ className: className },
 					toolbar,
 					_react2['default'].createElement(_reactVirtualized.VirtualScroll, {
+						ref: this.props.uniqueID + '_virtual',
 						className: "proper-search-list-virtual",
 						width: this.props.listWidth || this.props.containerWidth,
 						height: this.props.listHeight,
@@ -6278,7 +6278,8 @@ var ProperSearch =
 	}(_react2['default'].Component);
 
 	SearchList.defaultProps = getDefaultProps();
-	exports['default'] = (0, _reactDimensions2['default'])()(SearchList);
+	var toExport =  false ? SearchList : (0, _reactDimensions2['default'])()(SearchList);
+	exports['default'] = toExport;
 	module.exports = exports['default'];
 
 /***/ },
@@ -7650,7 +7651,6 @@ var ProperSearch =
 	      var overscanColumnsCount = _props3.overscanColumnsCount;
 	      var overscanRowsCount = _props3.overscanRowsCount;
 	      var renderCell = _props3.renderCell;
-	      var renderCellRanges = _props3.renderCellRanges;
 	      var rowsCount = _props3.rowsCount;
 	      var width = _props3.width;
 	      var _state2 = this.state;
@@ -7703,15 +7703,38 @@ var ProperSearch =
 	        this._rowStartIndex = overscanRowIndices.overscanStartIndex;
 	        this._rowStopIndex = overscanRowIndices.overscanStopIndex;
 
-	        childrenToDisplay = renderCellRanges({
-	          columnMetadata: this._columnMetadata,
-	          columnStartIndex: this._columnStartIndex,
-	          columnStopIndex: this._columnStopIndex,
-	          renderCell: renderCell,
-	          rowMetadata: this._rowMetadata,
-	          rowStartIndex: this._rowStartIndex,
-	          rowStopIndex: this._rowStopIndex
-	        });
+	        for (var rowIndex = this._rowStartIndex; rowIndex <= this._rowStopIndex; rowIndex++) {
+	          var rowDatum = this._rowMetadata[rowIndex];
+
+	          for (var columnIndex = this._columnStartIndex; columnIndex <= this._columnStopIndex; columnIndex++) {
+	            var columnDatum = this._columnMetadata[columnIndex];
+	            var renderedCell = renderCell({ columnIndex: columnIndex, rowIndex: rowIndex });
+	            var key = rowIndex + '-' + columnIndex;
+
+	            // any other falsey value will be rendered
+	            // as a text node by React
+	            if (renderedCell == null || renderedCell === false) {
+	              continue;
+	            }
+
+	            var child = _react2.default.createElement(
+	              'div',
+	              {
+	                key: key,
+	                className: 'Grid__cell',
+	                style: {
+	                  height: rowDatum.size,
+	                  left: columnDatum.offset,
+	                  top: rowDatum.offset,
+	                  width: columnDatum.size
+	                }
+	              },
+	              renderedCell
+	            );
+
+	            childrenToDisplay.push(child);
+	          }
+	        }
 	      }
 
 	      var gridStyle = {
@@ -8100,20 +8123,6 @@ var ProperSearch =
 	  renderCell: _react.PropTypes.func.isRequired,
 
 	  /**
-	   * Responsible for rendering a group of cells given their index ranges.
-	   * Should implement the following interface: ({
-	   *   columnMetadata:Array<Object>,
-	   *   columnStartIndex: number,
-	   *   columnStopIndex: number,
-	   *   renderCell: Function,
-	   *   rowMetadata:Array<Object>,
-	   *   rowStartIndex: number,
-	   *   rowStopIndex: number
-	   * }): Array<PropTypes.node>
-	   */
-	  renderCellRanges: _react.PropTypes.func.isRequired,
-
-	  /**
 	   * Either a fixed row height (number) or a function that returns the height of a row given its index.
 	   * Should implement the following interface: (index: number): number
 	   */
@@ -8157,58 +8166,9 @@ var ProperSearch =
 	    return null;
 	  },
 	  overscanColumnsCount: 0,
-	  overscanRowsCount: 10,
-	  renderCellRanges: defaultRenderCellRanges
+	  overscanRowsCount: 10
 	};
 	exports.default = Grid;
-
-
-	function defaultRenderCellRanges(_ref4) {
-	  var columnMetadata = _ref4.columnMetadata;
-	  var columnStartIndex = _ref4.columnStartIndex;
-	  var columnStopIndex = _ref4.columnStopIndex;
-	  var renderCell = _ref4.renderCell;
-	  var rowMetadata = _ref4.rowMetadata;
-	  var rowStartIndex = _ref4.rowStartIndex;
-	  var rowStopIndex = _ref4.rowStopIndex;
-
-	  var renderedCells = [];
-
-	  for (var rowIndex = rowStartIndex; rowIndex <= rowStopIndex; rowIndex++) {
-	    var rowDatum = rowMetadata[rowIndex];
-
-	    for (var columnIndex = columnStartIndex; columnIndex <= columnStopIndex; columnIndex++) {
-	      var columnDatum = columnMetadata[columnIndex];
-	      var renderedCell = renderCell({ columnIndex: columnIndex, rowIndex: rowIndex });
-	      var key = rowIndex + '-' + columnIndex;
-
-	      // any other falsey value will be rendered
-	      // as a text node by React
-	      if (renderedCell == null || renderedCell === false) {
-	        continue;
-	      }
-
-	      var child = _react2.default.createElement(
-	        'div',
-	        {
-	          key: key,
-	          className: 'Grid__cell',
-	          style: {
-	            height: rowDatum.size,
-	            left: columnDatum.offset,
-	            top: rowDatum.offset,
-	            width: columnDatum.size
-	          }
-	        },
-	        renderedCell
-	      );
-
-	      renderedCells.push(child);
-	    }
-	  }
-
-	  return renderedCells;
-	}
 
 /***/ },
 /* 24 */
@@ -9099,6 +9059,13 @@ var ProperSearch =
 	      });
 	      var style = this._getFlexStyleForColumn(column);
 
+	      // If this is a sortable header, clicking it should update the table data's sorting.
+	      var newSortDirection = sortBy !== dataKey || sortDirection === _SortDirection2.default.DESC ? _SortDirection2.default.ASC : _SortDirection2.default.DESC;
+	      var onClick = function onClick() {
+	        sortEnabled && sort(dataKey, newSortDirection);
+	        onHeaderClick && onHeaderClick(dataKey, columnData);
+	      };
+
 	      var renderedHeader = headerRenderer({
 	        columnData: columnData,
 	        dataKey: dataKey,
@@ -9111,27 +9078,10 @@ var ProperSearch =
 	      var a11yProps = {};
 
 	      if (sortEnabled || onHeaderClick) {
-	        (function () {
-	          // If this is a sortable header, clicking it should update the table data's sorting.
-	          var newSortDirection = sortBy !== dataKey || sortDirection === _SortDirection2.default.DESC ? _SortDirection2.default.ASC : _SortDirection2.default.DESC;
-
-	          var onClick = function onClick() {
-	            sortEnabled && sort(dataKey, newSortDirection);
-	            onHeaderClick && onHeaderClick(dataKey, columnData);
-	          };
-
-	          var onKeyDown = function onKeyDown(event) {
-	            if (event.key === 'Enter' || event.key === ' ') {
-	              onClick();
-	            }
-	          };
-
-	          a11yProps['aria-label'] = column.props['aria-label'] || label || dataKey;
-	          a11yProps.role = 'rowheader';
-	          a11yProps.tabIndex = 0;
-	          a11yProps.onClick = onClick;
-	          a11yProps.onKeyDown = onKeyDown;
-	        })();
+	        a11yProps['aria-label'] = column.props['aria-label'] || label || dataKey;
+	        a11yProps.role = 'rowheader';
+	        a11yProps.tabIndex = 0;
+	        a11yProps.onClick = onClick;
 	      }
 
 	      return _react2.default.createElement(
@@ -12111,6 +12061,7 @@ var ProperSearch =
 						_react2['default'].createElement('i', { className: this.props.searchIcon + ' ' + 'proper-search-field-icon' }),
 						_react2['default'].createElement('input', {
 							ref: 'propersearch_field',
+							className: 'proper-search-input-field',
 							type: 'text',
 							autoComplete: this.props.autoComplete,
 							placeholder: this.props.placeholder,
