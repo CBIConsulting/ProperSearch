@@ -6,19 +6,23 @@ import {Deferred} from 'jquery';
 const Set = require('es6-set');
 
 describe('Search', () => {
+	let wrapper = null;
+
+	beforeEach(function() {
+	    wrapper = document.createElement('div');
+	});
 
 	it('is available', () => {
 		expect(Search).not.toBe(null);
 	});
 
 	it('filter', (done) => {
-		let def = Deferred();
-		let props = getProps();
+		let def = Deferred(), component = null, node = null, props = getProps();
 		props.afterSearch = (searchValue) => {
 			if (searchValue) def.resolve(searchValue);
 		}
 
-		let component = prepare(props);
+		component = prepare(props);
 
 		// Check filter
 		component.handleSearch('foo');
@@ -30,14 +34,13 @@ describe('Search', () => {
 	});
 
 	it('selection multiselect', (done) => {
-		let def = Deferred();
-		let props = getProps();
+		let def = Deferred(), component = null, props = getProps();
 		props.afterSelect = (data, selection) => {
 			if (data.length > 1) {
 				def.resolve(data, selection);
 			}
 		}
-		let component = prepare(props);
+		component = prepare(props);
 
 		// Check selection
 		component.setDefaultSelection(['1','2']);
@@ -53,8 +56,7 @@ describe('Search', () => {
 	});
 
 	it('selection multiselect display-function', (done) => {
-		let def = Deferred();
-		let props = getPropsBigData();
+		let def = Deferred(), component = null, props = getPropsBigData();
 
 		props.multiSelect = true;
 		props.afterSelect = (data, selection) => {
@@ -62,7 +64,7 @@ describe('Search', () => {
 				def.resolve(data, selection);
 			}
 		}
-		let component = prepare(props);
+		component = prepare(props);
 
 		// Check selection
 		component.setDefaultSelection(['item_1','item_2','item_5','item_6', 'item_8']);
@@ -78,9 +80,7 @@ describe('Search', () => {
 	});
 
 	it('selection singleselection', (done) => {
-		let def = Deferred();
-		let def2 = Deferred();
-		let props = getPropsBigData();
+		let def = Deferred(), def2 = Deferred(), component = null, props = getPropsBigData();
 
 		props.defaultSelection = null;
 		props.afterSelect = (data, selection) => {
@@ -90,9 +90,9 @@ describe('Search', () => {
 				def2.resolve(data, selection)
 			}
 		}
-
-		let component = prepare(props);
+		component = prepare(props);
 		component.triggerSelection(new Set(['item_190']));
+
 		def.done((data, selection) => {
 			expect(data.length).toBe(1);
 			expect(selection.length).toBe(1);
@@ -107,8 +107,8 @@ describe('Search', () => {
 	});
 
 	it('selectAll on filtered data', (done) => {
-		let def = Deferred();
-		let props = getPropsBigData();
+		let def = Deferred(), component = null, node = null, props = null;
+		props = getPropsBigData();
 
 		props.multiSelect = true;
 		props.defaultSelection = null;
@@ -118,8 +118,8 @@ describe('Search', () => {
 			}
 		}
 
-		let component = prepare(props);
-		let node = TestUtils.findRenderedDOMComponentWithClass(component, "list-bar-check");
+		component = prepare(props);
+		node = TestUtils.findRenderedDOMComponentWithClass(component, "list-bar-check");
 
 		component.handleSearch('test 10'); // Filter
 		TestUtils.Simulate.click(node); // Select All
@@ -131,27 +131,25 @@ describe('Search', () => {
 		}).always(done);
 	});
 
-	it('unSelectAll on filtered data && multiple operations', (done) => {
-		let def = Deferred();
-		let props = getPropsBigData();
-		let func = {
-			done: function() {
-				return;
-			}
-		}
-		spyOn(func, 'done');
+	it('select/unselect all on filtered data && multiple operations', (done) => {
+		let def = Deferred(), component = null, nodeCheckAll = null, nodeUnCheck = null, nodeElements = null, props = null, promise = null;
+		props = getPropsBigData();
+		promise = { done: () => {return;} }
+
+		spyOn(promise, 'done');
+
 		props.multiSelect = true;
 		props.defaultSelection = null;
 		props.afterSelect = (data, selection) => {
-			if (func.done.calls.any()) {
+			if (promise.done.calls.any()) {
 				def.resolve(data, selection);
 			}
 		}
 
-		let component = prepare(props);
-		let nodeCheckAll = TestUtils.findRenderedDOMComponentWithClass(component, "list-bar-check");
-		let nodeUnCheck = TestUtils.findRenderedDOMComponentWithClass(component, "list-bar-unCheck");
-		let nodeElements = TestUtils.scryRenderedDOMComponentsWithClass(component, "proper-search-list-element");
+		component = prepare(props);
+		nodeCheckAll = TestUtils.findRenderedDOMComponentWithClass(component, "list-bar-check");
+		nodeUnCheck = TestUtils.findRenderedDOMComponentWithClass(component, "list-bar-unCheck");
+		nodeElements = TestUtils.scryRenderedDOMComponentsWithClass(component, "proper-search-list-element");
 
 		TestUtils.Simulate.click(nodeCheckAll); // Select All 1000
 		component.handleSearch('test 10'); // Filter (12 elements 1000 110 109... 100 10)
@@ -161,7 +159,7 @@ describe('Search', () => {
 		component.handleSearch('test 11'); // Filter (11 elements 11 110 111... 116 117 118 119)
 		TestUtils.Simulate.click(nodeUnCheck); // UnSelect All (987 - 11 => 976)
 		TestUtils.Simulate.click(nodeCheckAll); // Select All (976 + 11 => 987)
-		func.done();
+		promise.done();
 		nodeElements = TestUtils.scryRenderedDOMComponentsWithClass(component, "proper-search-list-element"); // update nodeElement to current in view
 		TestUtils.Simulate.click(nodeElements[3]); // Click element 116 (unSelect) (987 - 1 => 986)
 
@@ -174,10 +172,54 @@ describe('Search', () => {
 			expect(set.has('item_996')).toBe(true);
 			expect(set.has('item_116')).toBe(false);
 			expect(set.has('item_100')).toBe(false);
-			expect(func.done).toHaveBeenCalled();
+			expect(promise.done).toHaveBeenCalled();
 
 		}).always(done);
 	});
+
+	it('keeps selection after refreshing data && update props', (done) => {
+		let def = Deferred(), props = getPropsBigData(), promise = null, component = null, nodeCheckAll = null, nodeElements = null, newData = [];
+		promise = { done: () => {return;} }
+
+		spyOn(promise, 'done');
+
+		props.multiSelect = true;
+		props.defaultSelection = null;
+		props.afterSelect = (data, selection) => {
+			if (promise.done.calls.any()) {
+				def.resolve(data, selection);
+			}
+		}
+
+		component = ReactDOM.render(<Search {...props} />, wrapper);
+
+		nodeCheckAll = TestUtils.findRenderedDOMComponentWithClass(component, "list-bar-check");
+		TestUtils.Simulate.click(nodeCheckAll); // Select All 1000
+
+		for (let i = 1000; i > 0; i--) {
+			newData.push({id: 'item_' + i, display2: 'Element_' + i, name2: 'Testing2 ' + i});
+		};
+		props.data = newData;
+		props.idField = 'id';
+		props.displayField = 'display2';
+		props.filterField = 'name2';
+
+		component = ReactDOM.render(<Search {...props} />, wrapper); // Update props
+		nodeElements = TestUtils.scryRenderedDOMComponentsWithClass(component, "proper-search-list-element");
+
+		promise.done();
+		TestUtils.Simulate.click(nodeElements[0]); // Unselect one element (Element 1000) to call afterSelect
+
+		def.done((data, selection) => {
+			expect(selection.length).toBe(999);
+			expect(data[0]).toEqual(newData[1])
+			expect(data[0].id).toBeDefined();
+			expect(data[0].display2).toBeDefined();
+			expect(data[0].name2).toBeDefined();
+			expect(data[0].moreFields).not.toBeDefined();
+		}).always(done);
+	});
+
 });
 
 function prepare(props) {
