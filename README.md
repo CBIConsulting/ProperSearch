@@ -29,10 +29,12 @@ Features of ProperSearch:
 * List virtual rendered
 
 
-The compile and compressed ProperSearch distribution file can be found in the dist folder along with the css file. Add the default stylesheet `dist/propertable.min.css`, then import it into any module.
+The compile and compressed ProperSearch distribution file can be found in the dist folder along with the css file. Add the default stylesheet `dist/propersearch.min.css`, then import it into any module.
 
-## Live Example
-http://cbiconsulting.github.io/ProperSearch/
+## Live Demo
+##### [Code](https://github.com/CBIConsulting/ProperSearch/tree/gh-pages/examples/jsx/app.js)
+##### [Demo](http://cbiconsulting.github.io/ProperSearch/)
+
 
 ## External dependencies
 * React and React DOM
@@ -42,6 +44,10 @@ http://cbiconsulting.github.io/ProperSearch/
 ## Preview
 ![screen shot 2016-04-04 at 11 40 00] (examples/screenshots/example.png "Example of ProperSearch with multiselect")
 
+## Use this module in your projects
+```
+npm install react-propersearch --save
+```
 
 ## How to start
 
@@ -180,7 +186,7 @@ Check your http://localhost:8080/ or  `open http://localhost:8080/`
 ```javascript
 import React from 'react';
 import ReactDOM from 'react-dom';
-import ProperSearch from 'ProperSearch';
+import ProperSearch from 'react-propercombo';
 
 // Function Called after select items in the list.
 

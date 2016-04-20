@@ -144,8 +144,9 @@ class Search extends React.Component {
 				});
 			}
 
-			if (!nextProps.multiselect && (nextSelection.size > 1 || this.state.selection.size > 1)) {
-				selection = nextSelection.size > 1 ? nextProps.defaultSelection[0] : this.state.selection.values().next().value;
+			if (!nextProps.multiSelect && (nextSelection.size > 1 || this.state.selection.size > 1)) {
+				selection = nextSelection.size > 1 ? nextProps.defaultSelection : this.state.selection.values().next().value;
+				if (_.isArray(selection)) selection = selection[0];
 			}
 
 			if (idFieldChanged || displayFieldChanged) {
@@ -219,12 +220,21 @@ class Search extends React.Component {
 				} else {
 					this.setState({
 						selection: new Set(),
-						allSelected: false
+						allSelected: false,
+						ready: true
 					});
 				}
 
 				return false;
 			}
+		}
+
+		if (!nextState.ready) {
+			this.setState({
+				ready: true
+			});
+
+			return false;
 		}
 
 		return somethingChanged;
@@ -246,7 +256,7 @@ class Search extends React.Component {
 			let next = nextState.selection.values().next().value || null;
 			let old = this.state.selection.values().next().value || null;
 			let oldSize = !_.isNull(this.state.selection) ? this.state.selection.size : 0;
-			console.log(oldSize)
+
 			if (next !== old || oldSize > 1){
 				this.updateSelectionData(next);
 			}
@@ -270,8 +280,9 @@ class Search extends React.Component {
 		// if should be reset.
 		if (!this.props.multiSelect && oldSelection.size <= 1) { // Single select
 			let oldId = oldSelection.values().next().value || null;
+			let indexedKeys = new Set(_.keys(newIndexed));
 
-			if (!_.isNull(oldId)) {
+			if (!_.isNull(oldId) && indexedKeys.has(oldId)) {
 				newIndexed[oldId]._selected = false; // Update indexed data
 				rowIndex =  newIndexed[oldId]._rowIndex; // Get data index
 				if (newData.get(rowIndex)) {
@@ -280,7 +291,7 @@ class Search extends React.Component {
 				}
 			}
 
-			if (!_.isNull(newSelection)) {
+			if (!_.isNull(newSelection) && indexedKeys.has(newSelection)) {
 				newIndexed[newSelection]._selected = true; // Update indexed data
 				rowIndex =  newIndexed[newSelection]._rowIndex; // Get data index
 				rdata = newData.get(rowIndex).set('_selected', true); // Change the row in that index
@@ -395,11 +406,10 @@ class Search extends React.Component {
 			let selection = null;
 
 			if (!_.isArray(defSelection)) {
-				selection = new Set([defSelection]);
+				selection = new Set([defSelection.toString()]);
 			} else if (defSelection !== new Set()){
-				selection = new Set(defSelection);
+				selection = new Set(defSelection.toString().split(','));
 			}
-			console.log('ei selection dsdasdsad', selection)
 
 			this.triggerSelection(selection);
 		}
@@ -609,6 +619,7 @@ class Search extends React.Component {
 					/>
 				</div>
 			);
+
 		} else {
 			content = <div className="proper-search-loading">{messages.loading}</div>
 		}
@@ -622,5 +633,4 @@ class Search extends React.Component {
 };
 
 Search.defaultProps = getDefaultProps();
-
 export default Search;

@@ -1,6 +1,5 @@
 const webpack = require('webpack');
 const path = require('path');
-const ExtractTextPlugin = require('extract-text-webpack-plugin');
 
 module.exports = {
   context: path.join(__dirname, 'examples'),
@@ -18,14 +17,6 @@ module.exports = {
         test: /\.jsx$/,
         exclude: /node_modules/,
         loaders: ["babel-loader"],
-      },
-      {
-        test: /\.html$/,
-        loader: "file?name=[name].[ext]",
-      },
-      {
-        test: /\.scss$/,
-        loader: ExtractTextPlugin.extract('css!sass?includePaths[]='+path.resolve(__dirname, "./node_modules/compass-mixins/lib"))
       }
     ],
   },
@@ -38,12 +29,15 @@ module.exports = {
     libraryTarget: "var",
     library: "App",
     filename: "app.js",
-    path: __dirname + "/examples/js"
+    path: __dirname + "/examples/dist"
   },
   plugins: [
-    new ExtractTextPlugin('propersearch.css', {
-      allChunks: true
+    new webpack.DefinePlugin({
+        'process.env': {
+            NODE_ENV: JSON.stringify('production'),
+            APP_ENV: JSON.stringify('example')
+        },
     }),
-    new webpack.optimize.DedupePlugin()
+    new webpack.optimize.UglifyJsPlugin({compress: {warnings: false}})
   ]
 }

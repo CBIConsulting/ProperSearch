@@ -269,8 +269,9 @@ var ProperSearch =
 							});
 						}
 
-						if (!nextProps.multiselect && (nextSelection.size > 1 || _this2.state.selection.size > 1)) {
-							selection = nextSelection.size > 1 ? nextProps.defaultSelection[0] : _this2.state.selection.values().next().value;
+						if (!nextProps.multiSelect && (nextSelection.size > 1 || _this2.state.selection.size > 1)) {
+							selection = nextSelection.size > 1 ? nextProps.defaultSelection : _this2.state.selection.values().next().value;
+							if (_underscore2['default'].isArray(selection)) selection = selection[0];
 						}
 
 						if (idFieldChanged || displayFieldChanged) {
@@ -350,7 +351,8 @@ var ProperSearch =
 							} else {
 								_this2.setState({
 									selection: new Set(),
-									allSelected: false
+									allSelected: false,
+									ready: true
 								});
 							}
 
@@ -361,6 +363,14 @@ var ProperSearch =
 					}();
 
 					if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
+				}
+
+				if (!nextState.ready) {
+					this.setState({
+						ready: true
+					});
+
+					return false;
 				}
 
 				return somethingChanged;
@@ -385,7 +395,7 @@ var ProperSearch =
 					var next = nextState.selection.values().next().value || null;
 					var old = this.state.selection.values().next().value || null;
 					var oldSize = !_underscore2['default'].isNull(this.state.selection) ? this.state.selection.size : 0;
-					console.log(oldSize);
+
 					if (next !== old || oldSize > 1) {
 						this.updateSelectionData(next);
 					}
@@ -421,8 +431,9 @@ var ProperSearch =
 				if (!this.props.multiSelect && oldSelection.size <= 1) {
 					// Single select
 					var oldId = oldSelection.values().next().value || null;
+					var indexedKeys = new Set(_underscore2['default'].keys(newIndexed));
 
-					if (!_underscore2['default'].isNull(oldId)) {
+					if (!_underscore2['default'].isNull(oldId) && indexedKeys.has(oldId)) {
 						newIndexed[oldId]._selected = false; // Update indexed data
 						rowIndex = newIndexed[oldId]._rowIndex; // Get data index
 						if (newData.get(rowIndex)) {
@@ -431,7 +442,7 @@ var ProperSearch =
 						}
 					}
 
-					if (!_underscore2['default'].isNull(newSelection)) {
+					if (!_underscore2['default'].isNull(newSelection) && indexedKeys.has(newSelection)) {
 						newIndexed[newSelection]._selected = true; // Update indexed data
 						rowIndex = newIndexed[newSelection]._rowIndex; // Get data index
 						rdata = newData.get(rowIndex).set('_selected', true); // Change the row in that index
@@ -563,11 +574,10 @@ var ProperSearch =
 					var selection = null;
 
 					if (!_underscore2['default'].isArray(defSelection)) {
-						selection = new Set([defSelection]);
+						selection = new Set([defSelection.toString()]);
 					} else if (defSelection !== new Set()) {
-						selection = new Set(defSelection);
+						selection = new Set(defSelection.toString().split(','));
 					}
-					console.log('ei selection dsdasdsad', selection);
 
 					this.triggerSelection(selection);
 				}
@@ -7640,6 +7650,7 @@ var ProperSearch =
 	      var overscanColumnsCount = _props3.overscanColumnsCount;
 	      var overscanRowsCount = _props3.overscanRowsCount;
 	      var renderCell = _props3.renderCell;
+	      var renderCellRanges = _props3.renderCellRanges;
 	      var rowsCount = _props3.rowsCount;
 	      var width = _props3.width;
 	      var _state2 = this.state;
@@ -7692,38 +7703,15 @@ var ProperSearch =
 	        this._rowStartIndex = overscanRowIndices.overscanStartIndex;
 	        this._rowStopIndex = overscanRowIndices.overscanStopIndex;
 
-	        for (var rowIndex = this._rowStartIndex; rowIndex <= this._rowStopIndex; rowIndex++) {
-	          var rowDatum = this._rowMetadata[rowIndex];
-
-	          for (var columnIndex = this._columnStartIndex; columnIndex <= this._columnStopIndex; columnIndex++) {
-	            var columnDatum = this._columnMetadata[columnIndex];
-	            var renderedCell = renderCell({ columnIndex: columnIndex, rowIndex: rowIndex });
-	            var key = rowIndex + '-' + columnIndex;
-
-	            // any other falsey value will be rendered
-	            // as a text node by React
-	            if (renderedCell == null || renderedCell === false) {
-	              continue;
-	            }
-
-	            var child = _react2.default.createElement(
-	              'div',
-	              {
-	                key: key,
-	                className: 'Grid__cell',
-	                style: {
-	                  height: rowDatum.size,
-	                  left: columnDatum.offset,
-	                  top: rowDatum.offset,
-	                  width: columnDatum.size
-	                }
-	              },
-	              renderedCell
-	            );
-
-	            childrenToDisplay.push(child);
-	          }
-	        }
+	        childrenToDisplay = renderCellRanges({
+	          columnMetadata: this._columnMetadata,
+	          columnStartIndex: this._columnStartIndex,
+	          columnStopIndex: this._columnStopIndex,
+	          renderCell: renderCell,
+	          rowMetadata: this._rowMetadata,
+	          rowStartIndex: this._rowStartIndex,
+	          rowStopIndex: this._rowStopIndex
+	        });
 	      }
 
 	      var gridStyle = {
@@ -8112,6 +8100,20 @@ var ProperSearch =
 	  renderCell: _react.PropTypes.func.isRequired,
 
 	  /**
+	   * Responsible for rendering a group of cells given their index ranges.
+	   * Should implement the following interface: ({
+	   *   columnMetadata:Array<Object>,
+	   *   columnStartIndex: number,
+	   *   columnStopIndex: number,
+	   *   renderCell: Function,
+	   *   rowMetadata:Array<Object>,
+	   *   rowStartIndex: number,
+	   *   rowStopIndex: number
+	   * }): Array<PropTypes.node>
+	   */
+	  renderCellRanges: _react.PropTypes.func.isRequired,
+
+	  /**
 	   * Either a fixed row height (number) or a function that returns the height of a row given its index.
 	   * Should implement the following interface: (index: number): number
 	   */
@@ -8155,9 +8157,58 @@ var ProperSearch =
 	    return null;
 	  },
 	  overscanColumnsCount: 0,
-	  overscanRowsCount: 10
+	  overscanRowsCount: 10,
+	  renderCellRanges: defaultRenderCellRanges
 	};
 	exports.default = Grid;
+
+
+	function defaultRenderCellRanges(_ref4) {
+	  var columnMetadata = _ref4.columnMetadata;
+	  var columnStartIndex = _ref4.columnStartIndex;
+	  var columnStopIndex = _ref4.columnStopIndex;
+	  var renderCell = _ref4.renderCell;
+	  var rowMetadata = _ref4.rowMetadata;
+	  var rowStartIndex = _ref4.rowStartIndex;
+	  var rowStopIndex = _ref4.rowStopIndex;
+
+	  var renderedCells = [];
+
+	  for (var rowIndex = rowStartIndex; rowIndex <= rowStopIndex; rowIndex++) {
+	    var rowDatum = rowMetadata[rowIndex];
+
+	    for (var columnIndex = columnStartIndex; columnIndex <= columnStopIndex; columnIndex++) {
+	      var columnDatum = columnMetadata[columnIndex];
+	      var renderedCell = renderCell({ columnIndex: columnIndex, rowIndex: rowIndex });
+	      var key = rowIndex + '-' + columnIndex;
+
+	      // any other falsey value will be rendered
+	      // as a text node by React
+	      if (renderedCell == null || renderedCell === false) {
+	        continue;
+	      }
+
+	      var child = _react2.default.createElement(
+	        'div',
+	        {
+	          key: key,
+	          className: 'Grid__cell',
+	          style: {
+	            height: rowDatum.size,
+	            left: columnDatum.offset,
+	            top: rowDatum.offset,
+	            width: columnDatum.size
+	          }
+	        },
+	        renderedCell
+	      );
+
+	      renderedCells.push(child);
+	    }
+	  }
+
+	  return renderedCells;
+	}
 
 /***/ },
 /* 24 */
@@ -9048,13 +9099,6 @@ var ProperSearch =
 	      });
 	      var style = this._getFlexStyleForColumn(column);
 
-	      // If this is a sortable header, clicking it should update the table data's sorting.
-	      var newSortDirection = sortBy !== dataKey || sortDirection === _SortDirection2.default.DESC ? _SortDirection2.default.ASC : _SortDirection2.default.DESC;
-	      var onClick = function onClick() {
-	        sortEnabled && sort(dataKey, newSortDirection);
-	        onHeaderClick && onHeaderClick(dataKey, columnData);
-	      };
-
 	      var renderedHeader = headerRenderer({
 	        columnData: columnData,
 	        dataKey: dataKey,
@@ -9067,10 +9111,27 @@ var ProperSearch =
 	      var a11yProps = {};
 
 	      if (sortEnabled || onHeaderClick) {
-	        a11yProps['aria-label'] = column.props['aria-label'] || label || dataKey;
-	        a11yProps.role = 'rowheader';
-	        a11yProps.tabIndex = 0;
-	        a11yProps.onClick = onClick;
+	        (function () {
+	          // If this is a sortable header, clicking it should update the table data's sorting.
+	          var newSortDirection = sortBy !== dataKey || sortDirection === _SortDirection2.default.DESC ? _SortDirection2.default.ASC : _SortDirection2.default.DESC;
+
+	          var onClick = function onClick() {
+	            sortEnabled && sort(dataKey, newSortDirection);
+	            onHeaderClick && onHeaderClick(dataKey, columnData);
+	          };
+
+	          var onKeyDown = function onKeyDown(event) {
+	            if (event.key === 'Enter' || event.key === ' ') {
+	              onClick();
+	            }
+	          };
+
+	          a11yProps['aria-label'] = column.props['aria-label'] || label || dataKey;
+	          a11yProps.role = 'rowheader';
+	          a11yProps.tabIndex = 0;
+	          a11yProps.onClick = onClick;
+	          a11yProps.onKeyDown = onKeyDown;
+	        })();
 	      }
 
 	      return _react2.default.createElement(

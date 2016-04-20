@@ -1,3 +1,5 @@
+const webpack = require('webpack');
+
 module.exports = function(config) {
   config.set({
     browsers: ['PhantomJS'],
@@ -22,6 +24,13 @@ module.exports = function(config) {
           { test: /\.jsx?$/, exclude: /node_modules/, loader: 'babel-loader' }
         ]
       },
+      plugins: [
+        new webpack.DefinePlugin({
+            'process.env': {
+                NODE_ENV: JSON.stringify('Test')
+            }
+        })
+      ],
       watch: true
     },
     webpackServer: {
