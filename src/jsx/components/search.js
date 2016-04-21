@@ -88,7 +88,7 @@ class Search extends React.Component {
 	}
 
 	componentDidMount() {
-		this.setDefaultSelection(this.props.defaultSelection);
+		this.setDefaultSelection(this.props.defaultSelection, true);
 
 		this.setState({
 			ready: true
@@ -367,13 +367,21 @@ class Search extends React.Component {
  * In case that the new selection array be different than the selection array in the components state, then update
  * the components state with the new data.
  *
- * @param {array}	newSelection	The selected rows
+ * @param {array}	newSelection	 	The selected rows
+ * @param {boolean}	isFirstSelection  	If that's the first selection (then don't send the selection) or not
  */
-	triggerSelection(newSelection = new Set()) {
-		this.setState({
-			selection: newSelection,
-			allSelected: this.isAllSelected(this.state.data, newSelection)
-		}, this.sendSelection);
+	triggerSelection(newSelection = new Set(), isFirstSelection = false) {
+		if (isFirstSelection) {
+			this.setState({
+				selection: newSelection,
+				allSelected: this.isAllSelected(this.state.data, newSelection)
+			});
+		} else {
+			this.setState({
+				selection: newSelection,
+				allSelected: this.isAllSelected(this.state.data, newSelection)
+			}, this.sendSelection);
+		}
 	}
 
 /**
@@ -400,18 +408,23 @@ class Search extends React.Component {
  * Set up the default selection if exist
  *
  * @param {array || string ... number} defSelection 	Default selection to be applied to the list
+ * @param {boolean}	isFirstSelection  	If that's the first selection (then don't send the selection) or not
  */
-	setDefaultSelection(defSelection) {
+	setDefaultSelection(defSelection, isFirstSelection = false) {
 		if (defSelection) {
 			let selection = null;
 
-			if (!_.isArray(defSelection)) {
-				selection = new Set([defSelection]);
-			} else if (defSelection !== new Set()){
-				selection = new Set(defSelection);
+			if (defSelection.length == 0) {
+				selection = new Set();
+			} else {
+				if (!_.isArray(defSelection)) {
+					selection = new Set([defSelection.toString()]);
+				} else if (defSelection !== new Set()){
+					selection = new Set(defSelection.toString().split(','));
+				}
 			}
 
-			this.triggerSelection(selection);
+			this.triggerSelection(selection, isFirstSelection);
 		}
 	}
 
@@ -619,6 +632,7 @@ class Search extends React.Component {
 					/>
 				</div>
 			);
+
 		} else {
 			content = <div className="proper-search-loading">{messages.loading}</div>
 		}
@@ -632,5 +646,4 @@ class Search extends React.Component {
 };
 
 Search.defaultProps = getDefaultProps();
-
 export default Search;

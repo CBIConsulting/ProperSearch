@@ -205,7 +205,7 @@ var ProperSearch =
 		_createClass(Search, [{
 			key: 'componentDidMount',
 			value: function componentDidMount() {
-				this.setDefaultSelection(this.props.defaultSelection);
+				this.setDefaultSelection(this.props.defaultSelection, true);
 
 				this.setState({
 					ready: true
@@ -521,18 +521,27 @@ var ProperSearch =
 	   * In case that the new selection array be different than the selection array in the components state, then update
 	   * the components state with the new data.
 	   *
-	   * @param {array}	newSelection	The selected rows
+	   * @param {array}	newSelection	 	The selected rows
+	   * @param {boolean}	isFirstSelection  	If that's the first selection (then don't send the selection) or not
 	   */
 
 		}, {
 			key: 'triggerSelection',
 			value: function triggerSelection() {
 				var newSelection = arguments.length <= 0 || arguments[0] === undefined ? new Set() : arguments[0];
+				var isFirstSelection = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
 
-				this.setState({
-					selection: newSelection,
-					allSelected: this.isAllSelected(this.state.data, newSelection)
-				}, this.sendSelection);
+				if (isFirstSelection) {
+					this.setState({
+						selection: newSelection,
+						allSelected: this.isAllSelected(this.state.data, newSelection)
+					});
+				} else {
+					this.setState({
+						selection: newSelection,
+						allSelected: this.isAllSelected(this.state.data, newSelection)
+					}, this.sendSelection);
+				}
 			}
 
 			/**
@@ -565,21 +574,28 @@ var ProperSearch =
 	   * Set up the default selection if exist
 	   *
 	   * @param {array || string ... number} defSelection 	Default selection to be applied to the list
+	   * @param {boolean}	isFirstSelection  	If that's the first selection (then don't send the selection) or not
 	   */
 
 		}, {
 			key: 'setDefaultSelection',
 			value: function setDefaultSelection(defSelection) {
+				var isFirstSelection = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
+
 				if (defSelection) {
 					var selection = null;
 
-					if (!_underscore2['default'].isArray(defSelection)) {
-						selection = new Set([defSelection]);
-					} else if (defSelection !== new Set()) {
-						selection = new Set(defSelection);
+					if (defSelection.length == 0) {
+						selection = new Set();
+					} else {
+						if (!_underscore2['default'].isArray(defSelection)) {
+							selection = new Set([defSelection.toString()]);
+						} else if (defSelection !== new Set()) {
+							selection = new Set(defSelection.toString().split(','));
+						}
 					}
 
-					this.triggerSelection(selection);
+					this.triggerSelection(selection, isFirstSelection);
 				}
 			}
 
@@ -856,7 +872,6 @@ var ProperSearch =
 	;
 
 	Search.defaultProps = getDefaultProps();
-
 	exports['default'] = Search;
 	module.exports = exports['default'];
 
@@ -5909,11 +5924,12 @@ var ProperSearch =
 			allSelected: false,
 			listRowHeight: 26,
 			listHeight: 200,
-			listWidth: null, // Container width by default
+			listWidth: 100, // Container width by default
 			idField: 'value',
 			displayField: 'label',
 			showIcon: true,
-			listElementClass: null
+			listElementClass: null,
+			uniqueID: _underscore2['default'].uniqueId('search_list_')
 		};
 	}
 
@@ -5984,7 +6000,6 @@ var ProperSearch =
 			key: 'handleElementClick',
 			value: function handleElementClick(itemValue, e) {
 				e.preventDefault();
-
 				var data = this.props.data,
 				    selection = this.props.selection,
 				    nothingSelected = false,
@@ -6126,7 +6141,7 @@ var ProperSearch =
 						{ className: 'btn-group form-inline' },
 						_react2['default'].createElement(
 							'a',
-							{ id: 'proper-search-list-bar-check', className: 'btn', role: 'button', onClick: this.handleSelectAll.bind(this, true) },
+							{ id: 'proper-search-list-bar-check', ref: this.props.uniqueID + '_all', className: 'btn list-bar-check', role: 'button', onClick: this.handleSelectAll.bind(this, true) },
 							_react2['default'].createElement(
 								'label',
 								null,
@@ -6136,7 +6151,7 @@ var ProperSearch =
 						' ',
 						_react2['default'].createElement(
 							'a',
-							{ id: 'proper-search-list-bar-unCheck', className: 'btn', role: 'button', onClick: this.handleSelectAll.bind(this, false) },
+							{ id: 'proper-search-list-bar-unCheck', ref: this.props.uniqueID + '_none', className: 'btn list-bar-unCheck', role: 'button', onClick: this.handleSelectAll.bind(this, false) },
 							_react2['default'].createElement(
 								'label',
 								null,
@@ -6202,7 +6217,7 @@ var ProperSearch =
 
 					content = _react2['default'].createElement(
 						'div',
-						{ key: 'element-' + index, className: className, onClick: _this4.handleElementClick.bind(_this4, item.get(field)) },
+						{ key: 'element-' + index, ref: _this4.props.uniqueID + '_' + index, className: className, onClick: _this4.handleElementClick.bind(_this4, item.get(field)) },
 						icon,
 						element
 					);
@@ -6261,6 +6276,7 @@ var ProperSearch =
 					{ className: className },
 					toolbar,
 					_react2['default'].createElement(_reactVirtualized.VirtualScroll, {
+						ref: this.props.uniqueID + '_virtual',
 						className: "proper-search-list-virtual",
 						width: this.props.listWidth || this.props.containerWidth,
 						height: this.props.listHeight,
@@ -6278,7 +6294,8 @@ var ProperSearch =
 	}(_react2['default'].Component);
 
 	SearchList.defaultProps = getDefaultProps();
-	exports['default'] = (0, _reactDimensions2['default'])()(SearchList);
+	var toExport =  false ? SearchList : (0, _reactDimensions2['default'])()(SearchList);
+	exports['default'] = toExport;
 	module.exports = exports['default'];
 
 /***/ },
@@ -12111,6 +12128,7 @@ var ProperSearch =
 						_react2['default'].createElement('i', { className: this.props.searchIcon + ' ' + 'proper-search-field-icon' }),
 						_react2['default'].createElement('input', {
 							ref: 'propersearch_field',
+							className: 'proper-search-input-field',
 							type: 'text',
 							autoComplete: this.props.autoComplete,
 							placeholder: this.props.placeholder,

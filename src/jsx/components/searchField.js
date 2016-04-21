@@ -219,6 +219,7 @@ class SearchField extends React.Component {
 					<i className={this.props.searchIcon + ' ' + 'proper-search-field-icon'} />
 					<input
 						ref="propersearch_field"
+						className="proper-search-input-field"
 						type="text"
 						autoComplete={this.props.autoComplete}
 						placeholder={this.props.placeholder}
