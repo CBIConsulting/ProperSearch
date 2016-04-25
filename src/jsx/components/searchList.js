@@ -267,7 +267,7 @@ class SearchList extends React.Component {
  * @return (html) An div with a message
  */
 	noRowsRenderer () {
-	    return <div className={"proper-search-list search-list-no-data"}>{this.props.messages.noData}</div>;
+	    return <div key={'element-0'} ref={this.props.uniqueID + '_noData'} className={"proper-search-list search-list-no-data"}>{this.props.messages.noData}</div>;
 	}
 
 /**
