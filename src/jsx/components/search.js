@@ -89,7 +89,7 @@ class Search extends React.Component {
 	}
 
 	componentDidMount() {
-		this.setDefaultSelection(this.props.defaultSelection, true);
+		this.setDefaultSelection(this.props.defaultSelection);
 
 		this.setState({
 			ready: true
@@ -370,20 +370,20 @@ class Search extends React.Component {
  * In case that the new selection array be different than the selection array in the components state, then update
  * the components state with the new data.
  *
- * @param {array}	newSelection	 	The selected rows
- * @param {boolean}	isFirstSelection  	If that's the first selection (then don't send the selection) or not
+ * @param {array}	newSelection	The selected rows
+ * @param {boolean}	sendSelection 	If the selection must be sent or not
  */
-	triggerSelection(newSelection = new Set(), isFirstSelection = false) {
-		if (isFirstSelection) {
-			this.setState({
-				selection: newSelection,
-				allSelected: this.isAllSelected(this.state.data, newSelection)
-			});
-		} else {
+	triggerSelection(newSelection = new Set(), sendSelection = true) {
+		if (sendSelection) {
 			this.setState({
 				selection: newSelection,
 				allSelected: this.isAllSelected(this.state.data, newSelection)
 			}, this.sendSelection);
+		} else {
+			this.setState({
+				selection: newSelection,
+				allSelected: this.isAllSelected(this.state.data, newSelection)
+			});
 		}
 	}
 
@@ -411,9 +411,8 @@ class Search extends React.Component {
  * Set up the default selection if exist
  *
  * @param {array || string ... number} defSelection 	Default selection to be applied to the list
- * @param {boolean}	isFirstSelection  	If that's the first selection (then don't send the selection) or not
  */
-	setDefaultSelection(defSelection, isFirstSelection = false) {
+	setDefaultSelection(defSelection) {
 		if (defSelection) {
 			let selection = null;
 
@@ -427,7 +426,7 @@ class Search extends React.Component {
 				}
 			}
 
-			this.triggerSelection(selection, isFirstSelection);
+			this.triggerSelection(selection, false);
 		}
 	}
 

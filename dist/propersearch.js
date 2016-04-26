@@ -206,7 +206,7 @@ var ProperSearch =
 		_createClass(Search, [{
 			key: 'componentDidMount',
 			value: function componentDidMount() {
-				this.setDefaultSelection(this.props.defaultSelection, true);
+				this.setDefaultSelection(this.props.defaultSelection);
 
 				this.setState({
 					ready: true
@@ -524,26 +524,26 @@ var ProperSearch =
 	   * In case that the new selection array be different than the selection array in the components state, then update
 	   * the components state with the new data.
 	   *
-	   * @param {array}	newSelection	 	The selected rows
-	   * @param {boolean}	isFirstSelection  	If that's the first selection (then don't send the selection) or not
+	   * @param {array}	newSelection	The selected rows
+	   * @param {boolean}	sendSelection 	If the selection must be sent or not
 	   */
 
 		}, {
 			key: 'triggerSelection',
 			value: function triggerSelection() {
 				var newSelection = arguments.length <= 0 || arguments[0] === undefined ? new Set() : arguments[0];
-				var isFirstSelection = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
+				var sendSelection = arguments.length <= 1 || arguments[1] === undefined ? true : arguments[1];
 
-				if (isFirstSelection) {
-					this.setState({
-						selection: newSelection,
-						allSelected: this.isAllSelected(this.state.data, newSelection)
-					});
-				} else {
+				if (sendSelection) {
 					this.setState({
 						selection: newSelection,
 						allSelected: this.isAllSelected(this.state.data, newSelection)
 					}, this.sendSelection);
+				} else {
+					this.setState({
+						selection: newSelection,
+						allSelected: this.isAllSelected(this.state.data, newSelection)
+					});
 				}
 			}
 
@@ -577,14 +577,11 @@ var ProperSearch =
 	   * Set up the default selection if exist
 	   *
 	   * @param {array || string ... number} defSelection 	Default selection to be applied to the list
-	   * @param {boolean}	isFirstSelection  	If that's the first selection (then don't send the selection) or not
 	   */
 
 		}, {
 			key: 'setDefaultSelection',
 			value: function setDefaultSelection(defSelection) {
-				var isFirstSelection = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
-
 				if (defSelection) {
 					var selection = null;
 
@@ -598,7 +595,7 @@ var ProperSearch =
 						}
 					}
 
-					this.triggerSelection(selection, isFirstSelection);
+					this.triggerSelection(selection, false);
 				}
 			}
 
