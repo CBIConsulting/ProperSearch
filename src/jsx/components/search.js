@@ -83,6 +83,7 @@ class Search extends React.Component {
 			displayField: this.props.displayField, // same
 			selection: new Set(),
 			allSelected: false,
+			selectionApplied: false, // If the selection has been aplied to the data (mostly for some cases of updating props data)
 			ready: false
 		}
 	}
@@ -118,9 +119,7 @@ class Search extends React.Component {
 				if (!nextProps.multiSelect) selection = nextState.selection.values().next().value || null;
 
 				// props data has been changed in the last call to this method
-				this.setState({
-					ready: true
-				}, this.setDefaultSelection(selection));
+				this.setDefaultSelection(selection);
 			}
 
 			return false;
@@ -171,7 +170,8 @@ class Search extends React.Component {
 							initialIndexed: preparedData.indexed,
 							idField: nextProps.idField,
 							displayField: nextProps.displayField,
-							ready: false
+							ready: false,
+							selectionApplied: false
 						}, this.setDefaultSelection(selection));
 
 					} else {
@@ -191,7 +191,8 @@ class Search extends React.Component {
 							initialIndexed: initialIndexed,
 							idField: nextProps.idField,
 							displayField: nextProps.displayField,
-							ready: false
+							ready: false,
+							selectionApplied: false
 						});
 					}
 					return false;
@@ -207,7 +208,8 @@ class Search extends React.Component {
 					rawData: preparedData.rawdata,
 					indexedData: preparedData.indexed,
 					initialIndexed: preparedData.indexed,
-					ready: false
+					ready: false,
+					selectionApplied: false
 				}, this.setDefaultSelection(selection));
 
 				return false;
@@ -249,7 +251,7 @@ class Search extends React.Component {
 	componentWillUpdate(nextProps, nextState) {
 		// Selection
 		if (this.props.multiSelect) {
-			if (nextState.selection.size !== this.state.selection.size) {
+			if (nextState.selection.size !== this.state.selection.size || (!nextState.selectionApplied && nextState.selection.size > 0)){
 				this.updateSelectionData(nextState.selection, nextState.allSelected);
 			}
 		} else {
@@ -347,7 +349,8 @@ class Search extends React.Component {
 
 		this.setState({
 			data: newData,
-			indexedData: newIndexed
+			indexedData: newIndexed,
+			selectionApplied: true
 		});
 	}
 
@@ -368,12 +371,20 @@ class Search extends React.Component {
  * the components state with the new data.
  *
  * @param {array}	newSelection	The selected rows
+ * @param {boolean}	sendSelection 	If the selection must be sent or not
  */
-	triggerSelection(newSelection = new Set()) {
-		this.setState({
-			selection: newSelection,
-			allSelected: this.isAllSelected(this.state.data, newSelection)
-		}, this.sendSelection);
+	triggerSelection(newSelection = new Set(), sendSelection = true) {
+		if (sendSelection) {
+			this.setState({
+				selection: newSelection,
+				allSelected: this.isAllSelected(this.state.data, newSelection)
+			}, this.sendSelection);
+		} else {
+			this.setState({
+				selection: newSelection,
+				allSelected: this.isAllSelected(this.state.data, newSelection)
+			});
+		}
 	}
 
 /**
@@ -405,13 +416,17 @@ class Search extends React.Component {
 		if (defSelection) {
 			let selection = null;
 
-			if (!_.isArray(defSelection)) {
-				selection = new Set([defSelection.toString()]);
-			} else if (defSelection !== new Set()){
-				selection = new Set(defSelection.toString().split(','));
+			if (defSelection.length == 0) {
+				selection = new Set();
+			} else {
+				if (!_.isArray(defSelection)) {
+					selection = new Set([defSelection.toString()]);
+				} else if (defSelection !== new Set()){
+					selection = new Set(defSelection.toString().split(','));
+				}
 			}
 
-			this.triggerSelection(selection);
+			this.triggerSelection(selection, false);
 		}
 	}
 
@@ -538,12 +553,12 @@ class Search extends React.Component {
 			let {indexedData, initialData, rawData, data, selection} = this.state;
 
 			// Get the data (initialData) that match with the selection
-			filteredData = initialData.filter(element => selection.has(element.get(this.state.idField, null)));
+			filteredData = initialData.filter(element => selection.has(element.get(this.state.idField)));
 
 			// Then from the filtered data get the raw data that match with the selection
 			selectedData = filteredData.map(row => {
-				properId = row.get(this.state.idField, 0);
-				rowIndex = _.isUndefined(indexedData[properId]) ? this.state.initialIndexed[properId]._rowIndex : indexedData[properId]._rowIndex;
+				properId = row.get(this.state.idField);
+				rowIndex = this.state.initialIndexed[properId]._rowIndex;
 
 				return rawData.get(rowIndex);
 			});
