@@ -42,7 +42,7 @@ The compile and compressed ProperSearch distribution file can be found in the di
 
 
 ## Preview
-![screen shot 2016-04-04 at 11 40 00] (examples/screenshots/example.png "Example of ProperSearch with multiselect")
+![screen shot 2016-04-04 at 11 40 00](examples/screenshots/example.png "Example of ProperSearch with multiselect")
 
 ## Use this module in your projects
 ```
@@ -98,7 +98,17 @@ Check your http://localhost:8080/ or  `open http://localhost:8080/`
 	```javascript
 		afterSearch={
 			function(search_string) {
-				console.log('Filtering by: ', search_string);
+				console.info('Filtering by: ', search_string);
+			}
+		}
+	```
+* afterSelectGetSelection: Function called after select a row. This one works same as afterSelec(data, selection) but this one is faster because doesn't work over data, only get selection instead
+	* Ex:
+	```javascript
+		afterSelectGetSelection={
+			function(selectionAsArray, selectionAsSetObj) {
+				console.info(selectionAsArray); // Array of selected values (idField)
+				console.info(selectionAsSetObj); // Set object which contains selected values (idField)
 			}
 		}
 	```
