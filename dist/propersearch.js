@@ -129,7 +129,8 @@ var ProperSearch =
 			listWidth: null,
 			listHeight: 200,
 			listRowHeight: 26,
-			afterSelect: null,
+			afterSelect: null, // Function Get selection and data
+			afterSelectGetSelection: null, // Function Get just selection (no data)
 			afterSearch: null,
 			onEnter: null, // Optional - To do when key down Enter - SearchField
 			fieldClass: null,
@@ -619,26 +620,49 @@ var ProperSearch =
 				// The data will be inmutable inside the component
 				var data = newData || _immutable2['default'].fromJS(this.props.data),
 				    index = 0,
-				    field = idField || this.state.idField;
+				    rdataIndex = 0,
+				    idSet = new Set(),
+				    field = idField || this.state.idField,
+				    fieldValue = void 0;
 				var indexed = [],
-				    parsed = [];
+				    parsed = [],
+				    parsedJSON = void 0,
+				    hasNulls = false;
 
 				// Parsing data to add new fields (selected or not, field, rowIndex)
 				parsed = data.map(function (row) {
-					if (!row.get(field, false)) {
-						row = row.set(field, _underscore2['default'].uniqueId());
-					} else {
-						row = row.set(field, row.get(field).toString());
+					fieldValue = row.get(field, false);
+
+					if (!fieldValue) {
+						fieldValue = _underscore2['default'].uniqueId();
 					}
 
-					if (!row.get('_selected', false)) {
-						row = row.set('_selected', false);
+					// No rows with same idField. The idField must be unique
+					if (!idSet.has(fieldValue)) {
+						idSet.add(fieldValue);
+						row = row.set(field, fieldValue.toString());
+
+						if (!row.get('_selected', false)) {
+							row = row.set('_selected', false);
+						}
+
+						row = row.set('_rowIndex', index++); // data row index
+						row = row.set('_rawDataIndex', rdataIndex++); // rawData row index
+
+						return row;
 					}
 
-					row = row.set('_rowIndex', index++);
-
-					return row;
+					rdataIndex++; // add 1 to jump over duplicate values
+					hasNulls = true;
+					return null;
 				});
+
+				// Clear null values if exist
+				if (hasNulls) {
+					parsed = parsed.filter(function (element) {
+						return !_underscore2['default'].isNull(element);
+					});
+				}
 
 				// Prepare indexed data.
 				indexed = _underscore2['default'].indexBy(parsed.toJSON(), field);
@@ -746,40 +770,53 @@ var ProperSearch =
 			value: function sendSelection() {
 				var _this6 = this;
 
-				if (typeof this.props.afterSelect == 'function') {
+				var hasAfterSelect = typeof this.props.afterSelect == 'function',
+				    hasGetSelection = typeof this.props.afterSelectGetSelection == 'function';
+
+				if (hasAfterSelect || hasGetSelection) {
 					(function () {
 						var selectionArray = [],
-						    selectedData = [],
-						    properId = null,
-						    rowIndex = null,
-						    filteredData = null;
-						var _state = _this6.state;
-						var indexedData = _state.indexedData;
-						var initialData = _state.initialData;
-						var rawData = _state.rawData;
-						var data = _state.data;
-						var selection = _state.selection;
-
-						// Get the data (initialData) that match with the selection
-
-						filteredData = initialData.filter(function (element) {
-							return selection.has(element.get(_this6.state.idField));
-						});
-
-						// Then from the filtered data get the raw data that match with the selection
-						selectedData = filteredData.map(function (row) {
-							properId = row.get(_this6.state.idField);
-							rowIndex = _this6.state.initialIndexed[properId]._rowIndex;
-
-							return rawData.get(rowIndex);
-						});
+						    selection = _this6.state.selection;
 
 						// Parse the selection to return it as an array instead of a Set obj
 						selection.forEach(function (item) {
 							selectionArray.push(item);
 						});
 
-						_this6.props.afterSelect.call(_this6, selectedData.toJSON(), selectionArray);
+						if (hasGetSelection) {
+							// When you just need the selection but no data
+							_this6.props.afterSelectGetSelection.call(_this6, selectionArray, selection); // selection array / selection Set()
+						}
+
+						if (hasAfterSelect) {
+							(function () {
+								var selectedData = [],
+								    properId = null,
+								    rowIndex = null,
+								    filteredData = null;
+								var _state = _this6.state;
+								var indexedData = _state.indexedData;
+								var initialData = _state.initialData;
+								var rawData = _state.rawData;
+								var data = _state.data;
+
+								// Get the data (initialData) that match with the selection
+
+								filteredData = initialData.filter(function (element) {
+									return selection.has(element.get(_this6.state.idField));
+								});
+
+								// Then from the filtered data get the raw data that match with the selection
+								selectedData = filteredData.map(function (row) {
+									properId = row.get(_this6.state.idField);
+									rowIndex = _this6.state.initialIndexed[properId]._rawDataIndex;
+
+									return rawData.get(rowIndex);
+								});
+
+								_this6.props.afterSelect.call(_this6, selectedData.toJSON(), selectionArray);
+							})();
+						}
 					})();
 				}
 			}
@@ -833,7 +870,6 @@ var ProperSearch =
 						}),
 						_react2['default'].createElement(_searchList2['default'], {
 							data: data,
-							rawData: this.state.rawData,
 							indexedData: this.state.initialIndexed,
 							className: this.props.listClass,
 							idField: this.state.idField,

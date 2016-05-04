@@ -19,7 +19,8 @@ function getDefaultProps() {
 		listWidth: null,
 		listHeight: 200,
 		listRowHeight: 26,
-		afterSelect: null,
+		afterSelect: null, // Function Get selection and data
+		afterSelectGetSelection: null, // Function Get just selection (no data)
 		afterSearch: null,
 		onEnter: null, // Optional - To do when key down Enter - SearchField
 		fieldClass: null,
@@ -442,25 +443,41 @@ class Search extends React.Component {
  */
 	prepareData(newData = null, idField = null) {
 		// The data will be inmutable inside the component
-		let data = newData || Immutable.fromJS(this.props.data), index = 0, field = idField || this.state.idField;
-		let indexed = [], parsed = [];
+		let data = newData || Immutable.fromJS(this.props.data), index = 0, rdataIndex = 0, idSet = new Set(), field = idField || this.state.idField, fieldValue;
+		let indexed = [], parsed = [], parsedJSON, hasNulls = false;
 
 		// Parsing data to add new fields (selected or not, field, rowIndex)
 		parsed = data.map(row => {
-			if (!row.get(field, false)) {
-				row = row.set(field, _.uniqueId());
-			} else {
-				row = row.set(field, row.get(field).toString());
+			fieldValue = row.get(field, false);
+
+			if (!fieldValue) {
+				fieldValue = _.uniqueId();
 			}
 
-			if (!row.get('_selected', false)) {
-				row = row.set('_selected', false);
+			// No rows with same idField. The idField must be unique
+			if (!idSet.has(fieldValue)) {
+				idSet.add(fieldValue);
+				row = row.set(field, fieldValue.toString());
+
+				if (!row.get('_selected', false)) {
+					row = row.set('_selected', false);
+				}
+
+				row = row.set('_rowIndex', index++); // data row index
+				row = row.set('_rawDataIndex', rdataIndex++); // rawData row index
+
+				return row;
 			}
 
-			row = row.set('_rowIndex', index++);
-
-			return row;
+			rdataIndex++; // add 1 to jump over duplicate values
+			hasNulls = true;
+			return null;
 		});
+
+		// Clear null values if exist
+		if (hasNulls) {
+			parsed = parsed.filter(element => !_.isNull(element));
+		}
 
 		// Prepare indexed data.
 		indexed = _.indexBy(parsed.toJSON(), field);
@@ -548,27 +565,37 @@ class Search extends React.Component {
  * if this function was set up in the component props
  */
 	sendSelection() {
-		if (typeof this.props.afterSelect == 'function') {
-			let selectionArray = [], selectedData = [], properId = null, rowIndex = null, filteredData = null;
-			let {indexedData, initialData, rawData, data, selection} = this.state;
+		let hasAfterSelect = typeof this.props.afterSelect == 'function', hasGetSelection = typeof this.props.afterSelectGetSelection == 'function';
 
-			// Get the data (initialData) that match with the selection
-			filteredData = initialData.filter(element => selection.has(element.get(this.state.idField)));
-
-			// Then from the filtered data get the raw data that match with the selection
-			selectedData = filteredData.map(row => {
-				properId = row.get(this.state.idField);
-				rowIndex = this.state.initialIndexed[properId]._rowIndex;
-
-				return rawData.get(rowIndex);
-			});
+		if (hasAfterSelect || hasGetSelection) {
+			let selectionArray = [], selection = this.state.selection;
 
 			// Parse the selection to return it as an array instead of a Set obj
 			selection.forEach(item => {
 				selectionArray.push(item);
 			});
 
-			this.props.afterSelect.call(this, selectedData.toJSON(), selectionArray);
+			if (hasGetSelection) { // When you just need the selection but no data
+				this.props.afterSelectGetSelection.call(this, selectionArray, selection); // selection array / selection Set()
+			}
+
+			if (hasAfterSelect) {
+				let selectedData = [], properId = null, rowIndex = null, filteredData = null;
+				let {indexedData, initialData, rawData, data} = this.state;
+
+				// Get the data (initialData) that match with the selection
+				filteredData = initialData.filter(element => selection.has(element.get(this.state.idField)));
+
+				// Then from the filtered data get the raw data that match with the selection
+				selectedData = filteredData.map(row => {
+					properId = row.get(this.state.idField);
+					rowIndex = this.state.initialIndexed[properId]._rawDataIndex;
+
+					return rawData.get(rowIndex);
+				});
+
+				this.props.afterSelect.call(this, selectedData.toJSON(), selectionArray);
+			}
 		}
 	}
 
@@ -616,7 +643,6 @@ class Search extends React.Component {
 					/>
 					<SearchList
 						data={data}
-						rawData={this.state.rawData}
 						indexedData={this.state.initialIndexed}
 						className={this.props.listClass}
 						idField={this.state.idField}
