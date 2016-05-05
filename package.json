@@ -1,6 +1,6 @@
 {
   "name": "react-propersearch",
-  "version": "0.1.15",
+  "version": "0.1.16",
   "description": "A react component that render a search field with a list of items, allows the user to filter that list and select the items. The component return the selected data when it get selected",
   "main": "lib/propersearch.js",
   "scripts": {
@@ -67,6 +67,8 @@
     "es6-set": "^0.1.4",
     "immutable": "^3.7.6",
     "react": "^0.14.7",
+    "deepmerge": "^0.2.10",
+    "dot-object": "^1.4.1",
     "react-dimensions": "^1.0.2",
     "react-dom": "^0.14.7",
     "react-addons-shallow-compare": "^0.14.7",

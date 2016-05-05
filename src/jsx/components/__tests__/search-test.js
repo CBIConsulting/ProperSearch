@@ -68,7 +68,6 @@ describe('Search', () => {
 		component.triggerSelection(new Set(['1','item_2','item_5','item_6', 'item_8']));
 
 		def.done((data, selection) => {
-			console.log(selection)
 			expect(data.length).toBe(4);
 			expect(selection.length).toBe(5);
 			expect(selection).toContain('1');
