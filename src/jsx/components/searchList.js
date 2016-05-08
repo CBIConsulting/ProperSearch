@@ -3,6 +3,7 @@ import _ from 'underscore';
 import {shallowEqualImmutable} from 'react-immutable-render-mixin';
 import { VirtualScroll } from 'react-virtualized';
 import Dimensions from 'react-dimensions';
+import cache from '../lib/cache';
 const Set = require('es6-set');
 
 // For more info about this read ReadMe.md
@@ -11,6 +12,7 @@ function getDefaultProps() {
 		data: null,
 		indexedData: null, // Just when you use a function as a display field. (array) (Full indexed data not filted)
 		onSelectionChange: null,
+		rowFormater: null, // function
 		multiSelect: false,
 		messages: null,
 		selection: new Set(),
@@ -22,7 +24,7 @@ function getDefaultProps() {
 		displayField: 'label',
 		showIcon: true,
 		listElementClass: null,
-		uniqueID: _.uniqueId('search_list_'),
+		uniqueID: _.uniqueId('search_list_')
 	}
 }
 
@@ -210,56 +212,60 @@ class SearchList extends React.Component {
 
 /**
  * Build and return the content of the list.
+ *
+ * @param {integer} index 		Index of the data to be rendered
+ * @return {html}	list-row	A row of the list
  */
-	getContent() {
-		let icon =  null, result = [], selectedClass = null, className = null, element = null, content = null;
-		let data = this.props.data, selection = this.props.selection, field = this.props.idField;
-		let displayField = this.props.displayField, showIcon = this.props.showIcon;
-		let listElementClass = this.props.listElementClass;
+	getContent(index) {
+		let icon =  null, selectedClass = null, className = null, element = null, listElementClass = this.props.listElementClass;
+		let data = this.props.data, rowdata, field = this.props.idField, displayField = this.props.displayField, showIcon = this.props.showIcon;
 
-		data.forEach((item, index) => {
-			element = item.get(displayField);
-			className = "proper-search-list-element";
+		rowdata = data.get(index);
+		element = rowdata.get(displayField);
+		className = "proper-search-list-element";
 
-			if (this.props.multiSelect) {
-				if (showIcon) {
-					if (item.get('_selected', false)) {
-						icon = <i className="fa fa-check-square-o"/>;
-						selectedClass = ' proper-search-selected'
-					} else {
-						icon = <i className="fa fa-square-o"/>;
-						selectedClass = null;
-					}
+		if (this.props.multiSelect) {
+			if (showIcon) {
+				if (rowdata.get('_selected', false)) {
+					icon = <i className="fa fa-check-square-o"/>;
+					selectedClass = ' proper-search-selected'
+				} else {
+					icon = <i className="fa fa-square-o"/>;
+					selectedClass = null;
 				}
-			} else {
-				if (item.get('_selected')) selectedClass = ' proper-search-single-selected';
-				else selectedClass = null;
 			}
+		} else {
+			if (rowdata.get('_selected')) selectedClass = ' proper-search-single-selected';
+			else selectedClass = null;
+		}
 
-			if (listElementClass) {
-				className += ' ' + listElementClass;
+		if (listElementClass) {
+			className += ' ' + listElementClass;
+		}
+
+		if (selectedClass) {
+			className += ' ' + selectedClass;
+		}
+
+		if (typeof element == 'function') {
+			let id = rowdata.get(field);
+			element = element(this.props.indexedData[id]);
+		} else if (this.props.rowFormater) {
+			let ckey = ['search_list', 'list_'+ this.props.uniqueID, 'row__'+rowdata.get(this.props.idField), displayField];
+			element = cache.read(ckey);
+
+			if (element === undefined) {
+				element = this.props.rowFormater(rowdata.get(displayField));
+				cache.write(ckey, element);
 			}
+		}
 
-			if (selectedClass) {
-				className += ' ' + selectedClass;
-			}
-
-			if (typeof element == 'function') {
-				let id = item.get(field);
-				element = element(this.props.indexedData[id]);
-			}
-
-			content = (
-				<div key={'element-' + index} ref={this.props.uniqueID + '_' + index} className={className} onClick={this.handleElementClick.bind(this, item.get(field))}>
-					{icon}
-					{element}
-				</div>
-			);
-
-			result.push(content);
-		});
-
-		return result;
+		return (
+			<div key={'element-' + index} ref={this.props.uniqueID + '_' + index} className={className} onClick={this.handleElementClick.bind(this, rowdata.get(field))}>
+				{icon}
+				{element}
+			</div>
+		);
 	}
 /**
  * To be rendered when the data has no data (Ex. filtered data)
@@ -277,12 +283,12 @@ class SearchList extends React.Component {
  * @param 	index 		Current index to be rendered.
  * @return 	element 	The element on the index position
  */
-	rowRenderer(list, index) {
-		return list[index];
+	rowRenderer(index) {
+		return this.getContent(index);
 	}
 
 	render(){
-		let toolbar = null, rowsCount = 0, list = this.getContent(), className = "proper-search-list";
+		let toolbar = null, rowsCount = 0, className = "proper-search-list";
 
 		if (this.props.multiSelect) toolbar = this.getToolbar();
 		rowsCount = this.props.data.size;
@@ -299,7 +305,7 @@ class SearchList extends React.Component {
 					className={"proper-search-list-virtual"}
 	                width={this.props.listWidth || this.props.containerWidth}
 	                height={this.props.listHeight}
-	                rowRenderer={this.rowRenderer.bind(this, list)}
+	                rowRenderer={this.rowRenderer.bind(this)}
 	                rowHeight={this.props.listRowHeight}
 	                noRowsRenderer={this.noRowsRenderer.bind(this)}
 	                rowsCount={rowsCount}

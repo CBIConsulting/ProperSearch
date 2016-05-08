@@ -43,7 +43,7 @@ describe('Search', () => {
 		component = prepare(props);
 
 		// Check selection
-		component.setDefaultSelection(['1','2']);
+		component.triggerSelection(new Set(['1','2']));
 
 		def.done((data, selection) => {
 			expect(data.length).toBe(2);
@@ -60,18 +60,17 @@ describe('Search', () => {
 
 		props.multiSelect = true;
 		props.afterSelect = (data, selection) => {
-			if (data.length > 1) {
-				def.resolve(data, selection);
-			}
+			def.resolve(data, selection);
 		}
 		component = prepare(props);
 
 		// Check selection
-		component.setDefaultSelection(['item_1','item_2','item_5','item_6', 'item_8']);
+		component.triggerSelection(new Set(['1','item_2','item_5','item_6', 'item_8']));
 
 		def.done((data, selection) => {
-			expect(data.length).toBe(5);
+			expect(data.length).toBe(4);
 			expect(selection.length).toBe(5);
+			expect(selection).toContain('1');
 			expect(selection).toContain('item_2');
 			expect(selection).toContain('item_6');
 			expect(selection).not.toContain('item_4');
