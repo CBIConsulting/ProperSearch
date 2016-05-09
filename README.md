@@ -64,7 +64,7 @@ Check your http://localhost:8080/ or  `open http://localhost:8080/`
 `npm test`
 
 ### Component properties
-* data: List data. (Array)
+* data: List data. (Array) (You can send data as an Inmutable but it should have a similar structure to the procesed data in method prepareData() [src/search::445](https://github.com/CBIConsulting/ProperSearch/tree/dev/src/jsx/components/search.js), and in this case don't forget to send indexed and rawdata too. It's not recomended)
  	* value: Id name. (String)
  	* label: Name to show (String)
 * messages: Get the translated messages of the lang selected in the property lang. Default ENG (An example can be found in src/lang)
@@ -78,6 +78,7 @@ Check your http://localhost:8080/ or  `open http://localhost:8080/`
 		}
 	```
 * lang: Language for the messages (String)
+* rowFormater: Process the data of each element of the list, it's a function that get the value, it should return the value formated. (NOTE: If the element it's a function then this prop does nothing)
 * defaultSelection: Items of the list selected by default. (React eS6 Set) Default new Set()
 * multiSelect: Type of the selection, multiple or single (Boolean)
 * listWidth: Custom width for the list under the search field (Integer) Default component's width.
@@ -160,6 +161,8 @@ Check your http://localhost:8080/ or  `open http://localhost:8080/`
 * listShowIcon: Setting if the check icon on the left of each list element must be printed or not
 * autoComplete: If the search field has autocomplete 'on' or 'off'. Default 'off'
 * defaultSearch: Set a default searching string to search when the components get mounted or this prop is updated.
+* indexed: In case you want to use your own data (it has to be an Immutable obj) you must send indexed data by its idField.
+* rawdata: In case you want to use your own data (it has to be an Immutable obj) you must send raw data. (the data you'll get when someone clicks in list)
 * filterField: Field to use for filtering on search field change.
 * filter: Function used to filter on type something in the search field. By default the data will be filtered by its displayfield, if it's a function then by it's name, if it doesn't exist then by its idField. (Important: If filterField it's set up then the data will by filter by this field). Note: if you use the filter then you'll get each element of list and the search field value, then you can filter that in the way you wanted). The search value it's normalized.
 	* Ex:

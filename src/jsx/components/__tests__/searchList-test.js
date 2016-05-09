@@ -26,8 +26,8 @@ describe('SearchList', function() {
 	    let component = prepare(props);
 
 	    // Click elements
-		let node = ReactDOM.findDOMNode(component.refs.test_11);
-		TestUtils.Simulate.click(node);
+		let nodeElements = TestUtils.scryRenderedDOMComponentsWithClass(component, "proper-search-list-element");
+		TestUtils.Simulate.click(nodeElements[11]);
 
 		def.done((selection) => {
 			expect(selection.has(expected)).toBe(true);
@@ -49,16 +49,12 @@ describe('SearchList', function() {
 	    let component = prepare(props);
 
 	    // Click elements
-		let node = ReactDOM.findDOMNode(component.refs.test_2);
-		let node2 = ReactDOM.findDOMNode(component.refs.test_1); // Old selected item (unselect now)
-		let node3 = ReactDOM.findDOMNode(component.refs.test_0);
-		let node4 = ReactDOM.findDOMNode(component.refs.test_12);
-		let node5 = ReactDOM.findDOMNode(component.refs.test_9);
-		TestUtils.Simulate.click(node);
-		TestUtils.Simulate.click(node2);
-		TestUtils.Simulate.click(node3);
-		TestUtils.Simulate.click(node4);
-		TestUtils.Simulate.click(node5);
+	    let nodeElements = TestUtils.scryRenderedDOMComponentsWithClass(component, "proper-search-list-element");
+		TestUtils.Simulate.click(nodeElements[2]);
+		TestUtils.Simulate.click(nodeElements[1]); // Old selected item (unselect now)
+		TestUtils.Simulate.click(nodeElements[0]);
+		TestUtils.Simulate.click(nodeElements[12]);
+		TestUtils.Simulate.click(nodeElements[9]);
 
 		def.done((selection) => {
 			let result = true;

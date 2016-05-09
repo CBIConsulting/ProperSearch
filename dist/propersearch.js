@@ -58,7 +58,7 @@ var ProperSearch =
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
 	if (true) {
-		__webpack_require__(111);
+		__webpack_require__(114);
 	}
 
 	exports["default"] = _search2["default"];
@@ -94,19 +94,23 @@ var ProperSearch =
 
 	var _searchList2 = _interopRequireDefault(_searchList);
 
-	var _searchField = __webpack_require__(108);
+	var _searchField = __webpack_require__(111);
 
 	var _searchField2 = _interopRequireDefault(_searchField);
 
-	var _messages2 = __webpack_require__(109);
+	var _messages2 = __webpack_require__(112);
 
 	var _messages3 = _interopRequireDefault(_messages2);
 
-	var _normalize = __webpack_require__(110);
+	var _normalize = __webpack_require__(113);
 
 	var _normalize2 = _interopRequireDefault(_normalize);
 
 	var _reactImmutableRenderMixin = __webpack_require__(6);
+
+	var _cache = __webpack_require__(57);
+
+	var _cache2 = _interopRequireDefault(_cache);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
@@ -116,14 +120,17 @@ var ProperSearch =
 
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-	var Set = __webpack_require__(57);
+	var Set = __webpack_require__(60);
 
 	// For more info about this read ReadMe.md
 	function getDefaultProps() {
 		return {
 			data: [],
+			rawdata: null, // Case you want to use your own inmutable data. Read prepareData() method for more info.
+			indexed: null, // Case you want to use your own inmutable data. Read prepareData() method for more info.
 			messages: _messages3['default'],
 			lang: 'ENG',
+			rowFormater: null, // function to format values in render
 			defaultSelection: null,
 			multiSelect: false,
 			listWidth: null,
@@ -148,8 +155,7 @@ var ProperSearch =
 			displayField: 'label',
 			listShowIcon: true,
 			filter: null, // Optional function (to be used when the displayField is an function too)
-			filterField: null // By default it will be the displayField
-		};
+			filterField: null };
 	}
 
 	/**
@@ -177,6 +183,7 @@ var ProperSearch =
 	 *	/>
 	 * ```
 	 */
+	// By default it will be the displayField
 
 	var Search = function (_React$Component) {
 		_inherits(Search, _React$Component);
@@ -224,17 +231,24 @@ var ProperSearch =
 
 				// Update row indexes when data get filtered
 				if (this.state.data.size != nextState.data.size) {
-					var parsed = null,
-					    indexed = null;
+					var parsed = void 0,
+					    indexed = void 0,
+					    data = void 0;
 
 					if (nextState.ready) {
-						parsed = this.prepareData(nextState.data);
-						indexed = parsed.indexed;
+						if (nextState.data.size === 0) {
+							data = nextState.data;
+							indexed = {};
+						} else {
+							parsed = this.prepareData(nextState.data, this.state.idField, true); // Force rebuild indexes etc
+							data = parsed.data;
+							indexed = parsed.indexed;
+						}
 
 						this.setState({
-							data: parsed.data,
-							indexedData: parsed.indexed,
-							allSelected: this.isAllSelected(parsed.data, nextState.selection)
+							data: data,
+							indexedData: indexed,
+							allSelected: this.isAllSelected(data, nextState.selection)
 						});
 					} else {
 						var selection = nextProps.defaultSelection;
@@ -242,6 +256,7 @@ var ProperSearch =
 
 						// props data has been changed in the last call to this method
 						this.setDefaultSelection(selection);
+						if (_underscore2['default'].isNull(selection) || selection.length === 0) this.setState({ ready: true }); // No def selection so then ready
 					}
 
 					return false;
@@ -288,7 +303,8 @@ var ProperSearch =
 							} else {
 								// New idField &&//|| displayField exist in data array fields
 								if (dataChanged) {
-									var preparedData = _this2.prepareData(_immutable2['default'].fromJS(nextProps.data), nextProps.idField);
+									_cache2['default'].flush('search_list');
+									var preparedData = _this2.prepareData(nextProps.data, nextProps.idField);
 
 									_this2.setState({
 										data: preparedData.data,
@@ -330,7 +346,8 @@ var ProperSearch =
 						}
 
 						if (dataChanged) {
-							var _preparedData = _this2.prepareData(_immutable2['default'].fromJS(nextProps.data), nextProps.idField);
+							_cache2['default'].flush('search_list');
+							var _preparedData = _this2.prepareData(nextProps.data, nextProps.idField);
 
 							_this2.setState({
 								data: _preparedData.data,
@@ -601,12 +618,13 @@ var ProperSearch =
 			}
 
 			/**
-	   * Prepare the data received by the component for the internal working.
+	   * Prepare the data received by the component for the internal use.
 	   *
 	   * @param (object)	newData 	New data for rebuild. (filtering || props changed)
 	   * @param (string)	idField 	New idField if it has been changed. (props changed)
+	   * @param (boolean) rebuild		Rebuild the data. NOTE: If newData its an Immutable you should put this param to true.
 	   *
-	   * @return (array)	-rawdata: 	The same data as the props.
+	   * @return (array)	-rawdata: 	The same data as the props or the newData in case has been received.
 	   *					-indexed: 	Same as rawdata but indexed by the idField
 	   *					-data: 		Parsed data to add some fields necesary to internal working.
 	   */
@@ -616,9 +634,10 @@ var ProperSearch =
 			value: function prepareData() {
 				var newData = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
 				var idField = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
+				var rebuild = arguments.length <= 2 || arguments[2] === undefined ? false : arguments[2];
 
 				// The data will be inmutable inside the component
-				var data = newData || _immutable2['default'].fromJS(this.props.data),
+				var data = newData || this.props.data,
 				    index = 0,
 				    rdataIndex = 0,
 				    idSet = new Set(),
@@ -626,46 +645,59 @@ var ProperSearch =
 				    fieldValue = void 0;
 				var indexed = [],
 				    parsed = [],
-				    parsedJSON = void 0,
+				    rawdata = void 0,
 				    hasNulls = false;
 
-				// Parsing data to add new fields (selected or not, field, rowIndex)
-				parsed = data.map(function (row) {
-					fieldValue = row.get(field, false);
+				// If not Immutable.
+				// If an Immutable is received in props.data at the components first building the component will work with that data. In that case
+				// the component should get indexed and rawdata in props. It's up to the developer if he / she wants to work with data from outside
+				// but it's important to keep in mind that you need a similar data structure (_selected, _rowIndex, idField...)
+				if (!_immutable2['default'].Iterable.isIterable(data) || rebuild) {
+					data = _immutable2['default'].fromJS(data); // If data it's already Immutable the method .fromJS return the same object
 
-					if (!fieldValue) {
-						fieldValue = _underscore2['default'].uniqueId();
-					}
+					// Parsing data to add new fields (selected or not, field, rowIndex)
+					parsed = data.map(function (row) {
+						fieldValue = row.get(field, false);
 
-					// No rows with same idField. The idField must be unique
-					if (!idSet.has(fieldValue)) {
-						idSet.add(fieldValue);
-						row = row.set(field, fieldValue.toString());
-
-						if (!row.get('_selected', false)) {
-							row = row.set('_selected', false);
+						if (!fieldValue) {
+							fieldValue = _underscore2['default'].uniqueId();
 						}
 
-						row = row.set('_rowIndex', index++); // data row index
-						row = row.set('_rawDataIndex', rdataIndex++); // rawData row index
+						// No rows with same idField. The idField must be unique
+						if (!idSet.has(fieldValue)) {
+							idSet.add(fieldValue);
+							row = row.set(field, fieldValue.toString());
 
-						return row;
+							if (!row.get('_selected', false)) {
+								row = row.set('_selected', false);
+							}
+
+							row = row.set('_rowIndex', index++); // data row index
+							row = row.set('_rawDataIndex', rdataIndex++); // rawData row index
+
+							return row;
+						}
+
+						rdataIndex++; // add 1 to jump over duplicate values
+						hasNulls = true;
+						return null;
+					});
+
+					// Clear null values if exist
+					if (hasNulls) {
+						parsed = parsed.filter(function (element) {
+							return !_underscore2['default'].isNull(element);
+						});
 					}
 
-					rdataIndex++; // add 1 to jump over duplicate values
-					hasNulls = true;
-					return null;
-				});
-
-				// Clear null values if exist
-				if (hasNulls) {
-					parsed = parsed.filter(function (element) {
-						return !_underscore2['default'].isNull(element);
-					});
+					// Prepare indexed data.
+					indexed = _underscore2['default'].indexBy(parsed.toJSON(), field);
+				} else {
+					// In case received Inmutable data, indexed data and raw data in props.
+					data = this.props.rawdata;
+					parsed = this.props.data;
+					indexed = this.props.indexed;
 				}
-
-				// Prepare indexed data.
-				indexed = _underscore2['default'].indexBy(parsed.toJSON(), field);
 
 				return {
 					rawdata: data,
@@ -780,7 +812,7 @@ var ProperSearch =
 
 						// Parse the selection to return it as an array instead of a Set obj
 						selection.forEach(function (item) {
-							selectionArray.push(item);
+							selectionArray.push(item.toString());
 						});
 
 						if (hasGetSelection) {
@@ -870,6 +902,7 @@ var ProperSearch =
 						}),
 						_react2['default'].createElement(_searchList2['default'], {
 							data: data,
+							rowFormater: this.props.rowFormater,
 							indexedData: this.state.initialIndexed,
 							className: this.props.listClass,
 							idField: this.state.idField,
@@ -883,7 +916,8 @@ var ProperSearch =
 							listWidth: this.props.listWidth,
 							listRowHeight: this.props.listRowHeight,
 							listElementClass: this.props.listElementClass,
-							showIcon: this.props.listShowIcon
+							showIcon: this.props.listShowIcon,
+							cacheManager: this.props.cacheManager
 						})
 					);
 				} else {
@@ -5935,6 +5969,10 @@ var ProperSearch =
 
 	var _reactDimensions2 = _interopRequireDefault(_reactDimensions);
 
+	var _cache = __webpack_require__(57);
+
+	var _cache2 = _interopRequireDefault(_cache);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -5943,7 +5981,7 @@ var ProperSearch =
 
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-	var Set = __webpack_require__(57);
+	var Set = __webpack_require__(60);
 
 	// For more info about this read ReadMe.md
 	function getDefaultProps() {
@@ -5951,6 +5989,7 @@ var ProperSearch =
 			data: null,
 			indexedData: null, // Just when you use a function as a display field. (array) (Full indexed data not filted)
 			onSelectionChange: null,
+			rowFormater: null, // function
 			multiSelect: false,
 			messages: null,
 			selection: new Set(),
@@ -6197,68 +6236,70 @@ var ProperSearch =
 
 			/**
 	   * Build and return the content of the list.
+	   *
+	   * @param {integer} index 		Index of the data to be rendered
+	   * @return {html}	list-row	A row of the list
 	   */
 
 		}, {
 			key: 'getContent',
-			value: function getContent() {
-				var _this4 = this;
-
+			value: function getContent(index) {
 				var icon = null,
-				    result = [],
 				    selectedClass = null,
 				    className = null,
 				    element = null,
-				    content = null;
+				    listElementClass = this.props.listElementClass;
 				var data = this.props.data,
-				    selection = this.props.selection,
-				    field = this.props.idField;
-				var displayField = this.props.displayField,
+				    rowdata = void 0,
+				    field = this.props.idField,
+				    displayField = this.props.displayField,
 				    showIcon = this.props.showIcon;
-				var listElementClass = this.props.listElementClass;
 
-				data.forEach(function (item, index) {
-					element = item.get(displayField);
-					className = "proper-search-list-element";
+				rowdata = data.get(index);
+				element = rowdata.get(displayField);
+				className = "proper-search-list-element";
 
-					if (_this4.props.multiSelect) {
-						if (showIcon) {
-							if (item.get('_selected', false)) {
-								icon = _react2['default'].createElement('i', { className: 'fa fa-check-square-o' });
-								selectedClass = ' proper-search-selected';
-							} else {
-								icon = _react2['default'].createElement('i', { className: 'fa fa-square-o' });
-								selectedClass = null;
-							}
+				if (this.props.multiSelect) {
+					if (showIcon) {
+						if (rowdata.get('_selected', false)) {
+							icon = _react2['default'].createElement('i', { className: 'fa fa-check-square-o' });
+							selectedClass = ' proper-search-selected';
+						} else {
+							icon = _react2['default'].createElement('i', { className: 'fa fa-square-o' });
+							selectedClass = null;
 						}
-					} else {
-						if (item.get('_selected')) selectedClass = ' proper-search-single-selected';else selectedClass = null;
 					}
+				} else {
+					if (rowdata.get('_selected')) selectedClass = ' proper-search-single-selected';else selectedClass = null;
+				}
 
-					if (listElementClass) {
-						className += ' ' + listElementClass;
+				if (listElementClass) {
+					className += ' ' + listElementClass;
+				}
+
+				if (selectedClass) {
+					className += ' ' + selectedClass;
+				}
+
+				if (typeof element == 'function') {
+					var id = rowdata.get(field);
+					element = element(this.props.indexedData[id]);
+				} else if (this.props.rowFormater) {
+					var ckey = ['search_list', 'list_' + this.props.uniqueID, 'row__' + rowdata.get(this.props.idField), displayField];
+					element = _cache2['default'].read(ckey);
+
+					if (element === undefined) {
+						element = this.props.rowFormater(rowdata.get(displayField));
+						_cache2['default'].write(ckey, element);
 					}
+				}
 
-					if (selectedClass) {
-						className += ' ' + selectedClass;
-					}
-
-					if (typeof element == 'function') {
-						var id = item.get(field);
-						element = element(_this4.props.indexedData[id]);
-					}
-
-					content = _react2['default'].createElement(
-						'div',
-						{ key: 'element-' + index, ref: _this4.props.uniqueID + '_' + index, className: className, onClick: _this4.handleElementClick.bind(_this4, item.get(field)) },
-						icon,
-						element
-					);
-
-					result.push(content);
-				});
-
-				return result;
+				return _react2['default'].createElement(
+					'div',
+					{ key: 'element-' + index, ref: this.props.uniqueID + '_' + index, className: className, onClick: this.handleElementClick.bind(this, rowdata.get(field)) },
+					icon,
+					element
+				);
 			}
 			/**
 	   * To be rendered when the data has no data (Ex. filtered data)
@@ -6286,15 +6327,14 @@ var ProperSearch =
 
 		}, {
 			key: 'rowRenderer',
-			value: function rowRenderer(list, index) {
-				return list[index];
+			value: function rowRenderer(index) {
+				return this.getContent(index);
 			}
 		}, {
 			key: 'render',
 			value: function render() {
 				var toolbar = null,
 				    rowsCount = 0,
-				    list = this.getContent(),
 				    className = "proper-search-list";
 
 				if (this.props.multiSelect) toolbar = this.getToolbar();
@@ -6313,7 +6353,7 @@ var ProperSearch =
 						className: "proper-search-list-virtual",
 						width: this.props.listWidth || this.props.containerWidth,
 						height: this.props.listHeight,
-						rowRenderer: this.rowRenderer.bind(this, list),
+						rowRenderer: this.rowRenderer.bind(this),
 						rowHeight: this.props.listRowHeight,
 						noRowsRenderer: this.noRowsRenderer.bind(this),
 						rowsCount: rowsCount,
@@ -11787,11 +11827,653 @@ var ProperSearch =
 
 	'use strict';
 
-	module.exports = __webpack_require__(58)() ? Set : __webpack_require__(59);
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
 
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _dotObject = __webpack_require__(58);
+
+	var _dotObject2 = _interopRequireDefault(_dotObject);
+
+	var _underscore = __webpack_require__(4);
+
+	var _deepmerge = __webpack_require__(59);
+
+	var _deepmerge2 = _interopRequireDefault(_deepmerge);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var cache = {};
+
+	function parseKey(key) {
+		return (0, _underscore.map)(key, function (k) {
+			return k.toString().replace('.', '_');
+		}).join('.');
+	}
+
+	var RowCache = function () {
+		function RowCache() {
+			var base = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+
+			_classCallCheck(this, RowCache);
+
+			this.init(base);
+		}
+
+		_createClass(RowCache, [{
+			key: 'init',
+			value: function init() {
+				var base = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
+
+				cache = base;
+
+				return this;
+			}
+		}, {
+			key: 'read',
+			value: function read(key) {
+				var k = parseKey(key);
+				return _dotObject2['default'].pick(k, cache);
+			}
+		}, {
+			key: 'write',
+			value: function write(key, value) {
+				var k = parseKey(key);
+				var writable = {};
+
+				writable[k] = value;
+				writable = _dotObject2['default'].object(writable);
+
+				cache = (0, _deepmerge2['default'])(cache, writable);
+
+				return this;
+			}
+		}, {
+			key: 'flush',
+			value: function flush() {
+				var key = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
+
+				if (key) {
+					var k = parseKey(key);
+					_dotObject2['default'].remove(k, cache);
+				} else {
+					this.init();
+				}
+
+				return this;
+			}
+		}]);
+
+		return RowCache;
+	}();
+
+	var rowcache = new RowCache();
+
+	exports['default'] = rowcache;
+	module.exports = exports['default'];
 
 /***/ },
 /* 58 */
+/***/ function(module, exports) {
+
+	'use strict'
+
+	function _process (v, mod) {
+	  var i
+	  var r
+
+	  if (typeof mod === 'function') {
+	    r = mod(v)
+	    if (r !== undefined) {
+	      v = r
+	    }
+	  } else if (Array.isArray(mod)) {
+	    for (i = 0; i < mod.length; i++) {
+	      r = mod[i](v)
+	      if (r !== undefined) {
+	        v = r
+	      }
+	    }
+	  }
+
+	  return v
+	}
+
+	function parseKey (key, val) {
+	  // detect negative index notation
+	  if (key[0] === '-' && Array.isArray(val) && /^-\d+$/.test(key)) {
+	    return val.length + parseInt(key, 10)
+	  }
+	  return key
+	}
+
+	function isIndex (k) {
+	  return /^\d+/.test(k)
+	}
+
+	function parsePath (path, sep) {
+	  if (path.indexOf('[') >= 0) {
+	    path = path.replace(/\[/g, '.').replace(/]/g, '')
+	  }
+	  return path.split(sep)
+	}
+
+	function DotObject (seperator, override, useArray) {
+	  if (!(this instanceof DotObject)) {
+	    return new DotObject(seperator, override, useArray)
+	  }
+
+	  if (typeof seperator === 'undefined') seperator = '.'
+	  if (typeof override === 'undefined') override = false
+	  if (typeof useArray === 'undefined') useArray = true
+	  this.seperator = seperator
+	  this.override = override
+	  this.useArray = useArray
+
+	  // contains touched arrays
+	  this.cleanup = []
+	}
+
+	var dotDefault = new DotObject('.', false, true)
+	function wrap (method) {
+	  return function () {
+	    return dotDefault[method].apply(dotDefault, arguments)
+	  }
+	}
+
+	DotObject.prototype._fill = function (a, obj, v, mod) {
+	  var k = a.shift()
+
+	  if (a.length > 0) {
+	    obj[k] = obj[k] ||
+	      (this.useArray && isIndex(a[0]) ? [] : {})
+
+	    if (obj[k] !== Object(obj[k])) {
+	      if (this.override) {
+	        obj[k] = {}
+	      } else {
+	        throw new Error(
+	          'Trying to redefine `' + k + '` which is a ' + typeof obj[k]
+	        )
+	      }
+	    }
+
+	    this._fill(a, obj[k], v, mod)
+	  } else {
+	    if (!this.override &&
+	      obj[k] === Object(obj[k]) && Object.keys(obj[k]).length) {
+	      throw new Error("Trying to redefine non-empty obj['" + k + "']")
+	    }
+
+	    obj[k] = _process(v, mod)
+	  }
+	}
+
+	/**
+	 *
+	 * Converts an object with dotted-key/value pairs to it's expanded version
+	 *
+	 * Optionally transformed by a set of modifiers.
+	 *
+	 * Usage:
+	 *
+	 *   var row = {
+	 *     'nr': 200,
+	 *     'doc.name': '  My Document  '
+	 *   }
+	 *
+	 *   var mods = {
+	 *     'doc.name': [_s.trim, _s.underscored]
+	 *   }
+	 *
+	 *   dot.object(row, mods)
+	 *
+	 * @param {Object} obj
+	 * @param {Object} mods
+	 */
+	DotObject.prototype.object = function (obj, mods) {
+	  var self = this
+
+	  Object.keys(obj).forEach(function (k) {
+	    var mod = mods === undefined ? null : mods[k]
+	    // normalize array notation.
+	    var ok = parsePath(k, self.seperator).join(self.seperator)
+
+	    if (ok.indexOf(self.seperator) !== -1) {
+	      self._fill(ok.split(self.seperator), obj, obj[k], mod)
+	      delete obj[k]
+	    } else if (self.override) {
+	      obj[k] = _process(obj[k], mod)
+	    }
+	  })
+
+	  return obj
+	}
+
+	/**
+	 * @param {String} path dotted path
+	 * @param {String} v value to be set
+	 * @param {Object} obj object to be modified
+	 * @param {Function|Array} mod optional modifier
+	 */
+	DotObject.prototype.str = function (path, v, obj, mod) {
+	  if (path.indexOf(this.seperator) !== -1) {
+	    this._fill(path.split(this.seperator), obj, v, mod)
+	  } else if (this.override) {
+	    obj[path] = _process(v, mod)
+	  }
+
+	  return obj
+	}
+
+	/**
+	 *
+	 * Pick a value from an object using dot notation.
+	 *
+	 * Optionally remove the value
+	 *
+	 * @param {String} path
+	 * @param {Object} obj
+	 * @param {Boolean} remove
+	 */
+	DotObject.prototype.pick = function (path, obj, remove) {
+	  var i
+	  var keys
+	  var val
+	  var key
+	  var cp
+
+	  keys = parsePath(path, this.seperator)
+	  for (i = 0; i < keys.length; i++) {
+	    key = parseKey(keys[i], obj)
+	    if (obj && typeof obj === 'object' && key in obj) {
+	      if (i === (keys.length - 1)) {
+	        if (remove) {
+	          val = obj[key]
+	          delete obj[key]
+	          if (Array.isArray(obj)) {
+	            cp = keys.slice(0, -1).join('.')
+	            if (this.cleanup.indexOf(cp) === -1) {
+	              this.cleanup.push(cp)
+	            }
+	          }
+	          return val
+	        } else {
+	          return obj[key]
+	        }
+	      } else {
+	        obj = obj[key]
+	      }
+	    } else {
+	      return undefined
+	    }
+	  }
+	  if (remove && Array.isArray(obj)) {
+	    obj = obj.filter(function (n) { return n !== undefined })
+	  }
+	  return obj
+	}
+
+	/**
+	 *
+	 * Remove value from an object using dot notation.
+	 *
+	 * @param {String} path
+	 * @param {Object} obj
+	 * @return {Mixed} The removed value
+	 */
+	DotObject.prototype.remove = function (path, obj) {
+	  var i
+
+	  this.cleanup = []
+	  if (Array.isArray(path)) {
+	    for (i = 0; i < path.length; i++) {
+	      this.pick(path[i], obj, true)
+	    }
+	    this._cleanup(obj)
+	    return obj
+	  } else {
+	    return this.pick(path, obj, true)
+	  }
+	}
+
+	DotObject.prototype._cleanup = function (obj) {
+	  var ret
+	  var i
+	  var keys
+	  var root
+	  if (this.cleanup.length) {
+	    for (i = 0; i < this.cleanup.length; i++) {
+	      keys = this.cleanup[i].split('.')
+	      root = keys.splice(0, -1).join('.')
+	      ret = root ? this.pick(root, obj) : obj
+	      ret = ret[keys[0]].filter(function (v) { return v !== undefined })
+	      this.set(this.cleanup[i], ret, obj)
+	    }
+	    this.cleanup = []
+	  }
+	}
+
+	// alias method
+	DotObject.prototype.del = DotObject.prototype.remove
+
+	/**
+	 *
+	 * Move a property from one place to the other.
+	 *
+	 * If the source path does not exist (undefined)
+	 * the target property will not be set.
+	 *
+	 * @param {String} source
+	 * @param {String} target
+	 * @param {Object} obj
+	 * @param {Function|Array} mods
+	 * @param {Boolean} merge
+	 */
+	DotObject.prototype.move = function (source, target, obj, mods, merge) {
+	  if (typeof mods === 'function' || Array.isArray(mods)) {
+	    this.set(target, _process(this.pick(source, obj, true), mods), obj, merge)
+	  } else {
+	    merge = mods
+	    this.set(target, this.pick(source, obj, true), obj, merge)
+	  }
+
+	  return obj
+	}
+
+	/**
+	 *
+	 * Transfer a property from one object to another object.
+	 *
+	 * If the source path does not exist (undefined)
+	 * the property on the other object will not be set.
+	 *
+	 * @param {String} source
+	 * @param {String} target
+	 * @param {Object} obj1
+	 * @param {Object} obj2
+	 * @param {Function|Array} mods
+	 * @param {Boolean} merge
+	 */
+	DotObject.prototype.transfer = function (source, target, obj1, obj2, mods, merge) {
+	  if (typeof mods === 'function' || Array.isArray(mods)) {
+	    this.set(target,
+	      _process(
+	        this.pick(source, obj1, true),
+	        mods
+	      ), obj2, merge)
+	  } else {
+	    merge = mods
+	    this.set(target, this.pick(source, obj1, true), obj2, merge)
+	  }
+
+	  return obj2
+	}
+
+	/**
+	 *
+	 * Copy a property from one object to another object.
+	 *
+	 * If the source path does not exist (undefined)
+	 * the property on the other object will not be set.
+	 *
+	 * @param {String} source
+	 * @param {String} target
+	 * @param {Object} obj1
+	 * @param {Object} obj2
+	 * @param {Function|Array} mods
+	 * @param {Boolean} merge
+	 */
+	DotObject.prototype.copy = function (source, target, obj1, obj2, mods, merge) {
+	  if (typeof mods === 'function' || Array.isArray(mods)) {
+	    this.set(target,
+	      _process(
+	        // clone what is picked
+	        JSON.parse(
+	          JSON.stringify(
+	            this.pick(source, obj1, false)
+	          )
+	        ),
+	        mods
+	      ), obj2, merge)
+	  } else {
+	    merge = mods
+	    this.set(target, this.pick(source, obj1, false), obj2, merge)
+	  }
+
+	  return obj2
+	}
+
+	function isObject (val) {
+	  return Object.prototype.toString.call(val) === '[object Object]'
+	}
+
+	/**
+	 *
+	 * Set a property on an object using dot notation.
+	 *
+	 * @param {String} path
+	 * @param {Mixed} val
+	 * @param {Object} obj
+	 * @param {Boolean} merge
+	 */
+	DotObject.prototype.set = function (path, val, obj, merge) {
+	  var i
+	  var k
+	  var keys
+	  var key
+
+	  // Do not operate if the value is undefined.
+	  if (typeof val === 'undefined') {
+	    return obj
+	  }
+	  keys = parsePath(path, this.seperator)
+
+	  for (i = 0; i < keys.length; i++) {
+	    key = keys[i]
+	    if (i === (keys.length - 1)) {
+	      if (merge && isObject(val) && isObject(obj[key])) {
+	        for (k in val) {
+	          if (val.hasOwnProperty(k)) {
+	            obj[key][k] = val[k]
+	          }
+	        }
+	      } else if (merge && Array.isArray(obj[key]) && Array.isArray(val)) {
+	        for (var j = 0; j < val.length; j++) {
+	          obj[keys[i]].push(val[j])
+	        }
+	      } else {
+	        obj[key] = val
+	      }
+	    } else if (
+	      // force the value to be an object
+	      !obj.hasOwnProperty(key) ||
+	      (!isObject(obj[key]) && !Array.isArray(obj[key]))
+	    ) {
+	      // initialize as array if next key is numeric
+	      if (/^\d+$/.test(keys[i + 1])) {
+	        obj[key] = []
+	      } else {
+	        obj[key] = {}
+	      }
+	    }
+	    obj = obj[key]
+	  }
+	  return obj
+	}
+
+	/**
+	 *
+	 * Transform an object
+	 *
+	 * Usage:
+	 *
+	 *   var obj = {
+	 *     "id": 1,
+	  *    "some": {
+	  *      "thing": "else"
+	  *    }
+	 *   }
+	 *
+	 *   var transform = {
+	 *     "id": "nr",
+	  *    "some.thing": "name"
+	 *   }
+	 *
+	 *   var tgt = dot.transform(transform, obj)
+	 *
+	 * @param {Object} recipe Transform recipe
+	 * @param {Object} obj Object to be transformed
+	 * @param {Array} mods modifiers for the target
+	 */
+	DotObject.prototype.transform = function (recipe, obj, tgt) {
+	  obj = obj || {}
+	  tgt = tgt || {}
+	  Object.keys(recipe).forEach(function (key) {
+	    this.set(recipe[key], this.pick(key, obj), tgt)
+	  }.bind(this))
+	  return tgt
+	}
+
+	/**
+	 *
+	 * Convert object to dotted-key/value pair
+	 *
+	 * Usage:
+	 *
+	 *   var tgt = dot.dot(obj)
+	 *
+	 *   or
+	 *
+	 *   var tgt = {}
+	 *   dot.dot(obj, tgt)
+	 *
+	 * @param {Object} obj source object
+	 * @param {Object} tgt target object
+	 * @param {Array} path path array (internal)
+	 */
+	DotObject.prototype.dot = function (obj, tgt, path) {
+	  tgt = tgt || {}
+	  path = path || []
+	  Object.keys(obj).forEach(function (key) {
+	    if (Object(obj[key]) === obj[key]) {
+	      return this.dot(obj[key], tgt, path.concat(key))
+	    } else {
+	      tgt[path.concat(key).join(this.seperator)] = obj[key]
+	    }
+	  }.bind(this))
+	  return tgt
+	}
+
+	DotObject.pick = wrap('pick')
+	DotObject.move = wrap('move')
+	DotObject.transfer = wrap('transfer')
+	DotObject.transform = wrap('transform')
+	DotObject.copy = wrap('copy')
+	DotObject.object = wrap('object')
+	DotObject.str = wrap('str')
+	DotObject.set = wrap('set')
+	DotObject.del = DotObject.remove = wrap('remove')
+	DotObject.dot = wrap('dot')
+
+	;['override', 'overwrite'].forEach(function (prop) {
+	  Object.defineProperty(DotObject, prop, {
+	    get: function () {
+	      return dotDefault.override
+	    },
+	    set: function (val) {
+	      dotDefault.override = !!val
+	    }
+	  })
+	})
+
+	Object.defineProperty(DotObject, 'useArray', {
+	  get: function () {
+	    return dotDefault.useArray
+	  },
+	  set: function (val) {
+	    dotDefault.useArray = val
+	  }
+	})
+
+	DotObject._process = _process
+
+	module.exports = DotObject;
+
+
+/***/ },
+/* 59 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;(function (root, factory) {
+	    if (true) {
+	        !(__WEBPACK_AMD_DEFINE_FACTORY__ = (factory), __WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ? (__WEBPACK_AMD_DEFINE_FACTORY__.call(exports, __webpack_require__, exports, module)) : __WEBPACK_AMD_DEFINE_FACTORY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+	    } else if (typeof exports === 'object') {
+	        module.exports = factory();
+	    } else {
+	        root.deepmerge = factory();
+	    }
+	}(this, function () {
+
+	return function deepmerge(target, src) {
+	    var array = Array.isArray(src);
+	    var dst = array && [] || {};
+
+	    if (array) {
+	        target = target || [];
+	        dst = dst.concat(target);
+	        src.forEach(function(e, i) {
+	            if (typeof dst[i] === 'undefined') {
+	                dst[i] = e;
+	            } else if (typeof e === 'object') {
+	                dst[i] = deepmerge(target[i], e);
+	            } else {
+	                if (target.indexOf(e) === -1) {
+	                    dst.push(e);
+	                }
+	            }
+	        });
+	    } else {
+	        if (target && typeof target === 'object') {
+	            Object.keys(target).forEach(function (key) {
+	                dst[key] = target[key];
+	            })
+	        }
+	        Object.keys(src).forEach(function (key) {
+	            if (typeof src[key] !== 'object' || !src[key]) {
+	                dst[key] = src[key];
+	            }
+	            else {
+	                if (!target[key]) {
+	                    dst[key] = src[key];
+	                } else {
+	                    dst[key] = deepmerge(target[key], src[key]);
+	                }
+	            }
+	        });
+	    }
+
+	    return dst;
+	}
+
+	}));
+
+
+/***/ },
+/* 60 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	module.exports = __webpack_require__(61)() ? Set : __webpack_require__(62);
+
+
+/***/ },
+/* 61 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -11821,22 +12503,22 @@ var ProperSearch =
 
 
 /***/ },
-/* 59 */
+/* 62 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var clear          = __webpack_require__(60)
-	  , eIndexOf       = __webpack_require__(62)
-	  , setPrototypeOf = __webpack_require__(68)
-	  , callable       = __webpack_require__(73)
-	  , d              = __webpack_require__(74)
-	  , ee             = __webpack_require__(86)
-	  , Symbol         = __webpack_require__(87)
-	  , iterator       = __webpack_require__(92)
-	  , forOf          = __webpack_require__(96)
-	  , Iterator       = __webpack_require__(106)
-	  , isNative       = __webpack_require__(107)
+	var clear          = __webpack_require__(63)
+	  , eIndexOf       = __webpack_require__(65)
+	  , setPrototypeOf = __webpack_require__(71)
+	  , callable       = __webpack_require__(76)
+	  , d              = __webpack_require__(77)
+	  , ee             = __webpack_require__(89)
+	  , Symbol         = __webpack_require__(90)
+	  , iterator       = __webpack_require__(95)
+	  , forOf          = __webpack_require__(99)
+	  , Iterator       = __webpack_require__(109)
+	  , isNative       = __webpack_require__(110)
 
 	  , call = Function.prototype.call
 	  , defineProperty = Object.defineProperty, getPrototypeOf = Object.getPrototypeOf
@@ -11907,7 +12589,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 60 */
+/* 63 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Inspired by Google Closure:
@@ -11916,7 +12598,7 @@ var ProperSearch =
 
 	'use strict';
 
-	var value = __webpack_require__(61);
+	var value = __webpack_require__(64);
 
 	module.exports = function () {
 		value(this).length = 0;
@@ -11925,7 +12607,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 61 */
+/* 64 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -11937,13 +12619,13 @@ var ProperSearch =
 
 
 /***/ },
-/* 62 */
+/* 65 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var toPosInt = __webpack_require__(63)
-	  , value    = __webpack_require__(61)
+	var toPosInt = __webpack_require__(66)
+	  , value    = __webpack_require__(64)
 
 	  , indexOf = Array.prototype.indexOf
 	  , hasOwnProperty = Object.prototype.hasOwnProperty
@@ -11972,12 +12654,12 @@ var ProperSearch =
 
 
 /***/ },
-/* 63 */
+/* 66 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var toInteger = __webpack_require__(64)
+	var toInteger = __webpack_require__(67)
 
 	  , max = Math.max;
 
@@ -11985,12 +12667,12 @@ var ProperSearch =
 
 
 /***/ },
-/* 64 */
+/* 67 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var sign = __webpack_require__(65)
+	var sign = __webpack_require__(68)
 
 	  , abs = Math.abs, floor = Math.floor;
 
@@ -12003,18 +12685,18 @@ var ProperSearch =
 
 
 /***/ },
-/* 65 */
+/* 68 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	module.exports = __webpack_require__(66)()
+	module.exports = __webpack_require__(69)()
 		? Math.sign
-		: __webpack_require__(67);
+		: __webpack_require__(70);
 
 
 /***/ },
-/* 66 */
+/* 69 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -12027,7 +12709,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 67 */
+/* 70 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -12040,18 +12722,18 @@ var ProperSearch =
 
 
 /***/ },
-/* 68 */
+/* 71 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	module.exports = __webpack_require__(69)()
+	module.exports = __webpack_require__(72)()
 		? Object.setPrototypeOf
-		: __webpack_require__(70);
+		: __webpack_require__(73);
 
 
 /***/ },
-/* 69 */
+/* 72 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -12068,7 +12750,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 70 */
+/* 73 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Big thanks to @WebReflection for sorting this out
@@ -12076,8 +12758,8 @@ var ProperSearch =
 
 	'use strict';
 
-	var isObject      = __webpack_require__(71)
-	  , value         = __webpack_require__(61)
+	var isObject      = __webpack_require__(74)
+	  , value         = __webpack_require__(64)
 
 	  , isPrototypeOf = Object.prototype.isPrototypeOf
 	  , defineProperty = Object.defineProperty
@@ -12143,11 +12825,11 @@ var ProperSearch =
 		return false;
 	}())));
 
-	__webpack_require__(72);
+	__webpack_require__(75);
 
 
 /***/ },
-/* 71 */
+/* 74 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -12160,7 +12842,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 72 */
+/* 75 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Workaround for http://code.google.com/p/v8/issues/detail?id=2804
@@ -12169,8 +12851,8 @@ var ProperSearch =
 
 	var create = Object.create, shim;
 
-	if (!__webpack_require__(69)()) {
-		shim = __webpack_require__(70);
+	if (!__webpack_require__(72)()) {
+		shim = __webpack_require__(73);
 	}
 
 	module.exports = (function () {
@@ -12202,7 +12884,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 73 */
+/* 76 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -12214,15 +12896,15 @@ var ProperSearch =
 
 
 /***/ },
-/* 74 */
+/* 77 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var assign        = __webpack_require__(75)
-	  , normalizeOpts = __webpack_require__(81)
-	  , isCallable    = __webpack_require__(82)
-	  , contains      = __webpack_require__(83)
+	var assign        = __webpack_require__(78)
+	  , normalizeOpts = __webpack_require__(84)
+	  , isCallable    = __webpack_require__(85)
+	  , contains      = __webpack_require__(86)
 
 	  , d;
 
@@ -12283,18 +12965,18 @@ var ProperSearch =
 
 
 /***/ },
-/* 75 */
+/* 78 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	module.exports = __webpack_require__(76)()
+	module.exports = __webpack_require__(79)()
 		? Object.assign
-		: __webpack_require__(77);
+		: __webpack_require__(80);
 
 
 /***/ },
-/* 76 */
+/* 79 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -12309,13 +12991,13 @@ var ProperSearch =
 
 
 /***/ },
-/* 77 */
+/* 80 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var keys  = __webpack_require__(78)
-	  , value = __webpack_require__(61)
+	var keys  = __webpack_require__(81)
+	  , value = __webpack_require__(64)
 
 	  , max = Math.max;
 
@@ -12337,18 +13019,18 @@ var ProperSearch =
 
 
 /***/ },
-/* 78 */
+/* 81 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	module.exports = __webpack_require__(79)()
+	module.exports = __webpack_require__(82)()
 		? Object.keys
-		: __webpack_require__(80);
+		: __webpack_require__(83);
 
 
 /***/ },
-/* 79 */
+/* 82 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -12362,7 +13044,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 80 */
+/* 83 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -12375,7 +13057,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 81 */
+/* 84 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -12398,7 +13080,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 82 */
+/* 85 */
 /***/ function(module, exports) {
 
 	// Deprecated
@@ -12409,18 +13091,18 @@ var ProperSearch =
 
 
 /***/ },
-/* 83 */
+/* 86 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	module.exports = __webpack_require__(84)()
+	module.exports = __webpack_require__(87)()
 		? String.prototype.contains
-		: __webpack_require__(85);
+		: __webpack_require__(88);
 
 
 /***/ },
-/* 84 */
+/* 87 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -12434,7 +13116,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 85 */
+/* 88 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -12447,13 +13129,13 @@ var ProperSearch =
 
 
 /***/ },
-/* 86 */
+/* 89 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var d        = __webpack_require__(74)
-	  , callable = __webpack_require__(73)
+	var d        = __webpack_require__(77)
+	  , callable = __webpack_require__(76)
 
 	  , apply = Function.prototype.apply, call = Function.prototype.call
 	  , create = Object.create, defineProperty = Object.defineProperty
@@ -12585,16 +13267,16 @@ var ProperSearch =
 
 
 /***/ },
-/* 87 */
+/* 90 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	module.exports = __webpack_require__(88)() ? Symbol : __webpack_require__(89);
+	module.exports = __webpack_require__(91)() ? Symbol : __webpack_require__(92);
 
 
 /***/ },
-/* 88 */
+/* 91 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -12618,15 +13300,15 @@ var ProperSearch =
 
 
 /***/ },
-/* 89 */
+/* 92 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// ES2015 Symbol polyfill for environments that do not support it (or partially support it_
 
 	'use strict';
 
-	var d              = __webpack_require__(74)
-	  , validateSymbol = __webpack_require__(90)
+	var d              = __webpack_require__(77)
+	  , validateSymbol = __webpack_require__(93)
 
 	  , create = Object.create, defineProperties = Object.defineProperties
 	  , defineProperty = Object.defineProperty, objPrototype = Object.prototype
@@ -12731,12 +13413,12 @@ var ProperSearch =
 
 
 /***/ },
-/* 90 */
+/* 93 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var isSymbol = __webpack_require__(91);
+	var isSymbol = __webpack_require__(94);
 
 	module.exports = function (value) {
 		if (!isSymbol(value)) throw new TypeError(value + " is not a symbol");
@@ -12745,7 +13427,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 91 */
+/* 94 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -12756,12 +13438,12 @@ var ProperSearch =
 
 
 /***/ },
-/* 92 */
+/* 95 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var isIterable = __webpack_require__(93);
+	var isIterable = __webpack_require__(96);
 
 	module.exports = function (value) {
 		if (!isIterable(value)) throw new TypeError(value + " is not iterable");
@@ -12770,14 +13452,14 @@ var ProperSearch =
 
 
 /***/ },
-/* 93 */
+/* 96 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var isArguments    = __webpack_require__(94)
-	  , isString       = __webpack_require__(95)
-	  , iteratorSymbol = __webpack_require__(87).iterator
+	var isArguments    = __webpack_require__(97)
+	  , isString       = __webpack_require__(98)
+	  , iteratorSymbol = __webpack_require__(90).iterator
 
 	  , isArray = Array.isArray;
 
@@ -12791,7 +13473,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 94 */
+/* 97 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -12804,7 +13486,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 95 */
+/* 98 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -12820,15 +13502,15 @@ var ProperSearch =
 
 
 /***/ },
-/* 96 */
+/* 99 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var isArguments = __webpack_require__(94)
-	  , callable    = __webpack_require__(73)
-	  , isString    = __webpack_require__(95)
-	  , get         = __webpack_require__(97)
+	var isArguments = __webpack_require__(97)
+	  , callable    = __webpack_require__(76)
+	  , isString    = __webpack_require__(98)
+	  , get         = __webpack_require__(100)
 
 	  , isArray = Array.isArray, call = Function.prototype.call
 	  , some = Array.prototype.some;
@@ -12872,17 +13554,17 @@ var ProperSearch =
 
 
 /***/ },
-/* 97 */
+/* 100 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var isArguments    = __webpack_require__(94)
-	  , isString       = __webpack_require__(95)
-	  , ArrayIterator  = __webpack_require__(98)
-	  , StringIterator = __webpack_require__(105)
-	  , iterable       = __webpack_require__(92)
-	  , iteratorSymbol = __webpack_require__(87).iterator;
+	var isArguments    = __webpack_require__(97)
+	  , isString       = __webpack_require__(98)
+	  , ArrayIterator  = __webpack_require__(101)
+	  , StringIterator = __webpack_require__(108)
+	  , iterable       = __webpack_require__(95)
+	  , iteratorSymbol = __webpack_require__(90).iterator;
 
 	module.exports = function (obj) {
 		if (typeof iterable(obj)[iteratorSymbol] === 'function') return obj[iteratorSymbol]();
@@ -12893,15 +13575,15 @@ var ProperSearch =
 
 
 /***/ },
-/* 98 */
+/* 101 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var setPrototypeOf = __webpack_require__(68)
-	  , contains       = __webpack_require__(83)
-	  , d              = __webpack_require__(74)
-	  , Iterator       = __webpack_require__(99)
+	var setPrototypeOf = __webpack_require__(71)
+	  , contains       = __webpack_require__(86)
+	  , d              = __webpack_require__(77)
+	  , Iterator       = __webpack_require__(102)
 
 	  , defineProperty = Object.defineProperty
 	  , ArrayIterator;
@@ -12929,18 +13611,18 @@ var ProperSearch =
 
 
 /***/ },
-/* 99 */
+/* 102 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var clear    = __webpack_require__(60)
-	  , assign   = __webpack_require__(75)
-	  , callable = __webpack_require__(73)
-	  , value    = __webpack_require__(61)
-	  , d        = __webpack_require__(74)
-	  , autoBind = __webpack_require__(100)
-	  , Symbol   = __webpack_require__(87)
+	var clear    = __webpack_require__(63)
+	  , assign   = __webpack_require__(78)
+	  , callable = __webpack_require__(76)
+	  , value    = __webpack_require__(64)
+	  , d        = __webpack_require__(77)
+	  , autoBind = __webpack_require__(103)
+	  , Symbol   = __webpack_require__(90)
 
 	  , defineProperty = Object.defineProperty
 	  , defineProperties = Object.defineProperties
@@ -13025,15 +13707,15 @@ var ProperSearch =
 
 
 /***/ },
-/* 100 */
+/* 103 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var copy       = __webpack_require__(101)
-	  , map        = __webpack_require__(102)
-	  , callable   = __webpack_require__(73)
-	  , validValue = __webpack_require__(61)
+	var copy       = __webpack_require__(104)
+	  , map        = __webpack_require__(105)
+	  , callable   = __webpack_require__(76)
+	  , validValue = __webpack_require__(64)
 
 	  , bind = Function.prototype.bind, defineProperty = Object.defineProperty
 	  , hasOwnProperty = Object.prototype.hasOwnProperty
@@ -13062,13 +13744,13 @@ var ProperSearch =
 
 
 /***/ },
-/* 101 */
+/* 104 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var assign = __webpack_require__(75)
-	  , value  = __webpack_require__(61);
+	var assign = __webpack_require__(78)
+	  , value  = __webpack_require__(64);
 
 	module.exports = function (obj) {
 		var copy = Object(value(obj));
@@ -13078,13 +13760,13 @@ var ProperSearch =
 
 
 /***/ },
-/* 102 */
+/* 105 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var callable = __webpack_require__(73)
-	  , forEach  = __webpack_require__(103)
+	var callable = __webpack_require__(76)
+	  , forEach  = __webpack_require__(106)
 
 	  , call = Function.prototype.call;
 
@@ -13099,16 +13781,16 @@ var ProperSearch =
 
 
 /***/ },
-/* 103 */
+/* 106 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	module.exports = __webpack_require__(104)('forEach');
+	module.exports = __webpack_require__(107)('forEach');
 
 
 /***/ },
-/* 104 */
+/* 107 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Internal method, used by iteration functions.
@@ -13117,8 +13799,8 @@ var ProperSearch =
 
 	'use strict';
 
-	var callable = __webpack_require__(73)
-	  , value    = __webpack_require__(61)
+	var callable = __webpack_require__(76)
+	  , value    = __webpack_require__(64)
 
 	  , bind = Function.prototype.bind, call = Function.prototype.call, keys = Object.keys
 	  , propertyIsEnumerable = Object.prototype.propertyIsEnumerable;
@@ -13143,7 +13825,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 105 */
+/* 108 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Thanks @mathiasbynens
@@ -13151,9 +13833,9 @@ var ProperSearch =
 
 	'use strict';
 
-	var setPrototypeOf = __webpack_require__(68)
-	  , d              = __webpack_require__(74)
-	  , Iterator       = __webpack_require__(99)
+	var setPrototypeOf = __webpack_require__(71)
+	  , d              = __webpack_require__(77)
+	  , Iterator       = __webpack_require__(102)
 
 	  , defineProperty = Object.defineProperty
 	  , StringIterator;
@@ -13186,16 +13868,16 @@ var ProperSearch =
 
 
 /***/ },
-/* 106 */
+/* 109 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var setPrototypeOf    = __webpack_require__(68)
-	  , contains          = __webpack_require__(83)
-	  , d                 = __webpack_require__(74)
-	  , Iterator          = __webpack_require__(99)
-	  , toStringTagSymbol = __webpack_require__(87).toStringTag
+	var setPrototypeOf    = __webpack_require__(71)
+	  , contains          = __webpack_require__(86)
+	  , d                 = __webpack_require__(77)
+	  , Iterator          = __webpack_require__(102)
+	  , toStringTagSymbol = __webpack_require__(90).toStringTag
 
 	  , defineProperty = Object.defineProperty
 	  , SetIterator;
@@ -13222,7 +13904,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 107 */
+/* 110 */
 /***/ function(module, exports) {
 
 	// Exports true if environment provides native `Set` implementation,
@@ -13237,7 +13919,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 108 */
+/* 111 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -13542,7 +14224,7 @@ var ProperSearch =
 	module.exports = exports['default'];
 
 /***/ },
-/* 109 */
+/* 112 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -13573,7 +14255,7 @@ var ProperSearch =
 	module.exports = exports['default'];
 
 /***/ },
-/* 110 */
+/* 113 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -13615,7 +14297,7 @@ var ProperSearch =
 	module.exports = exports['default'];
 
 /***/ },
-/* 111 */
+/* 114 */
 /***/ function(module, exports) {
 
 	// removed by extract-text-webpack-plugin

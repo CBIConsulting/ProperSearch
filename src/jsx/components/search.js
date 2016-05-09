@@ -6,14 +6,18 @@ import SeachField from './searchField';
 import messages from "../lang/messages";
 import Normalizer from "../utils/normalize";
 import {shallowEqualImmutable} from 'react-immutable-render-mixin';
+import cache from '../lib/cache';
 const Set = require('es6-set');
 
 // For more info about this read ReadMe.md
 function getDefaultProps() {
 	return {
 		data: [],
+		rawdata: null, // Case you want to use your own inmutable data. Read prepareData() method for more info.
+		indexed: null, // Case you want to use your own inmutable data. Read prepareData() method for more info.
 		messages: messages,
 		lang: 'ENG',
+		rowFormater: null, // function to format values in render
 		defaultSelection: null,
 		multiSelect: false,
 		listWidth: null,
@@ -38,7 +42,7 @@ function getDefaultProps() {
 		displayField: 'label',
 		listShowIcon: true,
 		filter: null, // Optional function (to be used when the displayField is an function too)
-		filterField: null // By default it will be the displayField
+		filterField: null, // By default it will be the displayField
 	}
 }
 
@@ -104,16 +108,22 @@ class Search extends React.Component {
 
 		// Update row indexes when data get filtered
 		if (this.state.data.size != nextState.data.size) {
-			let parsed = null, indexed = null;
+			let parsed, indexed, data;
 
 			if (nextState.ready) {
-				parsed = this.prepareData(nextState.data);
-				indexed = parsed.indexed;
+				if (nextState.data.size === 0) {
+					data = nextState.data;
+					indexed = {};
+				} else {
+					parsed = this.prepareData(nextState.data, this.state.idField, true); // Force rebuild indexes etc
+					data = parsed.data;
+					indexed = parsed.indexed;
+				}
 
 				this.setState({
-					data: parsed.data,
-					indexedData: parsed.indexed,
-					allSelected: this.isAllSelected(parsed.data, nextState.selection)
+					data: data,
+					indexedData: indexed,
+					allSelected: this.isAllSelected(data, nextState.selection)
 				});
 			} else {
 				let selection = nextProps.defaultSelection;
@@ -121,6 +131,7 @@ class Search extends React.Component {
 
 				// props data has been changed in the last call to this method
 				this.setDefaultSelection(selection);
+				if (_.isNull(selection) || selection.length === 0) this.setState({ready: true}); // No def selection so then ready
 			}
 
 			return false;
@@ -161,7 +172,8 @@ class Search extends React.Component {
 					return false;
 				} else { // New idField &&//|| displayField exist in data array fields
 					if (dataChanged){
-						let preparedData = this.prepareData(Immutable.fromJS(nextProps.data), nextProps.idField);
+						cache.flush('search_list');
+						let preparedData = this.prepareData(nextProps.data, nextProps.idField);
 
 						this.setState({
 							data: preparedData.data,
@@ -201,7 +213,8 @@ class Search extends React.Component {
 			}
 
 			if (dataChanged){
-				let preparedData = this.prepareData(Immutable.fromJS(nextProps.data), nextProps.idField);
+				cache.flush('search_list');
+				let preparedData = this.prepareData(nextProps.data, nextProps.idField);
 
 				this.setState({
 					data: preparedData.data,
@@ -328,7 +341,6 @@ class Search extends React.Component {
 			rowIndex =  newIndexed[changedId]._rowIndex; // Get data index
 			rdata = newData.get(rowIndex).set('_selected', selected); // Change the row in that index
 			newData = newData.set(rowIndex, rdata); // Set that row in the data object
-
 		} else { // Change all data
 			if (_.isNull(newSelection)) newSelection = new Set();
 			else if (!_.isObject(newSelection)) newSelection = new Set([newSelection]);
@@ -432,55 +444,69 @@ class Search extends React.Component {
 	}
 
 /**
- * Prepare the data received by the component for the internal working.
+ * Prepare the data received by the component for the internal use.
  *
  * @param (object)	newData 	New data for rebuild. (filtering || props changed)
  * @param (string)	idField 	New idField if it has been changed. (props changed)
+ * @param (boolean) rebuild		Rebuild the data. NOTE: If newData its an Immutable you should put this param to true.
  *
- * @return (array)	-rawdata: 	The same data as the props.
+ * @return (array)	-rawdata: 	The same data as the props or the newData in case has been received.
  *					-indexed: 	Same as rawdata but indexed by the idField
  *					-data: 		Parsed data to add some fields necesary to internal working.
  */
-	prepareData(newData = null, idField = null) {
+	prepareData(newData = null, idField = null, rebuild = false) {
 		// The data will be inmutable inside the component
-		let data = newData || Immutable.fromJS(this.props.data), index = 0, rdataIndex = 0, idSet = new Set(), field = idField || this.state.idField, fieldValue;
-		let indexed = [], parsed = [], parsedJSON, hasNulls = false;
+		let data = newData || this.props.data, index = 0, rdataIndex = 0, idSet = new Set(), field = idField || this.state.idField, fieldValue;
+		let indexed = [], parsed = [], rawdata, hasNulls = false;
 
-		// Parsing data to add new fields (selected or not, field, rowIndex)
-		parsed = data.map(row => {
-			fieldValue = row.get(field, false);
+		// If not Immutable.
+		// If an Immutable is received in props.data at the components first building the component will work with that data. In that case
+		// the component should get indexed and rawdata in props. It's up to the developer if he / she wants to work with data from outside
+		// but it's important to keep in mind that you need a similar data structure (_selected, _rowIndex, idField...)
+		if (!Immutable.Iterable.isIterable(data) || rebuild) {
+			data = Immutable.fromJS(data); // If data it's already Immutable the method .fromJS return the same object
 
-			if (!fieldValue) {
-				fieldValue = _.uniqueId();
-			}
+			// Parsing data to add new fields (selected or not, field, rowIndex)
+			parsed = data.map(row => {
+				fieldValue = row.get(field, false);
 
-			// No rows with same idField. The idField must be unique
-			if (!idSet.has(fieldValue)) {
-				idSet.add(fieldValue);
-				row = row.set(field, fieldValue.toString());
-
-				if (!row.get('_selected', false)) {
-					row = row.set('_selected', false);
+				if (!fieldValue) {
+					fieldValue = _.uniqueId();
 				}
 
-				row = row.set('_rowIndex', index++); // data row index
-				row = row.set('_rawDataIndex', rdataIndex++); // rawData row index
+				// No rows with same idField. The idField must be unique
+				if (!idSet.has(fieldValue)) {
+					idSet.add(fieldValue);
+					row = row.set(field, fieldValue.toString());
 
-				return row;
+					if (!row.get('_selected', false)) {
+						row = row.set('_selected', false);
+					}
+
+					row = row.set('_rowIndex', index++); // data row index
+					row = row.set('_rawDataIndex', rdataIndex++); // rawData row index
+
+					return row;
+				}
+
+				rdataIndex++; // add 1 to jump over duplicate values
+				hasNulls = true;
+				return null;
+			});
+
+			// Clear null values if exist
+			if (hasNulls) {
+				parsed = parsed.filter(element => !_.isNull(element));
 			}
 
-			rdataIndex++; // add 1 to jump over duplicate values
-			hasNulls = true;
-			return null;
-		});
+			// Prepare indexed data.
+			indexed = _.indexBy(parsed.toJSON(), field);
 
-		// Clear null values if exist
-		if (hasNulls) {
-			parsed = parsed.filter(element => !_.isNull(element));
+		} else { // In case received Inmutable data, indexed data and raw data in props.
+			data = this.props.rawdata;
+			parsed = this.props.data;
+			indexed = this.props.indexed;
 		}
-
-		// Prepare indexed data.
-		indexed = _.indexBy(parsed.toJSON(), field);
 
 		return {
 			rawdata: data,
@@ -572,7 +598,7 @@ class Search extends React.Component {
 
 			// Parse the selection to return it as an array instead of a Set obj
 			selection.forEach(item => {
-				selectionArray.push(item);
+				selectionArray.push(item.toString());
 			});
 
 			if (hasGetSelection) { // When you just need the selection but no data
@@ -643,6 +669,7 @@ class Search extends React.Component {
 					/>
 					<SearchList
 						data={data}
+						rowFormater={this.props.rowFormater}
 						indexedData={this.state.initialIndexed}
 						className={this.props.listClass}
 						idField={this.state.idField}
@@ -657,6 +684,7 @@ class Search extends React.Component {
 						listRowHeight={this.props.listRowHeight}
 						listElementClass={this.props.listElementClass}
 						showIcon={this.props.listShowIcon}
+						cacheManager={this.props.cacheManager}
 					/>
 				</div>
 			);
