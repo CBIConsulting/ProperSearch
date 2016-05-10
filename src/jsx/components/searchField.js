@@ -1,5 +1,6 @@
 import React from 'react';
 import _ from 'underscore';
+import Dimensions from 'react-dimensions';
 import {shallowEqualImmutable} from 'react-immutable-render-mixin';
 
 
@@ -225,6 +226,7 @@ class SearchField extends React.Component {
 						placeholder={this.props.placeholder}
 						defaultValue={this.props.defaultValue}
 						onKeyUp={this.onChange}
+						style={{maxWidth: this.props.containerWidth - 5}}
 					/>
 					{clearBtn}
 				</div>
@@ -235,4 +237,5 @@ class SearchField extends React.Component {
 
 SearchField.defaultProps = getDefaultProps();
 
-export default SearchField;
+let toExport = process.env.NODE_ENV === 'Test' ?  SearchField : Dimensions()(SearchField)
+export default toExport;
