@@ -63,8 +63,6 @@
 		  	line-height: 5px;
 
 			.btn-group {
-				padding-left: 2%;
-				padding-right: 2%;
 			  	width: 100%;
 			}
 
@@ -77,17 +75,9 @@
 			    font-size: x-small;
 			}
 
-			#proper-search-list-bar-check {
-		  		float: left;
-		  	}
-
-		  	#proper-search-list-bar-unCheck {
-		  		float: right;
-		  	}
-
 			.btn-group .btn {
 				text-align: center;
-				width: 46%;
+				width: 100%;
 				cursor: pointer !important;
 			  	border: none;
 			  	margin: 0;

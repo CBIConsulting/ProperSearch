@@ -198,11 +198,10 @@ class SearchList extends React.Component {
 		return (
 			<div className="proper-search-list-bar">
 				<div className="btn-group form-inline">
-					<a id="proper-search-list-bar-check" ref={this.props.uniqueID + '_all'} className="btn list-bar-check" role="button" onClick={this.handleSelectAll.bind(this, true)}>
+					<a id="proper-search-list-bar-check" ref={this.props.uniqueID + '_all'} className="btn list-bar-check" role="button" onClick={this.handleSelectAll.bind(this, true)} style={{maxWidth: this.props.containerWidth / 2}}>
 						<label>{this.props.messages.all}</label>
 					</a>
-					&nbsp;
-					<a id="proper-search-list-bar-unCheck" ref={this.props.uniqueID + '_none'} className="btn list-bar-unCheck" role="button" onClick={this.handleSelectAll.bind(this, false)}>
+					<a id="proper-search-list-bar-unCheck" ref={this.props.uniqueID + '_none'} className="btn list-bar-unCheck" role="button" onClick={this.handleSelectAll.bind(this, false)} style={{maxWidth: this.props.containerWidth / 2}}>
 						<label>{this.props.messages.none}</label>
 					</a>
 				</div>
