@@ -6213,17 +6213,27 @@ var ProperSearch =
 						{ className: 'btn-group form-inline' },
 						_react2['default'].createElement(
 							'a',
-							{ id: 'proper-search-list-bar-check', ref: this.props.uniqueID + '_all', className: 'btn list-bar-check', role: 'button', onClick: this.handleSelectAll.bind(this, true) },
+							{
+								id: 'proper-search-list-bar-check',
+								ref: this.props.uniqueID + '_all',
+								className: 'btn-select list-bar-check', role: 'button',
+								onClick: this.handleSelectAll.bind(this, true),
+								style: { maxWidth: this.props.containerWidth / 2, boxSizing: 'border-box' } },
 							_react2['default'].createElement(
 								'label',
 								null,
 								this.props.messages.all
 							)
 						),
-						' ',
 						_react2['default'].createElement(
 							'a',
-							{ id: 'proper-search-list-bar-unCheck', ref: this.props.uniqueID + '_none', className: 'btn list-bar-unCheck', role: 'button', onClick: this.handleSelectAll.bind(this, false) },
+							{
+								id: 'proper-search-list-bar-unCheck',
+								ref: this.props.uniqueID + '_none',
+								className: 'btn-select list-bar-unCheck',
+								role: 'button',
+								onClick: this.handleSelectAll.bind(this, false),
+								style: { maxWidth: this.props.containerWidth / 2, boxSizing: 'border-box' } },
 							_react2['default'].createElement(
 								'label',
 								null,
@@ -13938,6 +13948,10 @@ var ProperSearch =
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
+	var _reactDimensions = __webpack_require__(56);
+
+	var _reactDimensions2 = _interopRequireDefault(_reactDimensions);
+
 	var _reactImmutableRenderMixin = __webpack_require__(6);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
@@ -14205,7 +14219,8 @@ var ProperSearch =
 							autoComplete: this.props.autoComplete,
 							placeholder: this.props.placeholder,
 							defaultValue: this.props.defaultValue,
-							onKeyUp: this.onChange
+							onKeyUp: this.onChange,
+							style: { maxWidth: this.props.containerWidth - 5, boxSizing: 'border-box' }
 						}),
 						clearBtn
 					)
@@ -14220,7 +14235,8 @@ var ProperSearch =
 
 	SearchField.defaultProps = getDefaultProps();
 
-	exports['default'] = SearchField;
+	var toExport =  false ? SearchField : (0, _reactDimensions2['default'])()(SearchField);
+	exports['default'] = toExport;
 	module.exports = exports['default'];
 
 /***/ },

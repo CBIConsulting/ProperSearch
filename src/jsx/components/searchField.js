@@ -226,7 +226,7 @@ class SearchField extends React.Component {
 						placeholder={this.props.placeholder}
 						defaultValue={this.props.defaultValue}
 						onKeyUp={this.onChange}
-						style={{maxWidth: this.props.containerWidth - 5}}
+						style={{maxWidth: this.props.containerWidth - 5, boxSizing: 'border-box'}}
 					/>
 					{clearBtn}
 				</div>
