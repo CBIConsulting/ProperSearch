@@ -36,9 +36,7 @@ describe('Search', () => {
 	it('selection multiselect', (done) => {
 		let def = Deferred(), component = null, props = getProps();
 		props.afterSelect = (data, selection) => {
-			if (data.length > 1) {
-				def.resolve(data, selection);
-			}
+			def.resolve(data, selection);
 		}
 		component = prepare(props);
 

@@ -241,7 +241,7 @@ var ProperSearch =
 							data = nextState.data;
 							indexed = {};
 						} else {
-							parsed = this.prepareData(nextState.data, this.state.idField, true, this.state.displayfield); // Force rebuild indexes etc
+							parsed = this.prepareData(nextState.data, this.state.idField, true, this.state.displayField); // Force rebuild indexes etc
 							data = parsed.data;
 							indexed = parsed.indexed;
 						}
@@ -305,7 +305,7 @@ var ProperSearch =
 								// New idField &&//|| displayField exist in data array fields
 								if (dataChanged) {
 									_cache2['default'].flush('search_list');
-									var preparedData = _this2.prepareData(nextProps.data, nextProps.idField, false, nextProps.displayfield);
+									var preparedData = _this2.prepareData(nextProps.data, nextProps.idField, false, nextProps.displayField);
 
 									_this2.setState({
 										data: preparedData.data,
@@ -348,7 +348,7 @@ var ProperSearch =
 
 						if (dataChanged) {
 							_cache2['default'].flush('search_list');
-							var _preparedData = _this2.prepareData(nextProps.data, nextProps.idField, false, nextProps.displayfield);
+							var _preparedData = _this2.prepareData(nextProps.data, nextProps.idField, false, nextProps.displayField);
 
 							_this2.setState({
 								data: _preparedData.data,
@@ -609,10 +609,12 @@ var ProperSearch =
 					} else {
 						if (!_underscore2['default'].isArray(defSelection)) {
 							selection = new Set([defSelection.toString()]);
-						} else if (defSelection !== new Set()) {
+						} else {
 							selection = new Set(defSelection.toString().split(','));
 						}
 					}
+
+					selection['delete'](''); // Remove empty values
 
 					this.triggerSelection(selection, false);
 				}
@@ -846,7 +848,7 @@ var ProperSearch =
 
 								if (hasIdField) {
 									selectedData = rawData.filter(function (element) {
-										return selection.has(element.get(_this6.state.idField));
+										return selection.has(element.get(_this6.state.idField).toString());
 									});
 								} else {
 									// Get the data (initialData) that match with the selection
@@ -6264,6 +6266,8 @@ var ProperSearch =
 		}, {
 			key: 'getToolbar',
 			value: function getToolbar() {
+				var maxWidth = this.props.containerWidth ? this.props.containerWidth / 2 - 1 : 100;
+
 				return _react2['default'].createElement(
 					'div',
 					{ className: 'proper-search-list-bar' },
@@ -6277,7 +6281,7 @@ var ProperSearch =
 								ref: this.props.uniqueID + '_all',
 								className: 'btn-select list-bar-check', role: 'button',
 								onClick: this.handleSelectAll.bind(this, true),
-								style: { maxWidth: this.props.containerWidth / 2, boxSizing: 'border-box' } },
+								style: { maxWidth: maxWidth, boxSizing: 'border-box' } },
 							_react2['default'].createElement(
 								'label',
 								null,
@@ -6292,7 +6296,7 @@ var ProperSearch =
 								className: 'btn-select list-bar-unCheck',
 								role: 'button',
 								onClick: this.handleSelectAll.bind(this, false),
-								style: { maxWidth: this.props.containerWidth / 2, boxSizing: 'border-box' } },
+								style: { maxWidth: maxWidth, boxSizing: 'border-box' } },
 							_react2['default'].createElement(
 								'label',
 								null,
@@ -6313,7 +6317,8 @@ var ProperSearch =
 			key: 'getToolbarForEmpty',
 			value: function getToolbarForEmpty() {
 				var allSelected = this.state.allSelected,
-				    selectMessage = void 0;
+				    selectMessage = void 0,
+				    maxWidth = this.props.containerWidth / 2 - 1;
 				selectMessage = allSelected ? this.props.messages.none : this.props.messages.all;
 
 				return _react2['default'].createElement(
@@ -6330,7 +6335,7 @@ var ProperSearch =
 								className: 'btn-select list-bar-select',
 								role: 'button',
 								onClick: this.handleSelectAll.bind(this, !allSelected),
-								style: { maxWidth: this.props.containerWidth / 2, boxSizing: 'border-box' } },
+								style: { maxWidth: maxWidth, boxSizing: 'border-box' } },
 							_react2['default'].createElement(
 								'label',
 								null,
@@ -6345,7 +6350,7 @@ var ProperSearch =
 								className: 'btn-select list-bar-empty',
 								role: 'button',
 								onClick: this.handleSelectEmpty.bind(this),
-								style: { maxWidth: this.props.containerWidth / 2, boxSizing: 'border-box' } },
+								style: { maxWidth: maxWidth, boxSizing: 'border-box' } },
 							_react2['default'].createElement(
 								'label',
 								null,
