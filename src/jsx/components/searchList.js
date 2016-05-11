@@ -24,7 +24,8 @@ function getDefaultProps() {
 		displayField: 'label',
 		showIcon: true,
 		listElementClass: null,
-		uniqueID: _.uniqueId('search_list_')
+		allowsEmptySelection: false,
+		uniqueID: _.uniqueId('search_list_'),
 	}
 }
 
@@ -50,7 +51,7 @@ class SearchList extends React.Component {
 
 		this.state = {
 			allSelected: this.props.allSelected,
-			nothingSelected: this.props.selection.size == 0
+			nothingSelected: this.props.selection.size == 0,
 		}
 	}
 
@@ -155,7 +156,6 @@ class SearchList extends React.Component {
 
 /**
  * Function called each time the buttons in the bar of the list has been clicked. Delete or add all the data elements into the selection, just if it has changed.
- * Prevent multiple clicks in the same button.
  *
  * @param (Boolean)	selectAll 	If its a select all action or an unselect all.
  * @param (Array)	e 			Element which call the function
@@ -190,11 +190,23 @@ class SearchList extends React.Component {
 	}
 
 /**
+ * Function called each time the buttons (select empty) in the bar of the list has been clicked (In case empty selection allowed).
+ *
+ * @param (Array)	e 			Element which call the function
+ */
+	handleSelectEmpty( e) {
+		if (typeof this.props.onSelectionChange == 'function') {
+			this.props.onSelectionChange.call(this, null, true);
+		}
+	}
+
+/**
  * Return the tool bar for the top of the list. It will be displayed only when the selection can be multiple.
  *
  * @return (html) 	The toolbar code
  */
 	getToolbar() {
+		let maxWidth = maxWidth = (this.props.containerWidth / 2) - 1;
 		return (
 			<div className="proper-search-list-bar">
 				<div className="btn-group form-inline">
@@ -203,7 +215,7 @@ class SearchList extends React.Component {
 						ref={this.props.uniqueID + '_all'}
 						className="btn-select list-bar-check" role="button"
 						onClick={this.handleSelectAll.bind(this, true)}
-						style={{maxWidth: this.props.containerWidth / 2, boxSizing: 'border-box'}}>
+						style={{maxWidth: maxWidth, boxSizing: 'border-box'}}>
 						<label>{this.props.messages.all}</label>
 					</a>
 					<a
@@ -212,8 +224,43 @@ class SearchList extends React.Component {
 						className="btn-select list-bar-unCheck"
 						role="button"
 						onClick={this.handleSelectAll.bind(this, false)}
-						style={{maxWidth: this.props.containerWidth / 2, boxSizing: 'border-box'}}>
+						style={{maxWidth: maxWidth, boxSizing: 'border-box'}}>
 						<label>{this.props.messages.none}</label>
+					</a>
+				</div>
+			</div>
+		);
+	}
+
+/**
+ * Return the tool bar for the top of the list in case Empty Selection allowed
+ *
+ * @return (html) 	The toolbar code
+ */
+	getToolbarForEmpty() {
+		let allSelected = this.state.allSelected, selectMessage, maxWidth = (this.props.containerWidth / 2) - 1;
+		selectMessage = allSelected ? this.props.messages.none : this.props.messages.all;
+
+		return (
+			<div className="proper-search-list-bar">
+				<div className="btn-group form-inline">
+					<a
+						id="proper-search-list-bar-select"
+						ref={this.props.uniqueID + '_all'}
+						className="btn-select list-bar-select"
+						role="button"
+						onClick={this.handleSelectAll.bind(this, !allSelected)}
+						style={{maxWidth: maxWidth, boxSizing: 'border-box'}}>
+						<label>{selectMessage}</label>
+					</a>
+					<a
+						id="proper-search-list-bar-empty"
+						ref={this.props.uniqueID + '_none'}
+						className="btn-select list-bar-empty"
+						role="button"
+						onClick={this.handleSelectEmpty.bind(this)}
+						style={{maxWidth: maxWidth, boxSizing: 'border-box'}}>
+						<label>{this.props.messages.empty}</label>
 					</a>
 				</div>
 			</div>
@@ -300,7 +347,10 @@ class SearchList extends React.Component {
 	render(){
 		let toolbar = null, rowsCount = 0, className = "proper-search-list";
 
-		if (this.props.multiSelect) toolbar = this.getToolbar();
+		if (this.props.multiSelect) {
+			toolbar = this.props.allowsEmptySelection ? this.getToolbarForEmpty() : this.getToolbar();
+		}
+
 		rowsCount = this.props.data.size;
 
 		if (this.props.className) {

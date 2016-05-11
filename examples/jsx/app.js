@@ -28,8 +28,7 @@ class App extends React.Component {
 			listRowHeight: this.props.listRowHeight,
 			placeholder: 'Search placeHolder',
 			filterOff: false,
-			dataSize: 100,
-			shouldUpdate: true
+			dataSize: 100
 		}
 	}
 
@@ -37,7 +36,8 @@ class App extends React.Component {
 		let data = [], fieldsSet = null;
 
 		for (let i = this.state.dataSize; i >= 0; i--) {
-			data.push({itemID: 'item-' + i, display: this.formater.bind(this), name: 'Tést ' + i,moreFields: 'moreFields values'});
+			if (i == 8 || i == 9 || i == 16) data.push({itemID: '', display: '', name: 'Tést ' + i, moreFields: 'moreFields values'});
+			else data.push({itemID: 'item-' + i, display: this.formater.bind(this), name: 'Tést ' + i, moreFields: 'moreFields values'});
 		};
 
 		fieldsSet = new Set(_.keys(data[0]));
@@ -76,18 +76,6 @@ class App extends React.Component {
 			return false;
 		}
 
-		if (!nextState.shouldUpdate) {
-			this.setState({
-				shouldUpdate: true
-			});
-
-			return false;
-		}
-
-		if (this.state.shouldUpdate != nextState.shouldUpdate) {
-			return false;
-		}
-
 		// If something change update form
 		if (somethingChanged) {
 			this.refs.listHeight.value = nextState.listHeight;
@@ -112,8 +100,7 @@ class App extends React.Component {
 		console.info('Selection: ', selection);
 
 		this.setState({
-			selection: selection,
-			shouldUpdate: false
+			selection: selection
 		});
 	}
 
@@ -268,8 +255,9 @@ class App extends React.Component {
 
 	    return (
 	    	<div>
-		    	<div style={{position: 'absolute', 'width': '100%',top: '5%', left: '40%'}}>
+		    	<div style={{position: 'absolute', 'width': '100%',top: '5%', left: '40%', display:'inline-flex'}}>
 	    			<h1><a href="https://github.com/CBIConsulting/ProperSearch/blob/dev/examples/jsx/app.js"> Code </a></h1>
+	    			<button className="btn btn-default" style={{width: 150, height: 40, marginLeft: '40px'}} onClick={this.onChangeData.bind(this)}> Random Data </button>
 	    		</div>
 		    	<div style={{position: 'absolute', width: '100%', top: '20%'}}>
 				    <div style={{position: 'absolute', top: 0, left: '10%',  width: '20%'}}>
@@ -331,8 +319,8 @@ class App extends React.Component {
 				          </form>
 				        </div>
 				    </div>
-				    <div style={{position: 'absolute', top: 0, left: '33%',  width: '25%'}}>
-				        <div id="canvas" style={{position: 'absolute', top: 0, bottom: 0, width:' 75%'}}>
+				    <div style={{position: 'absolute', top: 0, left: '33%',  width: '45%'}}>
+				        <div id="canvas" style={{position: 'absolute', top: 0, bottom: 0, width:' 40%'}}>
 				        	<Search
 								data={this.state.data}
 								idField={this.state.idField}
@@ -347,10 +335,28 @@ class App extends React.Component {
 								placeholder={this.state.placeholder}
 								afterSelect={this.afterSelect.bind(this)}
 								afterSearch={this.afterSearch.bind(this)}
+								allowsEmptySelection={false}
 							/>
 				        </div>
-				        <div id="canvas2" style={{position: 'absolute', top: 0, bottom: 0, right: 0, width: '20%'}}>
-				        	<button className="btn btn-default" onClick={this.onChangeData.bind(this)}> Random Data </button>
+				        <div id="canvas" style={{position: 'absolute', top: 0, bottom: 0, left:'55%', width:' 30%'}}>
+				        	<Search
+								data={this.state.data}
+								idField={this.state.idField}
+								displayField={this.state.displayField}
+								listHeight={this.state.listHeight}
+								listRowHeight={this.state.listRowHeight}
+								lang={this.state.language}
+								filter={filter}
+								multiSelect={this.state.multiSelect}
+								defaultSelection={this.state.selection}
+								defaultSearch={this.state.defaultSearch}
+								placeholder={this.state.placeholder}
+								afterSelect={this.afterSelect.bind(this)}
+								afterSearch={this.afterSearch.bind(this)}
+								allowsEmptySelection={true}
+							/>
+							&nbsp;
+							<h5> Get Empty values allowed (the empty values never get rendered "", just get that data after click the button, with selection [""]) </h5>
 				        </div>
 				    </div>
 				</div>
