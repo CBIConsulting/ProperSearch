@@ -43,6 +43,7 @@ function getDefaultProps() {
 		listShowIcon: true,
 		filter: null, // Optional function (to be used when the displayField is an function too)
 		filterField: null, // By default it will be the displayField
+		allowsEmptySelection: false, // Put this to true to get a diferent ToolBar that allows select empty
 	}
 }
 
@@ -76,11 +77,11 @@ class Search extends React.Component {
 	constructor(props) {
 		super(props);
 
-		let preparedData = this.prepareData(null, this.props.idField);
+		let preparedData = this.prepareData(null, this.props.idField, false, this.props.displayField);
 
 		this.state = {
 			data: preparedData.data, // Data to work with (Inmutable)
-			initialData: preparedData.data, // Same data as state.data but this data never changes. (Inmutable)
+			initialData: preparedData.data, // Same data as initial state.data but this data never changes. (Inmutable)
 			rawData: preparedData.rawdata, // Received data without any modfication (Inmutable)
 			indexedData: preparedData.indexed, // Received data indexed (No Inmutable)
 			initialIndexed: preparedData.indexed, // When data get filtered keep the full indexed
@@ -115,7 +116,7 @@ class Search extends React.Component {
 					data = nextState.data;
 					indexed = {};
 				} else {
-					parsed = this.prepareData(nextState.data, this.state.idField, true); // Force rebuild indexes etc
+					parsed = this.prepareData(nextState.data, this.state.idField, true, this.state.displayField); // Force rebuild indexes etc
 					data = parsed.data;
 					indexed = parsed.indexed;
 				}
@@ -173,7 +174,7 @@ class Search extends React.Component {
 				} else { // New idField &&//|| displayField exist in data array fields
 					if (dataChanged){
 						cache.flush('search_list');
-						let preparedData = this.prepareData(nextProps.data, nextProps.idField);
+						let preparedData = this.prepareData(nextProps.data, nextProps.idField, false, nextProps.displayField);
 
 						this.setState({
 							data: preparedData.data,
@@ -214,7 +215,7 @@ class Search extends React.Component {
 
 			if (dataChanged){
 				cache.flush('search_list');
-				let preparedData = this.prepareData(nextProps.data, nextProps.idField);
+				let preparedData = this.prepareData(nextProps.data, nextProps.idField, false, nextProps.displayField);
 
 				this.setState({
 					data: preparedData.data,
@@ -434,10 +435,12 @@ class Search extends React.Component {
 			} else {
 				if (!_.isArray(defSelection)) {
 					selection = new Set([defSelection.toString()]);
-				} else if (defSelection !== new Set()){
+				} else {
 					selection = new Set(defSelection.toString().split(','));
 				}
 			}
+
+			selection.delete(''); // Remove empty values
 
 			this.triggerSelection(selection, false);
 		}
@@ -454,7 +457,7 @@ class Search extends React.Component {
  *					-indexed: 	Same as rawdata but indexed by the idField
  *					-data: 		Parsed data to add some fields necesary to internal working.
  */
-	prepareData(newData = null, idField = null, rebuild = false) {
+	prepareData(newData = null, idField = null, rebuild = false, displayfield = null) {
 		// The data will be inmutable inside the component
 		let data = newData || this.props.data, index = 0, rdataIndex = 0, idSet = new Set(), field = idField || this.state.idField, fieldValue;
 		let indexed = [], parsed = [], rawdata, hasNulls = false;
@@ -474,8 +477,8 @@ class Search extends React.Component {
 					fieldValue = _.uniqueId();
 				}
 
-				// No rows with same idField. The idField must be unique
-				if (!idSet.has(fieldValue)) {
+				// No rows with same idField. The idField must be unique and also don't render the empty values
+				if (!idSet.has(fieldValue) && fieldValue !== '' && row.get(displayfield, '') !== '') {
 					idSet.add(fieldValue);
 					row = row.set(field, fieldValue.toString());
 
@@ -508,6 +511,7 @@ class Search extends React.Component {
 			indexed = this.props.indexed;
 		}
 
+
 		return {
 			rawdata: data,
 			data: parsed,
@@ -519,10 +523,15 @@ class Search extends React.Component {
  * Function called each time the selection has changed. Apply an update in the components state selection then render again an update the child
  * list.
  *
- * @param (Set)	selection The selected values using the values of the selected data.
+ * @param (Set object)	selection 		The selected values using the values of the selected data.
+ * @param (Boolean) 	emptySelection 	When allowsEmptySelection is true and someone wants the empty selection.
  */
-	handleSelectionChange(selection) {
-		this.triggerSelection(selection);
+	handleSelectionChange(selection, emptySelection = false) {
+		if (!emptySelection) {
+			this.triggerSelection(selection);
+		} else {
+			this.sendEmptySelection();
+		}
 	}
 
 /**
@@ -608,19 +617,47 @@ class Search extends React.Component {
 			if (hasAfterSelect) {
 				let selectedData = [], properId = null, rowIndex = null, filteredData = null;
 				let {indexedData, initialData, rawData, data} = this.state;
+				let fields = new Set(_.keys(rawData.get(0).toJSON())), hasIdField = fields.has(this.state.idField) ? true : false;
 
-				// Get the data (initialData) that match with the selection
-				filteredData = initialData.filter(element => selection.has(element.get(this.state.idField)));
+				if (hasIdField) {
+					selectedData = rawData.filter(element => {
+						return selection.has(element.get(this.state.idField));
+					});
+				} else {
+					// Get the data (initialData) that match with the selection
+					filteredData = initialData.filter(element => selection.has(element.get(this.state.idField)));
 
-				// Then from the filtered data get the raw data that match with the selection
-				selectedData = filteredData.map(row => {
-					properId = row.get(this.state.idField);
-					rowIndex = this.state.initialIndexed[properId]._rawDataIndex;
+					// Then from the filtered data get the raw data that match with the selection
+					selectedData = filteredData.map(row => {
+						properId = row.get(this.state.idField);
+						rowIndex = this.state.initialIndexed[properId]._rawDataIndex;
 
-					return rawData.get(rowIndex);
-				});
+						return rawData.get(rowIndex);
+					});
+				}
 
 				this.props.afterSelect.call(this, selectedData.toJSON(), selectionArray);
+			}
+		}
+	}
+
+	sendEmptySelection() {
+		let hasAfterSelect = typeof this.props.afterSelect == 'function', hasGetSelection = typeof this.props.afterSelectGetSelection == 'function';
+
+		if (hasAfterSelect || hasGetSelection) {
+			if (hasGetSelection) { // When you just need the selection but no data
+				this.props.afterSelectGetSelection.call(this, [''], new Set(''));
+			}
+
+			if (hasAfterSelect) {
+				let filteredData = null, rawData = this.state.rawData;
+
+				// Get the data (rawData) that have idField or displayfield equals to empty string
+				filteredData = rawData.filter(element =>{
+					return element.get(this.state.idField) === '' || element.get(this.state.displayField) === '';
+				});
+
+				this.props.afterSelect.call(this, filteredData.toJSON(), ['']);
 			}
 		}
 	}
@@ -685,6 +722,7 @@ class Search extends React.Component {
 						listElementClass={this.props.listElementClass}
 						showIcon={this.props.listShowIcon}
 						cacheManager={this.props.cacheManager}
+						allowsEmptySelection={this.props.allowsEmptySelection}
 					/>
 				</div>
 			);

@@ -155,7 +155,8 @@ var ProperSearch =
 			displayField: 'label',
 			listShowIcon: true,
 			filter: null, // Optional function (to be used when the displayField is an function too)
-			filterField: null };
+			filterField: null, // By default it will be the displayField
+			allowsEmptySelection: false };
 	}
 
 	/**
@@ -183,7 +184,7 @@ var ProperSearch =
 	 *	/>
 	 * ```
 	 */
-	// By default it will be the displayField
+	// Put this to true to get a diferent ToolBar that allows select empty
 
 	var Search = function (_React$Component) {
 		_inherits(Search, _React$Component);
@@ -193,11 +194,11 @@ var ProperSearch =
 
 			var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Search).call(this, props));
 
-			var preparedData = _this.prepareData(null, _this.props.idField);
+			var preparedData = _this.prepareData(null, _this.props.idField, false, _this.props.displayField);
 
 			_this.state = {
 				data: preparedData.data, // Data to work with (Inmutable)
-				initialData: preparedData.data, // Same data as state.data but this data never changes. (Inmutable)
+				initialData: preparedData.data, // Same data as initial state.data but this data never changes. (Inmutable)
 				rawData: preparedData.rawdata, // Received data without any modfication (Inmutable)
 				indexedData: preparedData.indexed, // Received data indexed (No Inmutable)
 				initialIndexed: preparedData.indexed, // When data get filtered keep the full indexed
@@ -240,7 +241,7 @@ var ProperSearch =
 							data = nextState.data;
 							indexed = {};
 						} else {
-							parsed = this.prepareData(nextState.data, this.state.idField, true); // Force rebuild indexes etc
+							parsed = this.prepareData(nextState.data, this.state.idField, true, this.state.displayfield); // Force rebuild indexes etc
 							data = parsed.data;
 							indexed = parsed.indexed;
 						}
@@ -304,7 +305,7 @@ var ProperSearch =
 								// New idField &&//|| displayField exist in data array fields
 								if (dataChanged) {
 									_cache2['default'].flush('search_list');
-									var preparedData = _this2.prepareData(nextProps.data, nextProps.idField);
+									var preparedData = _this2.prepareData(nextProps.data, nextProps.idField, false, nextProps.displayfield);
 
 									_this2.setState({
 										data: preparedData.data,
@@ -347,7 +348,7 @@ var ProperSearch =
 
 						if (dataChanged) {
 							_cache2['default'].flush('search_list');
-							var _preparedData = _this2.prepareData(nextProps.data, nextProps.idField);
+							var _preparedData = _this2.prepareData(nextProps.data, nextProps.idField, false, nextProps.displayfield);
 
 							_this2.setState({
 								data: _preparedData.data,
@@ -635,6 +636,7 @@ var ProperSearch =
 				var newData = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
 				var idField = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
 				var rebuild = arguments.length <= 2 || arguments[2] === undefined ? false : arguments[2];
+				var displayfield = arguments.length <= 3 || arguments[3] === undefined ? null : arguments[3];
 
 				// The data will be inmutable inside the component
 				var data = newData || this.props.data,
@@ -663,8 +665,8 @@ var ProperSearch =
 							fieldValue = _underscore2['default'].uniqueId();
 						}
 
-						// No rows with same idField. The idField must be unique
-						if (!idSet.has(fieldValue)) {
+						// No rows with same idField. The idField must be unique and also don't render the empty values
+						if (!idSet.has(fieldValue) && fieldValue !== '' && row.get(displayfield, '') !== '') {
 							idSet.add(fieldValue);
 							row = row.set(field, fieldValue.toString());
 
@@ -710,13 +712,20 @@ var ProperSearch =
 	   * Function called each time the selection has changed. Apply an update in the components state selection then render again an update the child
 	   * list.
 	   *
-	   * @param (Set)	selection The selected values using the values of the selected data.
+	   * @param (Set object)	selection 		The selected values using the values of the selected data.
+	   * @param (Boolean) 	emptySelection 	When allowsEmptySelection is true and someone wants the empty selection.
 	   */
 
 		}, {
 			key: 'handleSelectionChange',
 			value: function handleSelectionChange(selection) {
-				this.triggerSelection(selection);
+				var emptySelection = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
+
+				if (!emptySelection) {
+					this.triggerSelection(selection);
+				} else {
+					this.sendEmptySelection();
+				}
 			}
 
 			/**
@@ -832,24 +841,59 @@ var ProperSearch =
 								var rawData = _state.rawData;
 								var data = _state.data;
 
-								// Get the data (initialData) that match with the selection
+								var fields = new Set(_underscore2['default'].keys(rawData.get(0).toJSON())),
+								    hasIdField = fields.has(_this6.state.idField) ? true : false;
 
-								filteredData = initialData.filter(function (element) {
-									return selection.has(element.get(_this6.state.idField));
-								});
+								if (hasIdField) {
+									selectedData = rawData.filter(function (element) {
+										return selection.has(element.get(_this6.state.idField));
+									});
+								} else {
+									// Get the data (initialData) that match with the selection
+									filteredData = initialData.filter(function (element) {
+										return selection.has(element.get(_this6.state.idField));
+									});
 
-								// Then from the filtered data get the raw data that match with the selection
-								selectedData = filteredData.map(function (row) {
-									properId = row.get(_this6.state.idField);
-									rowIndex = _this6.state.initialIndexed[properId]._rawDataIndex;
+									// Then from the filtered data get the raw data that match with the selection
+									selectedData = filteredData.map(function (row) {
+										properId = row.get(_this6.state.idField);
+										rowIndex = _this6.state.initialIndexed[properId]._rawDataIndex;
 
-									return rawData.get(rowIndex);
-								});
+										return rawData.get(rowIndex);
+									});
+								}
 
 								_this6.props.afterSelect.call(_this6, selectedData.toJSON(), selectionArray);
 							})();
 						}
 					})();
+				}
+			}
+		}, {
+			key: 'sendEmptySelection',
+			value: function sendEmptySelection() {
+				var _this7 = this;
+
+				var hasAfterSelect = typeof this.props.afterSelect == 'function',
+				    hasGetSelection = typeof this.props.afterSelectGetSelection == 'function';
+
+				if (hasAfterSelect || hasGetSelection) {
+					if (hasGetSelection) {
+						// When you just need the selection but no data
+						this.props.afterSelectGetSelection.call(this, [''], new Set(''));
+					}
+
+					if (hasAfterSelect) {
+						var filteredData = null,
+						    rawData = this.state.rawData;
+
+						// Get the data (rawData) that have idField or displayfield equals to empty string
+						filteredData = rawData.filter(function (element) {
+							return element.get(_this7.state.idField) === '' || element.get(_this7.state.displayField) === '';
+						});
+
+						this.props.afterSelect.call(this, filteredData.toJSON(), ['']);
+					}
 				}
 			}
 
@@ -917,7 +961,8 @@ var ProperSearch =
 							listRowHeight: this.props.listRowHeight,
 							listElementClass: this.props.listElementClass,
 							showIcon: this.props.listShowIcon,
-							cacheManager: this.props.cacheManager
+							cacheManager: this.props.cacheManager,
+							allowsEmptySelection: this.props.allowsEmptySelection
 						})
 					);
 				} else {
@@ -6001,6 +6046,7 @@ var ProperSearch =
 			displayField: 'label',
 			showIcon: true,
 			listElementClass: null,
+			allowsEmptySelection: false,
 			uniqueID: _underscore2['default'].uniqueId('search_list_')
 		};
 	}
@@ -6157,7 +6203,6 @@ var ProperSearch =
 
 			/**
 	   * Function called each time the buttons in the bar of the list has been clicked. Delete or add all the data elements into the selection, just if it has changed.
-	   * Prevent multiple clicks in the same button.
 	   *
 	   * @param (Boolean)	selectAll 	If its a select all action or an unselect all.
 	   * @param (Array)	e 			Element which call the function
@@ -6197,6 +6242,20 @@ var ProperSearch =
 			}
 
 			/**
+	   * Function called each time the buttons (select empty) in the bar of the list has been clicked (In case empty selection allowed).
+	   *
+	   * @param (Array)	e 			Element which call the function
+	   */
+
+		}, {
+			key: 'handleSelectEmpty',
+			value: function handleSelectEmpty(e) {
+				if (typeof this.props.onSelectionChange == 'function') {
+					this.props.onSelectionChange.call(this, null, true);
+				}
+			}
+
+			/**
 	   * Return the tool bar for the top of the list. It will be displayed only when the selection can be multiple.
 	   *
 	   * @return (html) 	The toolbar code
@@ -6213,21 +6272,84 @@ var ProperSearch =
 						{ className: 'btn-group form-inline' },
 						_react2['default'].createElement(
 							'a',
-							{ id: 'proper-search-list-bar-check', ref: this.props.uniqueID + '_all', className: 'btn list-bar-check', role: 'button', onClick: this.handleSelectAll.bind(this, true) },
+							{
+								id: 'proper-search-list-bar-check',
+								ref: this.props.uniqueID + '_all',
+								className: 'btn-select list-bar-check', role: 'button',
+								onClick: this.handleSelectAll.bind(this, true),
+								style: { maxWidth: this.props.containerWidth / 2, boxSizing: 'border-box' } },
 							_react2['default'].createElement(
 								'label',
 								null,
 								this.props.messages.all
 							)
 						),
-						' ',
 						_react2['default'].createElement(
 							'a',
-							{ id: 'proper-search-list-bar-unCheck', ref: this.props.uniqueID + '_none', className: 'btn list-bar-unCheck', role: 'button', onClick: this.handleSelectAll.bind(this, false) },
+							{
+								id: 'proper-search-list-bar-unCheck',
+								ref: this.props.uniqueID + '_none',
+								className: 'btn-select list-bar-unCheck',
+								role: 'button',
+								onClick: this.handleSelectAll.bind(this, false),
+								style: { maxWidth: this.props.containerWidth / 2, boxSizing: 'border-box' } },
 							_react2['default'].createElement(
 								'label',
 								null,
 								this.props.messages.none
+							)
+						)
+					)
+				);
+			}
+
+			/**
+	   * Return the tool bar for the top of the list in case Empty Selection allowed
+	   *
+	   * @return (html) 	The toolbar code
+	   */
+
+		}, {
+			key: 'getToolbarForEmpty',
+			value: function getToolbarForEmpty() {
+				var allSelected = this.state.allSelected,
+				    selectMessage = void 0;
+				selectMessage = allSelected ? this.props.messages.none : this.props.messages.all;
+
+				return _react2['default'].createElement(
+					'div',
+					{ className: 'proper-search-list-bar' },
+					_react2['default'].createElement(
+						'div',
+						{ className: 'btn-group form-inline' },
+						_react2['default'].createElement(
+							'a',
+							{
+								id: 'proper-search-list-bar-select',
+								ref: this.props.uniqueID + '_all',
+								className: 'btn-select list-bar-select',
+								role: 'button',
+								onClick: this.handleSelectAll.bind(this, !allSelected),
+								style: { maxWidth: this.props.containerWidth / 2, boxSizing: 'border-box' } },
+							_react2['default'].createElement(
+								'label',
+								null,
+								selectMessage
+							)
+						),
+						_react2['default'].createElement(
+							'a',
+							{
+								id: 'proper-search-list-bar-empty',
+								ref: this.props.uniqueID + '_none',
+								className: 'btn-select list-bar-empty',
+								role: 'button',
+								onClick: this.handleSelectEmpty.bind(this),
+								style: { maxWidth: this.props.containerWidth / 2, boxSizing: 'border-box' } },
+							_react2['default'].createElement(
+								'label',
+								null,
+								this.props.messages.empty
 							)
 						)
 					)
@@ -6337,7 +6459,10 @@ var ProperSearch =
 				    rowsCount = 0,
 				    className = "proper-search-list";
 
-				if (this.props.multiSelect) toolbar = this.getToolbar();
+				if (this.props.multiSelect) {
+					toolbar = this.props.allowsEmptySelection ? this.getToolbarForEmpty() : this.getToolbar();
+				}
+
 				rowsCount = this.props.data.size;
 
 				if (this.props.className) {
@@ -13938,6 +14063,10 @@ var ProperSearch =
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
+	var _reactDimensions = __webpack_require__(56);
+
+	var _reactDimensions2 = _interopRequireDefault(_reactDimensions);
+
 	var _reactImmutableRenderMixin = __webpack_require__(6);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
@@ -14205,7 +14334,8 @@ var ProperSearch =
 							autoComplete: this.props.autoComplete,
 							placeholder: this.props.placeholder,
 							defaultValue: this.props.defaultValue,
-							onKeyUp: this.onChange
+							onKeyUp: this.onChange,
+							style: { maxWidth: this.props.containerWidth - 5, boxSizing: 'border-box' }
 						}),
 						clearBtn
 					)
@@ -14220,7 +14350,8 @@ var ProperSearch =
 
 	SearchField.defaultProps = getDefaultProps();
 
-	exports['default'] = SearchField;
+	var toExport =  false ? SearchField : (0, _reactDimensions2['default'])()(SearchField);
+	exports['default'] = toExport;
 	module.exports = exports['default'];
 
 /***/ },
@@ -14236,6 +14367,8 @@ var ProperSearch =
 		'SPA': {
 			all: 'Seleccionar Todo',
 			none: 'Deseleccionar Todo',
+			empty: 'Seleccionar Vacios',
+			notEmpty: 'Deseleccionar Vacios',
 			loading: 'Cargando...',
 			noData: 'No se encontró ningún elemento',
 			errorIdField: 'No se pudo cambiar el `idField´, el campo',
@@ -14245,6 +14378,8 @@ var ProperSearch =
 		'ENG': {
 			all: 'Select All',
 			none: 'Unselect All',
+			empty: 'Select Empty',
+			notEmpty: 'Unselect Empty',
 			loading: 'Loading...',
 			noData: 'No data found',
 			errorIdField: "Couldn\'t change the `idField´, the field",
