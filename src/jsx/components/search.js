@@ -621,7 +621,7 @@ class Search extends React.Component {
 
 				if (hasIdField) {
 					selectedData = rawData.filter(element => {
-						return selection.has(element.get(this.state.idField));
+						return selection.has(element.get(this.state.idField).toString());
 					});
 				} else {
 					// Get the data (initialData) that match with the selection
