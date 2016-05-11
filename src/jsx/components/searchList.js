@@ -206,7 +206,8 @@ class SearchList extends React.Component {
  * @return (html) 	The toolbar code
  */
 	getToolbar() {
-		let maxWidth = maxWidth = (this.props.containerWidth / 2) - 1;
+		let maxWidth = this.props.containerWidth ? (this.props.containerWidth / 2) - 1 : 100;
+
 		return (
 			<div className="proper-search-list-bar">
 				<div className="btn-group form-inline">

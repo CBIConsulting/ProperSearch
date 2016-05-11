@@ -58,7 +58,7 @@ var ProperSearch =
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
 	if (true) {
-		__webpack_require__(101);
+		__webpack_require__(114);
 	}
 
 	exports["default"] = _search2["default"];
@@ -94,21 +94,21 @@ var ProperSearch =
 
 	var _searchList2 = _interopRequireDefault(_searchList);
 
-	var _searchField = __webpack_require__(98);
+	var _searchField = __webpack_require__(111);
 
 	var _searchField2 = _interopRequireDefault(_searchField);
 
-	var _messages2 = __webpack_require__(99);
+	var _messages2 = __webpack_require__(112);
 
 	var _messages3 = _interopRequireDefault(_messages2);
 
-	var _normalize = __webpack_require__(100);
+	var _normalize = __webpack_require__(113);
 
 	var _normalize2 = _interopRequireDefault(_normalize);
 
 	var _reactImmutableRenderMixin = __webpack_require__(6);
 
-	var _cache = __webpack_require__(44);
+	var _cache = __webpack_require__(57);
 
 	var _cache2 = _interopRequireDefault(_cache);
 
@@ -120,7 +120,7 @@ var ProperSearch =
 
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-	var Set = __webpack_require__(47);
+	var Set = __webpack_require__(60);
 
 	// For more info about this read ReadMe.md
 	function getDefaultProps() {
@@ -848,7 +848,7 @@ var ProperSearch =
 
 								if (hasIdField) {
 									selectedData = rawData.filter(function (element) {
-										return selection.has(element.get(_this6.state.idField));
+										return selection.has(element.get(_this6.state.idField).toString());
 									});
 								} else {
 									// Get the data (initialData) that match with the selection
@@ -1014,7 +1014,7 @@ var ProperSearch =
 	(function (global, factory) {
 	   true ? module.exports = factory() :
 	  typeof define === 'function' && define.amd ? define(factory) :
-	  global.Immutable = factory();
+	  (global.Immutable = factory());
 	}(this, function () { 'use strict';var SLICE$0 = Array.prototype.slice;
 
 	  function createClass(ctor, superClass) {
@@ -1909,7 +1909,7 @@ var ProperSearch =
 	      }
 	      return 'Range [ ' +
 	        this._start + '...' + this._end +
-	        (this._step > 1 ? ' by ' + this._step : '') +
+	        (this._step !== 1 ? ' by ' + this._step : '') +
 	      ' ]';
 	    };
 
@@ -2041,6 +2041,9 @@ var ProperSearch =
 	    }
 	    var type = typeof o;
 	    if (type === 'number') {
+	      if (o !== o || o === Infinity) {
+	        return 0;
+	      }
 	      var h = o | 0;
 	      if (h !== o) {
 	        h ^= o * 0xFFFFFFFF;
@@ -2225,6 +2228,17 @@ var ProperSearch =
 	          iter.forEach(function(v, k)  {return map.set(k, v)});
 	        });
 	    }
+
+	    Map.of = function() {var keyValues = SLICE$0.call(arguments, 0);
+	      return emptyMap().withMutations(function(map ) {
+	        for (var i = 0; i < keyValues.length; i += 2) {
+	          if (i + 1 >= keyValues.length) {
+	            throw new Error('Missing value for key: ' + keyValues[i]);
+	          }
+	          map.set(keyValues[i], keyValues[i + 1]);
+	        }
+	      });
+	    };
 
 	    Map.prototype.toString = function() {
 	      return this.__toString('Map {', '}');
@@ -4138,7 +4152,11 @@ var ProperSearch =
 	      begin = begin | 0;
 	    }
 	    if (end !== undefined) {
-	      end = end | 0;
+	      if (end === Infinity) {
+	        end = originalSize;
+	      } else {
+	        end = end | 0;
+	      }
 	    }
 
 	    if (wholeSlice(begin, end, originalSize)) {
@@ -4674,6 +4692,12 @@ var ProperSearch =
 	    Record.prototype.set = function(k, v) {
 	      if (!this.has(k)) {
 	        throw new Error('Cannot set unknown key "' + k + '" on ' + recordName(this));
+	      }
+	      if (this._map && !this._map.has(k)) {
+	        var defaultVal = this._defaultValues[k];
+	        if (v === defaultVal) {
+	          return this;
+	        }
 	      }
 	      var newMap = this._map && this._map.set(k, v);
 	      if (this.__ownerID || newMap === this._map) {
@@ -5358,21 +5382,6 @@ var ProperSearch =
 	      return entry ? entry[1] : notSetValue;
 	    },
 
-	    findEntry: function(predicate, context) {
-	      var found;
-	      this.__iterate(function(v, k, c)  {
-	        if (predicate.call(context, v, k, c)) {
-	          found = [k, v];
-	          return false;
-	        }
-	      });
-	      return found;
-	    },
-
-	    findLastEntry: function(predicate, context) {
-	      return this.toSeq().reverse().findEntry(predicate, context);
-	    },
-
 	    forEach: function(sideEffect, context) {
 	      assertNotInfinite(this.size);
 	      return this.__iterate(context ? sideEffect.bind(context) : sideEffect);
@@ -5483,8 +5492,32 @@ var ProperSearch =
 	      return this.filter(not(predicate), context);
 	    },
 
+	    findEntry: function(predicate, context, notSetValue) {
+	      var found = notSetValue;
+	      this.__iterate(function(v, k, c)  {
+	        if (predicate.call(context, v, k, c)) {
+	          found = [k, v];
+	          return false;
+	        }
+	      });
+	      return found;
+	    },
+
+	    findKey: function(predicate, context) {
+	      var entry = this.findEntry(predicate, context);
+	      return entry && entry[0];
+	    },
+
 	    findLast: function(predicate, context, notSetValue) {
 	      return this.toKeyedSeq().reverse().find(predicate, context, notSetValue);
+	    },
+
+	    findLastEntry: function(predicate, context, notSetValue) {
+	      return this.toKeyedSeq().reverse().findEntry(predicate, context, notSetValue);
+	    },
+
+	    findLastKey: function(predicate, context) {
+	      return this.toKeyedSeq().reverse().findKey(predicate, context);
 	    },
 
 	    first: function() {
@@ -5545,12 +5578,20 @@ var ProperSearch =
 	      return iter.isSubset(this);
 	    },
 
+	    keyOf: function(searchValue) {
+	      return this.findKey(function(value ) {return is(value, searchValue)});
+	    },
+
 	    keySeq: function() {
 	      return this.toSeq().map(keyMapper).toIndexedSeq();
 	    },
 
 	    last: function() {
 	      return this.toSeq().reverse().first();
+	    },
+
+	    lastKeyOf: function(searchValue) {
+	      return this.toKeyedSeq().reverse().keyOf(searchValue);
 	    },
 
 	    max: function(comparator) {
@@ -5643,58 +5684,12 @@ var ProperSearch =
 	  IterablePrototype.chain = IterablePrototype.flatMap;
 	  IterablePrototype.contains = IterablePrototype.includes;
 
-	  // Temporary warning about using length
-	  (function () {
-	    try {
-	      Object.defineProperty(IterablePrototype, 'length', {
-	        get: function () {
-	          if (!Iterable.noLengthWarning) {
-	            var stack;
-	            try {
-	              throw new Error();
-	            } catch (error) {
-	              stack = error.stack;
-	            }
-	            if (stack.indexOf('_wrapObject') === -1) {
-	              console && console.warn && console.warn(
-	                'iterable.length has been deprecated, '+
-	                'use iterable.size or iterable.count(). '+
-	                'This warning will become a silent error in a future version. ' +
-	                stack
-	              );
-	              return this.size;
-	            }
-	          }
-	        }
-	      });
-	    } catch (e) {}
-	  })();
-
-
-
 	  mixin(KeyedIterable, {
 
 	    // ### More sequential methods
 
 	    flip: function() {
 	      return reify(this, flipFactory(this));
-	    },
-
-	    findKey: function(predicate, context) {
-	      var entry = this.findEntry(predicate, context);
-	      return entry && entry[0];
-	    },
-
-	    findLastKey: function(predicate, context) {
-	      return this.toSeq().reverse().findKey(predicate, context);
-	    },
-
-	    keyOf: function(searchValue) {
-	      return this.findKey(function(value ) {return is(value, searchValue)});
-	    },
-
-	    lastKeyOf: function(searchValue) {
-	      return this.findLastKey(function(value ) {return is(value, searchValue)});
 	    },
 
 	    mapEntries: function(mapper, context) {var this$0 = this;
@@ -5745,16 +5740,13 @@ var ProperSearch =
 	    },
 
 	    indexOf: function(searchValue) {
-	      var key = this.toKeyedSeq().keyOf(searchValue);
+	      var key = this.keyOf(searchValue);
 	      return key === undefined ? -1 : key;
 	    },
 
 	    lastIndexOf: function(searchValue) {
-	      var key = this.toKeyedSeq().reverse().keyOf(searchValue);
+	      var key = this.lastKeyOf(searchValue);
 	      return key === undefined ? -1 : key;
-
-	      // var index =
-	      // return this.toSeq().reverse().indexOf(searchValue);
 	    },
 
 	    reverse: function() {
@@ -5788,8 +5780,8 @@ var ProperSearch =
 	    // ### More collection methods
 
 	    findLastIndex: function(predicate, context) {
-	      var key = this.toKeyedSeq().findLastKey(predicate, context);
-	      return key === undefined ? -1 : key;
+	      var entry = this.findLastEntry(predicate, context);
+	      return entry ? entry[0] : -1;
 	    },
 
 	    first: function() {
@@ -5828,6 +5820,10 @@ var ProperSearch =
 	        interleaved.size = zipped.size * iterables.length;
 	      }
 	      return reify(this, interleaved);
+	    },
+
+	    keySeq: function() {
+	      return Range(0, this.size);
 	    },
 
 	    last: function() {
@@ -5878,6 +5874,7 @@ var ProperSearch =
 	  });
 
 	  SetIterable.prototype.has = IterablePrototype.includes;
+	  SetIterable.prototype.contains = SetIterable.prototype.includes;
 
 
 	  // Mixin subclasses
@@ -5914,7 +5911,7 @@ var ProperSearch =
 	  }
 
 	  function quoteString(value) {
-	    return typeof value === 'string' ? JSON.stringify(value) : value;
+	    return typeof value === 'string' ? JSON.stringify(value) : String(value);
 	  }
 
 	  function defaultZipper() {
@@ -6015,11 +6012,11 @@ var ProperSearch =
 
 	var _reactVirtualized = __webpack_require__(11);
 
-	var _reactDimensions = __webpack_require__(43);
+	var _reactDimensions = __webpack_require__(56);
 
 	var _reactDimensions2 = _interopRequireDefault(_reactDimensions);
 
-	var _cache = __webpack_require__(44);
+	var _cache = __webpack_require__(57);
 
 	var _cache2 = _interopRequireDefault(_cache);
 
@@ -6031,7 +6028,7 @@ var ProperSearch =
 
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-	var Set = __webpack_require__(47);
+	var Set = __webpack_require__(60);
 
 	// For more info about this read ReadMe.md
 	function getDefaultProps() {
@@ -6269,7 +6266,8 @@ var ProperSearch =
 		}, {
 			key: 'getToolbar',
 			value: function getToolbar() {
-				var maxWidth = maxWidth = this.props.containerWidth / 2 - 1;
+				var maxWidth = this.props.containerWidth ? this.props.containerWidth / 2 - 1 : 100;
+
 				return _react2['default'].createElement(
 					'div',
 					{ className: 'proper-search-list-bar' },
@@ -6715,7 +6713,16 @@ var ProperSearch =
 	  }
 	});
 
-	var _ColumnSizer = __webpack_require__(20);
+	var _Collection = __webpack_require__(20);
+
+	Object.defineProperty(exports, 'Collection', {
+	  enumerable: true,
+	  get: function get() {
+	    return _Collection.Collection;
+	  }
+	});
+
+	var _ColumnSizer = __webpack_require__(34);
 
 	Object.defineProperty(exports, 'ColumnSizer', {
 	  enumerable: true,
@@ -6724,7 +6731,7 @@ var ProperSearch =
 	  }
 	});
 
-	var _FlexTable = __webpack_require__(31);
+	var _FlexTable = __webpack_require__(44);
 
 	Object.defineProperty(exports, 'FlexTable', {
 	  enumerable: true,
@@ -6751,7 +6758,7 @@ var ProperSearch =
 	  }
 	});
 
-	var _Grid = __webpack_require__(22);
+	var _Grid = __webpack_require__(36);
 
 	Object.defineProperty(exports, 'Grid', {
 	  enumerable: true,
@@ -6760,7 +6767,7 @@ var ProperSearch =
 	  }
 	});
 
-	var _InfiniteLoader = __webpack_require__(37);
+	var _InfiniteLoader = __webpack_require__(50);
 
 	Object.defineProperty(exports, 'InfiniteLoader', {
 	  enumerable: true,
@@ -6769,7 +6776,7 @@ var ProperSearch =
 	  }
 	});
 
-	var _ScrollSync = __webpack_require__(39);
+	var _ScrollSync = __webpack_require__(52);
 
 	Object.defineProperty(exports, 'ScrollSync', {
 	  enumerable: true,
@@ -6778,7 +6785,7 @@ var ProperSearch =
 	  }
 	});
 
-	var _VirtualScroll = __webpack_require__(41);
+	var _VirtualScroll = __webpack_require__(54);
 
 	Object.defineProperty(exports, 'VirtualScroll', {
 	  enumerable: true,
@@ -7411,9 +7418,1565 @@ var ProperSearch =
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
+	exports.Collection = exports.default = undefined;
+
+	var _Collection2 = __webpack_require__(21);
+
+	var _Collection3 = _interopRequireDefault(_Collection2);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	exports.default = _Collection3.default;
+	exports.Collection = _Collection3.default;
+
+/***/ },
+/* 21 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _react = __webpack_require__(2);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _CollectionView = __webpack_require__(22);
+
+	var _CollectionView2 = _interopRequireDefault(_CollectionView);
+
+	var _calculateSizeAndPositionData2 = __webpack_require__(30);
+
+	var _calculateSizeAndPositionData3 = _interopRequireDefault(_calculateSizeAndPositionData2);
+
+	var _getUpdatedOffsetForIndex = __webpack_require__(33);
+
+	var _getUpdatedOffsetForIndex2 = _interopRequireDefault(_getUpdatedOffsetForIndex);
+
+	var _reactAddonsShallowCompare = __webpack_require__(14);
+
+	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	/**
+	 * Renders scattered or non-linear data.
+	 * Unlike Grid, which renders checkerboard data, Collection can render arbitrarily positioned- even overlapping- data.
+	 */
+
+	var Collection = function (_Component) {
+	  _inherits(Collection, _Component);
+
+	  function Collection(props, context) {
+	    _classCallCheck(this, Collection);
+
+	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Collection).call(this, props, context));
+
+	    _this._cellMetadata = [];
+	    _this._lastRenderedCellIndices = [];
+	    return _this;
+	  }
+
+	  /** React lifecycle methods */
+
+	  _createClass(Collection, [{
+	    key: 'render',
+	    value: function render() {
+	      var props = _objectWithoutProperties(this.props, []);
+
+	      return _react2.default.createElement(_CollectionView2.default, _extends({
+	        cellLayoutManager: this,
+	        ref: 'CollectionView'
+	      }, props));
+	    }
+	  }, {
+	    key: 'shouldComponentUpdate',
+	    value: function shouldComponentUpdate(nextProps, nextState) {
+	      return (0, _reactAddonsShallowCompare2.default)(this, nextProps, nextState);
+	    }
+
+	    /** CellLayoutManager interface */
+
+	  }, {
+	    key: 'calculateSizeAndPositionData',
+	    value: function calculateSizeAndPositionData() {
+	      var _props = this.props;
+	      var cellCount = _props.cellCount;
+	      var cellSizeAndPositionGetter = _props.cellSizeAndPositionGetter;
+	      var sectionSize = _props.sectionSize;
+
+
+	      var data = (0, _calculateSizeAndPositionData3.default)({
+	        cellCount: cellCount,
+	        cellSizeAndPositionGetter: cellSizeAndPositionGetter,
+	        sectionSize: sectionSize
+	      });
+
+	      this._cellMetadata = data.cellMetadata;
+	      this._sectionManager = data.sectionManager;
+	      this._height = data.height;
+	      this._width = data.width;
+	    }
+
+	    /**
+	     * Returns the most recently rendered set of cell indices.
+	     */
+
+	  }, {
+	    key: 'getLastRenderedIndices',
+	    value: function getLastRenderedIndices() {
+	      return this._lastRenderedCellIndices;
+	    }
+
+	    /**
+	     * Calculates the minimum amount of change from the current scroll position to ensure the specified cell is (fully) visible.
+	     */
+
+	  }, {
+	    key: 'getScrollPositionForCell',
+	    value: function getScrollPositionForCell(_ref) {
+	      var cellIndex = _ref.cellIndex;
+	      var height = _ref.height;
+	      var scrollLeft = _ref.scrollLeft;
+	      var scrollTop = _ref.scrollTop;
+	      var width = _ref.width;
+	      var cellCount = this.props.cellCount;
+
+
+	      if (cellIndex >= 0 && cellIndex < cellCount) {
+	        var cellMetadata = this._cellMetadata[cellIndex];
+
+	        scrollLeft = (0, _getUpdatedOffsetForIndex2.default)({
+	          cellOffset: cellMetadata.x,
+	          cellSize: cellMetadata.width,
+	          containerSize: width,
+	          currentOffset: scrollLeft,
+	          targetIndex: cellIndex
+	        });
+
+	        scrollTop = (0, _getUpdatedOffsetForIndex2.default)({
+	          cellOffset: cellMetadata.y,
+	          cellSize: cellMetadata.height,
+	          containerSize: height,
+	          currentOffset: scrollTop,
+	          targetIndex: cellIndex
+	        });
+	      }
+
+	      return {
+	        scrollLeft: scrollLeft,
+	        scrollTop: scrollTop
+	      };
+	    }
+	  }, {
+	    key: 'getTotalSize',
+	    value: function getTotalSize() {
+	      return {
+	        height: this._height,
+	        width: this._width
+	      };
+	    }
+	  }, {
+	    key: 'renderCells',
+	    value: function renderCells(_ref2) {
+	      var _this2 = this;
+
+	      var height = _ref2.height;
+	      var isScrolling = _ref2.isScrolling;
+	      var width = _ref2.width;
+	      var x = _ref2.x;
+	      var y = _ref2.y;
+	      var _props2 = this.props;
+	      var cellGroupRenderer = _props2.cellGroupRenderer;
+	      var cellRenderer = _props2.cellRenderer;
+
+	      // Store for later calls to getLastRenderedIndices()
+
+	      this._lastRenderedCellIndices = this._sectionManager.getCellIndices({
+	        height: height,
+	        width: width,
+	        x: x,
+	        y: y
+	      });
+
+	      return cellGroupRenderer({
+	        cellRenderer: cellRenderer,
+	        cellSizeAndPositionGetter: function cellSizeAndPositionGetter(index) {
+	          return _this2._sectionManager.getCellMetadata(index);
+	        },
+	        indices: this._lastRenderedCellIndices
+	      });
+	    }
+	  }]);
+
+	  return Collection;
+	}(_react.Component);
+
+	Collection.propTypes = {
+	  'aria-label': _react.PropTypes.string,
+
+	  /**
+	   * Number of cells in Collection.
+	   */
+	  cellCount: _react.PropTypes.number.isRequired,
+
+	  /**
+	   * Responsible for rendering a group of cells given their indices.
+	   * Should implement the following interface: ({
+	   *   cellSizeAndPositionGetter:Function,
+	   *   indices: Array<number>,
+	   *   cellRenderer: Function
+	   * }): Array<PropTypes.node>
+	   */
+	  cellGroupRenderer: _react.PropTypes.func.isRequired,
+
+	  /**
+	   * Responsible for rendering a cell given an row and column index.
+	   * Should implement the following interface: (index: number): PropTypes.node
+	   */
+	  cellRenderer: _react.PropTypes.func.isRequired,
+
+	  /**
+	   * Callback responsible for returning size and offset/position information for a given cell (index).
+	   * (index): { height: number, width: number, x: number, y: number }
+	   */
+	  cellSizeAndPositionGetter: _react.PropTypes.func.isRequired,
+
+	  /**
+	   * Optionally override the size of the sections a Collection's cells are split into.
+	   */
+	  sectionSize: _react.PropTypes.number
+	};
+	Collection.defaultProps = {
+	  'aria-label': 'grid',
+	  cellGroupRenderer: defaultCellGroupRenderer
+	};
+	exports.default = Collection;
+
+
+	function defaultCellGroupRenderer(_ref3) {
+	  var cellRenderer = _ref3.cellRenderer;
+	  var cellSizeAndPositionGetter = _ref3.cellSizeAndPositionGetter;
+	  var indices = _ref3.indices;
+
+	  return indices.map(function (index) {
+	    var cellMetadata = cellSizeAndPositionGetter(index);
+	    var renderedCell = cellRenderer(index);
+
+	    if (renderedCell == null || renderedCell === false) {
+	      return null;
+	    }
+
+	    return _react2.default.createElement(
+	      'div',
+	      {
+	        className: 'Collection__cell',
+	        key: index,
+	        style: {
+	          height: cellMetadata.height,
+	          left: cellMetadata.x,
+	          top: cellMetadata.y,
+	          width: cellMetadata.width
+	        }
+	      },
+	      renderedCell
+	    );
+	  }).filter(function (renderedCell) {
+	    return !!renderedCell;
+	  });
+	}
+
+/***/ },
+/* 22 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _react = __webpack_require__(2);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _classnames = __webpack_require__(23);
+
+	var _classnames2 = _interopRequireDefault(_classnames);
+
+	var _createCallbackMemoizer = __webpack_require__(24);
+
+	var _createCallbackMemoizer2 = _interopRequireDefault(_createCallbackMemoizer);
+
+	var _scrollbarSize = __webpack_require__(25);
+
+	var _scrollbarSize2 = _interopRequireDefault(_scrollbarSize);
+
+	var _raf = __webpack_require__(27);
+
+	var _raf2 = _interopRequireDefault(_raf);
+
+	var _reactAddonsShallowCompare = __webpack_require__(14);
+
+	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	// @TODO It would be nice to refactor Grid to use this code as well.
+
+	/**
+	 * Specifies the number of miliseconds during which to disable pointer events while a scroll is in progress.
+	 * This improves performance and makes scrolling smoother.
+	 */
+	var IS_SCROLLING_TIMEOUT = 150;
+
+	/**
+	 * Controls whether the Grid updates the DOM element's scrollLeft/scrollTop based on the current state or just observes it.
+	 * This prevents Grid from interrupting mouse-wheel animations (see issue #2).
+	 */
+	var SCROLL_POSITION_CHANGE_REASONS = {
+	  OBSERVED: 'observed',
+	  REQUESTED: 'requested'
+	};
+
+	/**
+	 * Monitors changes in properties (eg. cellCount) and state (eg. scroll offsets) to determine when rendering needs to occur.
+	 * This component does not render any visible content itself; it defers to the specified :cellLayoutManager.
+	 */
+
+	var CollectionView = function (_Component) {
+	  _inherits(CollectionView, _Component);
+
+	  function CollectionView(props, context) {
+	    _classCallCheck(this, CollectionView);
+
+	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(CollectionView).call(this, props, context));
+
+	    _this.state = {
+	      calculateSizeAndPositionDataOnNextUpdate: false,
+	      isScrolling: false,
+	      scrollLeft: 0,
+	      scrollTop: 0
+	    };
+
+	    // Invokes callbacks only when their values have changed.
+	    _this._onSectionRenderedMemoizer = (0, _createCallbackMemoizer2.default)();
+	    _this._onScrollMemoizer = (0, _createCallbackMemoizer2.default)(false);
+
+	    // Bind functions to instance so they don't lose context when passed around.
+	    _this._invokeOnSectionRenderedHelper = _this._invokeOnSectionRenderedHelper.bind(_this);
+	    _this._onScroll = _this._onScroll.bind(_this);
+	    _this._updateScrollPositionForScrollToCell = _this._updateScrollPositionForScrollToCell.bind(_this);
+	    return _this;
+	  }
+
+	  /**
+	   * Forced recompute of cell sizes and positions.
+	   * This function should be called if cell sizes have changed but nothing else has.
+	   * Since cell positions are calculated by callbacks, the collection view has no way of detecting when the underlying data has changed.
+	   */
+
+
+	  _createClass(CollectionView, [{
+	    key: 'recomputeCellSizesAndPositions',
+	    value: function recomputeCellSizesAndPositions() {
+	      this.setState({
+	        calculateSizeAndPositionDataOnNextUpdate: true
+	      });
+	    }
+
+	    /* ---------------------------- Component lifecycle methods ---------------------------- */
+
+	  }, {
+	    key: 'componentDidMount',
+	    value: function componentDidMount() {
+	      var _props = this.props;
+	      var cellLayoutManager = _props.cellLayoutManager;
+	      var scrollLeft = _props.scrollLeft;
+	      var scrollToCell = _props.scrollToCell;
+	      var scrollTop = _props.scrollTop;
+
+
+	      this._scrollbarSize = (0, _scrollbarSize2.default)();
+
+	      // Update onSectionRendered callback.
+	      this._invokeOnSectionRenderedHelper();
+
+	      var _cellLayoutManager$ge = cellLayoutManager.getTotalSize();
+
+	      var totalHeight = _cellLayoutManager$ge.height;
+	      var totalWidth = _cellLayoutManager$ge.width;
+
+
+	      if (scrollToCell >= 0) {
+	        this._updateScrollPositionForScrollToCell();
+	      }
+
+	      // Initialize onScroll callback.
+	      this._invokeOnScrollMemoizer({
+	        scrollLeft: scrollLeft || 0,
+	        scrollTop: scrollTop || 0,
+	        totalHeight: totalHeight,
+	        totalWidth: totalWidth
+	      });
+	    }
+	  }, {
+	    key: 'componentDidUpdate',
+	    value: function componentDidUpdate(prevProps, prevState) {
+	      var _props2 = this.props;
+	      var height = _props2.height;
+	      var scrollToCell = _props2.scrollToCell;
+	      var width = _props2.width;
+	      var _state = this.state;
+	      var scrollLeft = _state.scrollLeft;
+	      var scrollPositionChangeReason = _state.scrollPositionChangeReason;
+	      var scrollTop = _state.scrollTop;
+
+	      // Make sure requested changes to :scrollLeft or :scrollTop get applied.
+	      // Assigning to scrollLeft/scrollTop tells the browser to interrupt any running scroll animations,
+	      // And to discard any pending async changes to the scroll position that may have happened in the meantime (e.g. on a separate scrolling thread).
+	      // So we only set these when we require an adjustment of the scroll position.
+	      // See issue #2 for more information.
+
+	      if (scrollPositionChangeReason === SCROLL_POSITION_CHANGE_REASONS.REQUESTED) {
+	        if (scrollLeft >= 0 && scrollLeft !== prevState.scrollLeft && scrollLeft !== this.refs.scrollingContainer.scrollLeft) {
+	          this.refs.scrollingContainer.scrollLeft = scrollLeft;
+	        }
+	        if (scrollTop >= 0 && scrollTop !== prevState.scrollTop && scrollTop !== this.refs.scrollingContainer.scrollTop) {
+	          this.refs.scrollingContainer.scrollTop = scrollTop;
+	        }
+	      }
+
+	      // Update scroll offsets if the current :scrollToCell values requires it
+	      if (height !== prevProps.height || scrollToCell !== prevProps.scrollToCell || width !== prevProps.width) {
+	        this._updateScrollPositionForScrollToCell();
+	      }
+
+	      // Update onRowsRendered callback if start/stop indices have changed
+	      this._invokeOnSectionRenderedHelper();
+	    }
+	  }, {
+	    key: 'componentWillMount',
+	    value: function componentWillMount() {
+	      var _props3 = this.props;
+	      var cellLayoutManager = _props3.cellLayoutManager;
+	      var scrollLeft = _props3.scrollLeft;
+	      var scrollTop = _props3.scrollTop;
+
+
+	      cellLayoutManager.calculateSizeAndPositionData();
+
+	      if (scrollLeft >= 0 || scrollTop >= 0) {
+	        this._setScrollPosition({ scrollLeft: scrollLeft, scrollTop: scrollTop });
+	      }
+	    }
+	  }, {
+	    key: 'componentWillUnmount',
+	    value: function componentWillUnmount() {
+	      if (this._disablePointerEventsTimeoutId) {
+	        clearTimeout(this._disablePointerEventsTimeoutId);
+	      }
+
+	      if (this._setNextStateAnimationFrameId) {
+	        _raf2.default.cancel(this._setNextStateAnimationFrameId);
+	      }
+	    }
+
+	    /**
+	     * @private
+	     * This method updates scrollLeft/scrollTop in state for the following conditions:
+	     * 1) Empty content (0 rows or columns)
+	     * 2) New scroll props overriding the current state
+	     * 3) Cells-count or cells-size has changed, making previous scroll offsets invalid
+	     */
+
+	  }, {
+	    key: 'componentWillUpdate',
+	    value: function componentWillUpdate(nextProps, nextState) {
+	      if (nextProps.cellCount === 0 && (nextState.scrollLeft !== 0 || nextState.scrollTop !== 0)) {
+	        this._setScrollPosition({
+	          scrollLeft: 0,
+	          scrollTop: 0
+	        });
+	      } else if (nextProps.scrollLeft !== this.props.scrollLeft || nextProps.scrollTop !== this.props.scrollTop) {
+	        this._setScrollPosition({
+	          scrollLeft: nextProps.scrollLeft,
+	          scrollTop: nextProps.scrollTop
+	        });
+	      }
+
+	      if (nextProps.cellCount !== this.props.cellCount || nextProps.cellLayoutManager !== this.props.cellLayoutManager || nextState.calculateSizeAndPositionDataOnNextUpdate) {
+	        nextProps.cellLayoutManager.calculateSizeAndPositionData();
+	      }
+
+	      if (nextState.calculateSizeAndPositionDataOnNextUpdate) {
+	        this.setState({
+	          calculateSizeAndPositionDataOnNextUpdate: false
+	        });
+	      }
+	    }
+	  }, {
+	    key: 'render',
+	    value: function render() {
+	      var _props4 = this.props;
+	      var cellLayoutManager = _props4.cellLayoutManager;
+	      var className = _props4.className;
+	      var height = _props4.height;
+	      var noContentRenderer = _props4.noContentRenderer;
+	      var width = _props4.width;
+	      var _state2 = this.state;
+	      var isScrolling = _state2.isScrolling;
+	      var scrollLeft = _state2.scrollLeft;
+	      var scrollTop = _state2.scrollTop;
+
+
+	      var childrenToDisplay = height > 0 && width > 0 ? cellLayoutManager.renderCells({
+	        height: height,
+	        isScrolling: isScrolling,
+	        width: width,
+	        x: scrollLeft,
+	        y: scrollTop
+	      }) : [];
+
+	      var _cellLayoutManager$ge2 = cellLayoutManager.getTotalSize();
+
+	      var totalHeight = _cellLayoutManager$ge2.height;
+	      var totalWidth = _cellLayoutManager$ge2.width;
+
+
+	      var gridStyle = {
+	        height: height,
+	        width: width
+	      };
+
+	      // Force browser to hide scrollbars when we know they aren't necessary.
+	      // Otherwise once scrollbars appear they may not disappear again.
+	      // For more info see issue #116
+	      if (totalHeight <= height) {
+	        gridStyle.overflowY = 'hidden';
+	      }
+	      if (totalWidth <= width) {
+	        gridStyle.overflowX = 'hidden';
+	      }
+
+	      return _react2.default.createElement(
+	        'div',
+	        {
+	          ref: 'scrollingContainer',
+	          'aria-label': this.props['aria-label'],
+	          className: (0, _classnames2.default)('Collection', className),
+	          onScroll: this._onScroll,
+	          role: 'grid',
+	          style: gridStyle,
+	          tabIndex: 0
+	        },
+	        childrenToDisplay.length > 0 && _react2.default.createElement(
+	          'div',
+	          {
+	            className: 'Collection__innerScrollContainer',
+	            style: {
+	              height: totalHeight,
+	              maxHeight: totalHeight,
+	              maxWidth: totalWidth,
+	              pointerEvents: isScrolling ? 'none' : 'auto',
+	              width: totalWidth
+	            }
+	          },
+	          childrenToDisplay
+	        ),
+	        childrenToDisplay.length === 0 && noContentRenderer()
+	      );
+	    }
+	  }, {
+	    key: 'shouldComponentUpdate',
+	    value: function shouldComponentUpdate(nextProps, nextState) {
+	      return (0, _reactAddonsShallowCompare2.default)(this, nextProps, nextState);
+	    }
+
+	    /* ---------------------------- Helper methods ---------------------------- */
+
+	    /**
+	     * Sets an :isScrolling flag for a small window of time.
+	     * This flag is used to disable pointer events on the scrollable portion of the Collection.
+	     * This prevents jerky/stuttery mouse-wheel scrolling.
+	     */
+
+	  }, {
+	    key: '_enablePointerEventsAfterDelay',
+	    value: function _enablePointerEventsAfterDelay() {
+	      var _this2 = this;
+
+	      if (this._disablePointerEventsTimeoutId) {
+	        clearTimeout(this._disablePointerEventsTimeoutId);
+	      }
+
+	      this._disablePointerEventsTimeoutId = setTimeout(function () {
+	        _this2._disablePointerEventsTimeoutId = null;
+	        _this2.setState({
+	          isScrolling: false
+	        });
+	      }, IS_SCROLLING_TIMEOUT);
+	    }
+	  }, {
+	    key: '_invokeOnSectionRenderedHelper',
+	    value: function _invokeOnSectionRenderedHelper() {
+	      var _props5 = this.props;
+	      var cellLayoutManager = _props5.cellLayoutManager;
+	      var onSectionRendered = _props5.onSectionRendered;
+
+
+	      this._onSectionRenderedMemoizer({
+	        callback: onSectionRendered,
+	        indices: cellLayoutManager.getLastRenderedIndices()
+	      });
+	    }
+	  }, {
+	    key: '_invokeOnScrollMemoizer',
+	    value: function _invokeOnScrollMemoizer(_ref) {
+	      var _this3 = this;
+
+	      var scrollLeft = _ref.scrollLeft;
+	      var scrollTop = _ref.scrollTop;
+	      var totalHeight = _ref.totalHeight;
+	      var totalWidth = _ref.totalWidth;
+
+	      this._onScrollMemoizer({
+	        callback: function callback(_ref2) {
+	          var scrollLeft = _ref2.scrollLeft;
+	          var scrollTop = _ref2.scrollTop;
+	          var _props6 = _this3.props;
+	          var height = _props6.height;
+	          var onScroll = _props6.onScroll;
+	          var width = _props6.width;
+
+
+	          onScroll({
+	            clientHeight: height,
+	            clientWidth: width,
+	            scrollHeight: totalHeight,
+	            scrollLeft: scrollLeft,
+	            scrollTop: scrollTop,
+	            scrollWidth: totalWidth
+	          });
+	        },
+	        indices: {
+	          scrollLeft: scrollLeft,
+	          scrollTop: scrollTop
+	        }
+	      });
+	    }
+
+	    /**
+	     * Updates the state during the next animation frame.
+	     * Use this method to avoid multiple renders in a small span of time.
+	     * This helps performance for bursty events (like onScroll).
+	     */
+
+	  }, {
+	    key: '_setNextState',
+	    value: function _setNextState(state) {
+	      var _this4 = this;
+
+	      if (this._setNextStateAnimationFrameId) {
+	        _raf2.default.cancel(this._setNextStateAnimationFrameId);
+	      }
+
+	      this._setNextStateAnimationFrameId = (0, _raf2.default)(function () {
+	        _this4._setNextStateAnimationFrameId = null;
+	        _this4.setState(state);
+	      });
+	    }
+	  }, {
+	    key: '_setScrollPosition',
+	    value: function _setScrollPosition(_ref3) {
+	      var scrollLeft = _ref3.scrollLeft;
+	      var scrollTop = _ref3.scrollTop;
+
+	      var newState = {
+	        scrollPositionChangeReason: SCROLL_POSITION_CHANGE_REASONS.REQUESTED
+	      };
+
+	      if (scrollLeft >= 0) {
+	        newState.scrollLeft = scrollLeft;
+	      }
+
+	      if (scrollTop >= 0) {
+	        newState.scrollTop = scrollTop;
+	      }
+
+	      if (scrollLeft >= 0 && scrollLeft !== this.state.scrollLeft || scrollTop >= 0 && scrollTop !== this.state.scrollTop) {
+	        this.setState(newState);
+	      }
+	    }
+	  }, {
+	    key: '_updateScrollPositionForScrollToCell',
+	    value: function _updateScrollPositionForScrollToCell() {
+	      var _props7 = this.props;
+	      var cellLayoutManager = _props7.cellLayoutManager;
+	      var height = _props7.height;
+	      var scrollToCell = _props7.scrollToCell;
+	      var width = _props7.width;
+	      var _state3 = this.state;
+	      var scrollLeft = _state3.scrollLeft;
+	      var scrollTop = _state3.scrollTop;
+
+
+	      if (scrollToCell >= 0) {
+	        var scrollPosition = cellLayoutManager.getScrollPositionForCell({
+	          cellIndex: scrollToCell,
+	          height: height,
+	          scrollLeft: scrollLeft,
+	          scrollTop: scrollTop,
+	          width: width
+	        });
+
+	        if (scrollPosition.scrollLeft !== scrollLeft || scrollPosition.scrollTop !== scrollTop) {
+	          this._setScrollPosition(scrollPosition);
+	        }
+	      }
+	    }
+	  }, {
+	    key: '_onScroll',
+	    value: function _onScroll(event) {
+	      // In certain edge-cases React dispatches an onScroll event with an invalid target.scrollLeft / target.scrollTop.
+	      // This invalid event can be detected by comparing event.target to this component's scrollable DOM element.
+	      // See issue #404 for more information.
+	      if (event.target !== this.refs.scrollingContainer) {
+	        return;
+	      }
+
+	      // Prevent pointer events from interrupting a smooth scroll
+	      this._enablePointerEventsAfterDelay();
+
+	      // When this component is shrunk drastically, React dispatches a series of back-to-back scroll events,
+	      // Gradually converging on a scrollTop that is within the bounds of the new, smaller height.
+	      // This causes a series of rapid renders that is slow for long lists.
+	      // We can avoid that by doing some simple bounds checking to ensure that scrollTop never exceeds the total height.
+	      var _props8 = this.props;
+	      var cellLayoutManager = _props8.cellLayoutManager;
+	      var height = _props8.height;
+	      var width = _props8.width;
+
+	      var scrollbarSize = this._scrollbarSize;
+
+	      var _cellLayoutManager$ge3 = cellLayoutManager.getTotalSize();
+
+	      var totalHeight = _cellLayoutManager$ge3.height;
+	      var totalWidth = _cellLayoutManager$ge3.width;
+
+	      var scrollLeft = Math.min(totalWidth - width + scrollbarSize, event.target.scrollLeft);
+	      var scrollTop = Math.min(totalHeight - height + scrollbarSize, event.target.scrollTop);
+
+	      // Certain devices (like Apple touchpad) rapid-fire duplicate events.
+	      // Don't force a re-render if this is the case.
+	      // The mouse may move faster then the animation frame does.
+	      // Use requestAnimationFrame to avoid over-updating.
+	      if (this.state.scrollLeft !== scrollLeft || this.state.scrollTop !== scrollTop) {
+	        // Browsers with cancelable scroll events (eg. Firefox) interrupt scrolling animations if scrollTop/scrollLeft is set.
+	        // Other browsers (eg. Safari) don't scroll as well without the help under certain conditions (DOM or style changes during scrolling).
+	        // All things considered, this seems to be the best current work around that I'm aware of.
+	        // For more information see https://github.com/bvaughn/react-virtualized/pull/124
+	        var scrollPositionChangeReason = event.cancelable ? SCROLL_POSITION_CHANGE_REASONS.OBSERVED : SCROLL_POSITION_CHANGE_REASONS.REQUESTED;
+
+	        // Synchronously set :isScrolling the first time (since _setNextState will reschedule its animation frame each time it's called)
+	        if (!this.state.isScrolling) {
+	          this.setState({
+	            isScrolling: true
+	          });
+	        }
+
+	        this._setNextState({
+	          isScrolling: true,
+	          scrollLeft: scrollLeft,
+	          scrollPositionChangeReason: scrollPositionChangeReason,
+	          scrollTop: scrollTop
+	        });
+	      }
+
+	      this._invokeOnScrollMemoizer({
+	        scrollLeft: scrollLeft,
+	        scrollTop: scrollTop,
+	        totalWidth: totalWidth,
+	        totalHeight: totalHeight
+	      });
+	    }
+	  }]);
+
+	  return CollectionView;
+	}(_react.Component);
+
+	CollectionView.propTypes = {
+	  'aria-label': _react.PropTypes.string,
+
+	  /**
+	   * Number of cells in collection.
+	   */
+	  cellCount: _react.PropTypes.number.isRequired,
+
+	  /**
+	   * Calculates cell sizes and positions and manages rendering the appropriate cells given a specified window.
+	   */
+	  cellLayoutManager: _react.PropTypes.object.isRequired,
+
+	  /**
+	   * Optional custom CSS class name to attach to root Collection element.
+	   */
+	  className: _react.PropTypes.string,
+
+	  /**
+	   * Height of Collection; this property determines the number of visible (vs virtualized) rows.
+	   */
+	  height: _react.PropTypes.number.isRequired,
+
+	  /**
+	   * Optional renderer to be used in place of rows when either :rowsCount or :cellCount is 0.
+	   */
+	  noContentRenderer: _react.PropTypes.func.isRequired,
+
+	  /**
+	   * Callback invoked whenever the scroll offset changes within the inner scrollable region.
+	   * This callback can be used to sync scrolling between lists, tables, or grids.
+	   * ({ clientHeight, clientWidth, scrollHeight, scrollLeft, scrollTop, scrollWidth }): void
+	   */
+	  onScroll: _react.PropTypes.func.isRequired,
+
+	  /**
+	   * Callback invoked with information about the section of the Collection that was just rendered.
+	   * This callback is passed an array of the most recently rendered section indices.
+	   */
+	  onSectionRendered: _react.PropTypes.func.isRequired,
+
+	  /**
+	   * Horizontal offset.
+	   */
+	  scrollLeft: _react.PropTypes.number,
+
+	  /**
+	   * Cell index to ensure visible (by forcefully scrolling if necessary).
+	   */
+	  scrollToCell: _react.PropTypes.number,
+
+	  /**
+	   * Vertical offset.
+	   */
+	  scrollTop: _react.PropTypes.number,
+
+	  /**
+	   * Width of Collection; this property determines the number of visible (vs virtualized) columns.
+	   */
+	  width: _react.PropTypes.number.isRequired
+	};
+	CollectionView.defaultProps = {
+	  'aria-label': 'grid',
+	  noContentRenderer: function noContentRenderer() {
+	    return null;
+	  },
+	  onScroll: function onScroll() {
+	    return null;
+	  },
+	  onSectionRendered: function onSectionRendered() {
+	    return null;
+	  }
+	};
+	exports.default = CollectionView;
+
+/***/ },
+/* 23 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
+	  Copyright (c) 2016 Jed Watson.
+	  Licensed under the MIT License (MIT), see
+	  http://jedwatson.github.io/classnames
+	*/
+	/* global define */
+
+	(function () {
+		'use strict';
+
+		var hasOwn = {}.hasOwnProperty;
+
+		function classNames () {
+			var classes = [];
+
+			for (var i = 0; i < arguments.length; i++) {
+				var arg = arguments[i];
+				if (!arg) continue;
+
+				var argType = typeof arg;
+
+				if (argType === 'string' || argType === 'number') {
+					classes.push(arg);
+				} else if (Array.isArray(arg)) {
+					classes.push(classNames.apply(null, arg));
+				} else if (argType === 'object') {
+					for (var key in arg) {
+						if (hasOwn.call(arg, key) && arg[key]) {
+							classes.push(key);
+						}
+					}
+				}
+			}
+
+			return classes.join(' ');
+		}
+
+		if (typeof module !== 'undefined' && module.exports) {
+			module.exports = classNames;
+		} else if (true) {
+			// register as 'classnames', consistent with npm package name
+			!(__WEBPACK_AMD_DEFINE_ARRAY__ = [], __WEBPACK_AMD_DEFINE_RESULT__ = function () {
+				return classNames;
+			}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+		} else {
+			window.classNames = classNames;
+		}
+	}());
+
+
+/***/ },
+/* 24 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.default = createCallbackMemoizer;
+	/**
+	 * Helper utility that updates the specified callback whenever any of the specified indices have changed.
+	 */
+	function createCallbackMemoizer() {
+	  var requireAllKeys = arguments.length <= 0 || arguments[0] === undefined ? true : arguments[0];
+
+	  var cachedIndices = {};
+
+	  return function (_ref) {
+	    var callback = _ref.callback;
+	    var indices = _ref.indices;
+
+	    var keys = Object.keys(indices);
+	    var allInitialized = !requireAllKeys || keys.every(function (key) {
+	      return indices[key] >= 0;
+	    });
+	    var indexChanged = keys.length !== Object.keys(cachedIndices).length || keys.some(function (key) {
+	      return cachedIndices[key] !== indices[key];
+	    });
+
+	    cachedIndices = indices;
+
+	    if (allInitialized && indexChanged) {
+	      callback(indices);
+	    }
+	  };
+	}
+
+/***/ },
+/* 25 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var canUseDOM = __webpack_require__(26);
+
+	var size;
+
+	module.exports = function (recalc) {
+	  if (!size || recalc) {
+	    if (canUseDOM) {
+	      var scrollDiv = document.createElement('div');
+
+	      scrollDiv.style.position = 'absolute';
+	      scrollDiv.style.top = '-9999px';
+	      scrollDiv.style.width = '50px';
+	      scrollDiv.style.height = '50px';
+	      scrollDiv.style.overflow = 'scroll';
+
+	      document.body.appendChild(scrollDiv);
+	      size = scrollDiv.offsetWidth - scrollDiv.clientWidth;
+	      document.body.removeChild(scrollDiv);
+	    }
+	  }
+
+	  return size;
+	};
+
+/***/ },
+/* 26 */
+/***/ function(module, exports) {
+
+	'use strict';
+	module.exports = !!(typeof window !== 'undefined' && window.document && window.document.createElement);
+
+/***/ },
+/* 27 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(global) {var now = __webpack_require__(28)
+	  , root = typeof window === 'undefined' ? global : window
+	  , vendors = ['moz', 'webkit']
+	  , suffix = 'AnimationFrame'
+	  , raf = root['request' + suffix]
+	  , caf = root['cancel' + suffix] || root['cancelRequest' + suffix]
+
+	for(var i = 0; !raf && i < vendors.length; i++) {
+	  raf = root[vendors[i] + 'Request' + suffix]
+	  caf = root[vendors[i] + 'Cancel' + suffix]
+	      || root[vendors[i] + 'CancelRequest' + suffix]
+	}
+
+	// Some versions of FF have rAF but not cAF
+	if(!raf || !caf) {
+	  var last = 0
+	    , id = 0
+	    , queue = []
+	    , frameDuration = 1000 / 60
+
+	  raf = function(callback) {
+	    if(queue.length === 0) {
+	      var _now = now()
+	        , next = Math.max(0, frameDuration - (_now - last))
+	      last = next + _now
+	      setTimeout(function() {
+	        var cp = queue.slice(0)
+	        // Clear queue here to prevent
+	        // callbacks from appending listeners
+	        // to the current frame's queue
+	        queue.length = 0
+	        for(var i = 0; i < cp.length; i++) {
+	          if(!cp[i].cancelled) {
+	            try{
+	              cp[i].callback(last)
+	            } catch(e) {
+	              setTimeout(function() { throw e }, 0)
+	            }
+	          }
+	        }
+	      }, Math.round(next))
+	    }
+	    queue.push({
+	      handle: ++id,
+	      callback: callback,
+	      cancelled: false
+	    })
+	    return id
+	  }
+
+	  caf = function(handle) {
+	    for(var i = 0; i < queue.length; i++) {
+	      if(queue[i].handle === handle) {
+	        queue[i].cancelled = true
+	      }
+	    }
+	  }
+	}
+
+	module.exports = function(fn) {
+	  // Wrap in a new function to prevent
+	  // `cancel` potentially being assigned
+	  // to the native rAF function
+	  return raf.call(root, fn)
+	}
+	module.exports.cancel = function() {
+	  caf.apply(root, arguments)
+	}
+	module.exports.polyfill = function() {
+	  root.requestAnimationFrame = raf
+	  root.cancelAnimationFrame = caf
+	}
+
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
+
+/***/ },
+/* 28 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(process) {// Generated by CoffeeScript 1.7.1
+	(function() {
+	  var getNanoSeconds, hrtime, loadTime;
+
+	  if ((typeof performance !== "undefined" && performance !== null) && performance.now) {
+	    module.exports = function() {
+	      return performance.now();
+	    };
+	  } else if ((typeof process !== "undefined" && process !== null) && process.hrtime) {
+	    module.exports = function() {
+	      return (getNanoSeconds() - loadTime) / 1e6;
+	    };
+	    hrtime = process.hrtime;
+	    getNanoSeconds = function() {
+	      var hr;
+	      hr = hrtime();
+	      return hr[0] * 1e9 + hr[1];
+	    };
+	    loadTime = getNanoSeconds();
+	  } else if (Date.now) {
+	    module.exports = function() {
+	      return Date.now() - loadTime;
+	    };
+	    loadTime = Date.now();
+	  } else {
+	    module.exports = function() {
+	      return new Date().getTime() - loadTime;
+	    };
+	    loadTime = new Date().getTime();
+	  }
+
+	}).call(this);
+
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(29)))
+
+/***/ },
+/* 29 */
+/***/ function(module, exports) {
+
+	// shim for using process in browser
+
+	var process = module.exports = {};
+	var queue = [];
+	var draining = false;
+	var currentQueue;
+	var queueIndex = -1;
+
+	function cleanUpNextTick() {
+	    draining = false;
+	    if (currentQueue.length) {
+	        queue = currentQueue.concat(queue);
+	    } else {
+	        queueIndex = -1;
+	    }
+	    if (queue.length) {
+	        drainQueue();
+	    }
+	}
+
+	function drainQueue() {
+	    if (draining) {
+	        return;
+	    }
+	    var timeout = setTimeout(cleanUpNextTick);
+	    draining = true;
+
+	    var len = queue.length;
+	    while(len) {
+	        currentQueue = queue;
+	        queue = [];
+	        while (++queueIndex < len) {
+	            if (currentQueue) {
+	                currentQueue[queueIndex].run();
+	            }
+	        }
+	        queueIndex = -1;
+	        len = queue.length;
+	    }
+	    currentQueue = null;
+	    draining = false;
+	    clearTimeout(timeout);
+	}
+
+	process.nextTick = function (fun) {
+	    var args = new Array(arguments.length - 1);
+	    if (arguments.length > 1) {
+	        for (var i = 1; i < arguments.length; i++) {
+	            args[i - 1] = arguments[i];
+	        }
+	    }
+	    queue.push(new Item(fun, args));
+	    if (queue.length === 1 && !draining) {
+	        setTimeout(drainQueue, 0);
+	    }
+	};
+
+	// v8 likes predictible objects
+	function Item(fun, array) {
+	    this.fun = fun;
+	    this.array = array;
+	}
+	Item.prototype.run = function () {
+	    this.fun.apply(null, this.array);
+	};
+	process.title = 'browser';
+	process.browser = true;
+	process.env = {};
+	process.argv = [];
+	process.version = ''; // empty string to avoid regexp issues
+	process.versions = {};
+
+	function noop() {}
+
+	process.on = noop;
+	process.addListener = noop;
+	process.once = noop;
+	process.off = noop;
+	process.removeListener = noop;
+	process.removeAllListeners = noop;
+	process.emit = noop;
+
+	process.binding = function (name) {
+	    throw new Error('process.binding is not supported');
+	};
+
+	process.cwd = function () { return '/' };
+	process.chdir = function (dir) {
+	    throw new Error('process.chdir is not supported');
+	};
+	process.umask = function() { return 0; };
+
+
+/***/ },
+/* 30 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.default = calculateSizeAndPositionData;
+
+	var _SectionManager = __webpack_require__(31);
+
+	var _SectionManager2 = _interopRequireDefault(_SectionManager);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function calculateSizeAndPositionData(_ref) {
+	  var cellCount = _ref.cellCount;
+	  var cellSizeAndPositionGetter = _ref.cellSizeAndPositionGetter;
+	  var sectionSize = _ref.sectionSize;
+
+	  var cellMetadata = [];
+	  var sectionManager = new _SectionManager2.default(sectionSize);
+	  var height = 0;
+	  var width = 0;
+
+	  for (var index = 0; index < cellCount; index++) {
+	    var cellMetadatum = cellSizeAndPositionGetter(index);
+
+	    if (cellMetadatum.height == null || isNaN(cellMetadatum.height) || cellMetadatum.width == null || isNaN(cellMetadatum.width) || cellMetadatum.x == null || isNaN(cellMetadatum.x) || cellMetadatum.y == null || isNaN(cellMetadatum.y)) {
+	      throw Error('Invalid metadata returned for cell ' + index + ':\n        x:' + cellMetadatum.x + ', y:' + cellMetadatum.y + ', width:' + cellMetadatum.width + ', height:' + cellMetadatum.height);
+	    }
+
+	    height = Math.max(height, cellMetadatum.y + cellMetadatum.height);
+	    width = Math.max(width, cellMetadatum.x + cellMetadatum.width);
+
+	    cellMetadata[index] = cellMetadatum;
+	    sectionManager.registerCell({
+	      cellMetadatum: cellMetadatum,
+	      index: index
+	    });
+	  }
+
+	  return {
+	    cellMetadata: cellMetadata,
+	    height: height,
+	    sectionManager: sectionManager,
+	    width: width
+	  };
+	}
+
+/***/ },
+/* 31 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); /**
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      * Window Sections are used to group nearby cells.
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      * This enables us to more quickly determine which cells to display in a given region of the Window.
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      * 
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      */
+
+
+	var _Section = __webpack_require__(32);
+
+	var _Section2 = _interopRequireDefault(_Section);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var SECTION_SIZE = 100;
+
+	/**
+	 * Contains 0 to many Sections.
+	 * Grows (and adds Sections) dynamically as cells are registered.
+	 * Automatically adds cells to the appropriate Section(s).
+	 */
+
+	var SectionManager = function () {
+	  function SectionManager() {
+	    var sectionSize = arguments.length <= 0 || arguments[0] === undefined ? SECTION_SIZE : arguments[0];
+
+	    _classCallCheck(this, SectionManager);
+
+	    this._sectionSize = sectionSize;
+
+	    this._cellMetadata = [];
+	    this._sections = {};
+	  }
+
+	  /**
+	   * Gets all cell indices contained in the specified region.
+	   * A region may encompass 1 or more Sections.
+	   */
+
+
+	  _createClass(SectionManager, [{
+	    key: 'getCellIndices',
+	    value: function getCellIndices(_ref) {
+	      var height = _ref.height;
+	      var width = _ref.width;
+	      var x = _ref.x;
+	      var y = _ref.y;
+
+	      var indices = {};
+
+	      this.getSections({ height: height, width: width, x: x, y: y }).forEach(function (section) {
+	        return section.getCellIndices().forEach(function (index) {
+	          return indices[index] = index;
+	        });
+	      });
+
+	      // Object keys are strings; this function returns numbers
+	      return Object.keys(indices).map(function (index) {
+	        return indices[index];
+	      });
+	    }
+
+	    /** Get size and position information for the cell specified. */
+
+	  }, {
+	    key: 'getCellMetadata',
+	    value: function getCellMetadata(index) {
+	      return this._cellMetadata[index];
+	    }
+
+	    /** Get all Sections overlapping the specified region. */
+
+	  }, {
+	    key: 'getSections',
+	    value: function getSections(_ref2) {
+	      var height = _ref2.height;
+	      var width = _ref2.width;
+	      var x = _ref2.x;
+	      var y = _ref2.y;
+
+	      var sectionXStart = Math.floor(x / this._sectionSize);
+	      var sectionXStop = Math.floor((x + width - 1) / this._sectionSize);
+	      var sectionYStart = Math.floor(y / this._sectionSize);
+	      var sectionYStop = Math.floor((y + height - 1) / this._sectionSize);
+
+	      var sections = [];
+
+	      for (var sectionX = sectionXStart; sectionX <= sectionXStop; sectionX++) {
+	        for (var sectionY = sectionYStart; sectionY <= sectionYStop; sectionY++) {
+	          var key = sectionX + '.' + sectionY;
+
+	          if (!this._sections[key]) {
+	            this._sections[key] = new _Section2.default({
+	              height: this._sectionSize,
+	              width: this._sectionSize,
+	              x: sectionX * this._sectionSize,
+	              y: sectionY * this._sectionSize
+	            });
+	          }
+
+	          sections.push(this._sections[key]);
+	        }
+	      }
+
+	      return sections;
+	    }
+
+	    /** Total number of Sections based on the currently registered cells. */
+
+	  }, {
+	    key: 'getTotalSectionCount',
+	    value: function getTotalSectionCount() {
+	      return Object.keys(this._sections).length;
+	    }
+
+	    /** Intended for debugger/test purposes only */
+
+	  }, {
+	    key: 'toString',
+	    value: function toString() {
+	      var _this = this;
+
+	      return Object.keys(this._sections).map(function (index) {
+	        return _this._sections[index].toString();
+	      });
+	    }
+
+	    /** Adds a cell to the appropriate Sections and registers it metadata for later retrievable. */
+
+	  }, {
+	    key: 'registerCell',
+	    value: function registerCell(_ref3) {
+	      var cellMetadatum = _ref3.cellMetadatum;
+	      var index = _ref3.index;
+
+	      this._cellMetadata[index] = cellMetadatum;
+
+	      this.getSections(cellMetadatum).forEach(function (section) {
+	        return section.addCellIndex(index);
+	      });
+	    }
+	  }]);
+
+	  return SectionManager;
+	}();
+
+	exports.default = SectionManager;
+
+/***/ },
+/* 32 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	/**
+	 * A section of the Window.
+	 * Window Sections are used to group nearby cells.
+	 * This enables us to more quickly determine which cells to display in a given region of the Window.
+	 * Sections have a fixed size and contain 0 to many cells (tracked by their indices).
+	 */
+
+	var Section = function () {
+	  function Section(_ref) {
+	    var height = _ref.height;
+	    var width = _ref.width;
+	    var x = _ref.x;
+	    var y = _ref.y;
+
+	    _classCallCheck(this, Section);
+
+	    this.height = height;
+	    this.width = width;
+	    this.x = x;
+	    this.y = y;
+
+	    this._indexMap = {};
+	    this._indices = [];
+	  }
+
+	  /** Add a cell to this section. */
+
+
+	  _createClass(Section, [{
+	    key: 'addCellIndex',
+	    value: function addCellIndex(index) {
+	      if (!this._indexMap[index]) {
+	        this._indexMap[index] = true;
+	        this._indices.push(index);
+	      }
+	    }
+
+	    /** Get all cell indices that have been added to this section. */
+
+	  }, {
+	    key: 'getCellIndices',
+	    value: function getCellIndices() {
+	      return this._indices;
+	    }
+
+	    /** Intended for debugger/test purposes only */
+
+	  }, {
+	    key: 'toString',
+	    value: function toString() {
+	      return this.x + ',' + this.y + ' ' + this.width + 'x' + this.height;
+	    }
+	  }]);
+
+	  return Section;
+	}(); /** @rlow */
+
+
+	exports.default = Section;
+
+/***/ },
+/* 33 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.default = getUpdatedOffsetForIndex;
+	/**
+	 * Determines a new offset that ensures a certain cell is visible, given the current offset.
+	 * If the cell is already visible then the current offset will be returned.
+	 * If the current offset is too great or small, it will be adjusted just enough to ensure the specified index is visible.
+	 *
+	 * @param cellOffset Offset (x or y) position for cell
+	 * @param cellSize Size (width or height) of cell
+	 * @param containerSize Total size (width or height) of the container
+	 * @param currentOffset Container's current (x or y) offset
+	 * @return Offset to use to ensure the specified cell is visible
+	 */
+	function getUpdatedOffsetForIndex(_ref) {
+	  var cellOffset = _ref.cellOffset;
+	  var cellSize = _ref.cellSize;
+	  var containerSize = _ref.containerSize;
+	  var currentOffset = _ref.currentOffset;
+
+	  var maxOffset = cellOffset;
+	  var minOffset = maxOffset - containerSize + cellSize;
+	  var newOffset = Math.max(minOffset, Math.min(maxOffset, currentOffset));
+
+	  return newOffset;
+	}
+
+/***/ },
+/* 34 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
 	exports.ColumnSizer = exports.default = undefined;
 
-	var _ColumnSizer2 = __webpack_require__(21);
+	var _ColumnSizer2 = __webpack_require__(35);
 
 	var _ColumnSizer3 = _interopRequireDefault(_ColumnSizer2);
 
@@ -7423,7 +8986,7 @@ var ProperSearch =
 	exports.ColumnSizer = _ColumnSizer3.default;
 
 /***/ },
-/* 21 */
+/* 35 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -7440,7 +9003,7 @@ var ProperSearch =
 
 	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
 
-	var _Grid = __webpack_require__(22);
+	var _Grid = __webpack_require__(36);
 
 	var _Grid2 = _interopRequireDefault(_Grid);
 
@@ -7564,7 +9127,7 @@ var ProperSearch =
 	exports.default = ColumnSizer;
 
 /***/ },
-/* 22 */
+/* 36 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -7574,7 +9137,7 @@ var ProperSearch =
 	});
 	exports.Grid = exports.default = undefined;
 
-	var _Grid2 = __webpack_require__(23);
+	var _Grid2 = __webpack_require__(37);
 
 	var _Grid3 = _interopRequireDefault(_Grid2);
 
@@ -7584,7 +9147,7 @@ var ProperSearch =
 	exports.Grid = _Grid3.default;
 
 /***/ },
-/* 23 */
+/* 37 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -7593,29 +9156,61 @@ var ProperSearch =
 	  value: true
 	});
 
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-	var _GridUtils = __webpack_require__(24);
-
-	var _classnames = __webpack_require__(25);
-
-	var _classnames2 = _interopRequireDefault(_classnames);
-
-	var _raf = __webpack_require__(26);
-
-	var _raf2 = _interopRequireDefault(_raf);
-
-	var _scrollbarSize = __webpack_require__(29);
-
-	var _scrollbarSize2 = _interopRequireDefault(_scrollbarSize);
 
 	var _react = __webpack_require__(2);
 
 	var _react2 = _interopRequireDefault(_react);
 
+	var _classnames = __webpack_require__(23);
+
+	var _classnames2 = _interopRequireDefault(_classnames);
+
+	var _calculateSizeAndPositionDataAndUpdateScrollOffset = __webpack_require__(38);
+
+	var _calculateSizeAndPositionDataAndUpdateScrollOffset2 = _interopRequireDefault(_calculateSizeAndPositionDataAndUpdateScrollOffset);
+
+	var _createCallbackMemoizer = __webpack_require__(24);
+
+	var _createCallbackMemoizer2 = _interopRequireDefault(_createCallbackMemoizer);
+
+	var _getNearestIndex = __webpack_require__(39);
+
+	var _getNearestIndex2 = _interopRequireDefault(_getNearestIndex);
+
+	var _getOverscanIndices = __webpack_require__(40);
+
+	var _getOverscanIndices2 = _interopRequireDefault(_getOverscanIndices);
+
+	var _scrollbarSize = __webpack_require__(25);
+
+	var _scrollbarSize2 = _interopRequireDefault(_scrollbarSize);
+
+	var _getUpdatedOffsetForIndex = __webpack_require__(33);
+
+	var _getUpdatedOffsetForIndex2 = _interopRequireDefault(_getUpdatedOffsetForIndex);
+
+	var _getVisibleCellIndices = __webpack_require__(41);
+
+	var _getVisibleCellIndices2 = _interopRequireDefault(_getVisibleCellIndices);
+
+	var _initCellMetadata = __webpack_require__(42);
+
+	var _initCellMetadata2 = _interopRequireDefault(_initCellMetadata);
+
+	var _raf = __webpack_require__(27);
+
+	var _raf2 = _interopRequireDefault(_raf);
+
 	var _reactAddonsShallowCompare = __webpack_require__(14);
 
 	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
+
+	var _updateScrollIndexHelper = __webpack_require__(43);
+
+	var _updateScrollIndexHelper2 = _interopRequireDefault(_updateScrollIndexHelper);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -7661,8 +9256,8 @@ var ProperSearch =
 	    };
 
 	    // Invokes onSectionRendered callback only when start/stop row or column indices change
-	    _this._onGridRenderedMemoizer = (0, _GridUtils.createCallbackMemoizer)();
-	    _this._onScrollMemoizer = (0, _GridUtils.createCallbackMemoizer)(false);
+	    _this._onGridRenderedMemoizer = (0, _createCallbackMemoizer2.default)();
+	    _this._onScrollMemoizer = (0, _createCallbackMemoizer2.default)(false);
 
 	    // Bind functions to instance so they don't lose context when passed around
 	    _this._computeColumnMetadata = _this._computeColumnMetadata.bind(_this);
@@ -7730,6 +9325,8 @@ var ProperSearch =
 	  }, {
 	    key: 'componentDidUpdate',
 	    value: function componentDidUpdate(prevProps, prevState) {
+	      var _this2 = this;
+
 	      var _props2 = this.props;
 	      var columnsCount = _props2.columnsCount;
 	      var columnWidth = _props2.columnWidth;
@@ -7760,8 +9357,9 @@ var ProperSearch =
 	      }
 
 	      // Update scroll offsets if the current :scrollToColumn or :scrollToRow values requires it
-	      (0, _GridUtils.updateScrollIndexHelper)({
-	        cellsCount: columnsCount,
+	      // @TODO Do we also need this check or can the one in componentWillUpdate() suffice?
+	      (0, _updateScrollIndexHelper2.default)({
+	        cellCount: columnsCount,
 	        cellMetadata: this._columnMetadata,
 	        cellSize: columnWidth,
 	        previousCellsCount: prevProps.columnsCount,
@@ -7771,10 +9369,12 @@ var ProperSearch =
 	        scrollOffset: scrollLeft,
 	        scrollToIndex: scrollToColumn,
 	        size: width,
-	        updateScrollIndexCallback: this._updateScrollLeftForScrollToColumn
+	        updateScrollIndexCallback: function updateScrollIndexCallback(scrollToColumn) {
+	          return _this2._updateScrollLeftForScrollToColumn(_extends({}, _this2.props, { scrollToColumn: scrollToColumn }));
+	        }
 	      });
-	      (0, _GridUtils.updateScrollIndexHelper)({
-	        cellsCount: rowsCount,
+	      (0, _updateScrollIndexHelper2.default)({
+	        cellCount: rowsCount,
 	        cellMetadata: this._rowMetadata,
 	        cellSize: rowHeight,
 	        previousCellsCount: prevProps.rowsCount,
@@ -7784,7 +9384,9 @@ var ProperSearch =
 	        scrollOffset: scrollTop,
 	        scrollToIndex: scrollToRow,
 	        size: height,
-	        updateScrollIndexCallback: this._updateScrollTopForScrollToRow
+	        updateScrollIndexCallback: function updateScrollIndexCallback(scrollToRow) {
+	          return _this2._updateScrollTopForScrollToRow(_extends({}, _this2.props, { scrollToRow: scrollToRow }));
+	        }
 	      });
 
 	      // Update onRowsRendered callback if start/stop indices have changed
@@ -7819,6 +9421,8 @@ var ProperSearch =
 	  }, {
 	    key: 'componentWillUpdate',
 	    value: function componentWillUpdate(nextProps, nextState) {
+	      var _this3 = this;
+
 	      if (nextProps.columnsCount === 0 && nextState.scrollLeft !== 0 || nextProps.rowsCount === 0 && nextState.scrollTop !== 0) {
 	        this._setScrollPosition({
 	          scrollLeft: 0,
@@ -7832,8 +9436,8 @@ var ProperSearch =
 	      }
 
 	      // Update scroll offsets if the size or number of cells have changed, invalidating the previous value
-	      (0, _GridUtils.computeCellMetadataAndUpdateScrollOffsetHelper)({
-	        cellsCount: this.props.columnsCount,
+	      (0, _calculateSizeAndPositionDataAndUpdateScrollOffset2.default)({
+	        cellCount: this.props.columnsCount,
 	        cellSize: this.props.columnWidth,
 	        computeMetadataCallback: this._computeColumnMetadata,
 	        computeMetadataCallbackProps: nextProps,
@@ -7842,10 +9446,12 @@ var ProperSearch =
 	        nextCellSize: nextProps.columnWidth,
 	        nextScrollToIndex: nextProps.scrollToColumn,
 	        scrollToIndex: this.props.scrollToColumn,
-	        updateScrollOffsetForScrollToIndex: this._updateScrollLeftForScrollToColumn
+	        updateScrollOffsetForScrollToIndex: function updateScrollOffsetForScrollToIndex() {
+	          return _this3._updateScrollLeftForScrollToColumn(nextProps, nextState);
+	        }
 	      });
-	      (0, _GridUtils.computeCellMetadataAndUpdateScrollOffsetHelper)({
-	        cellsCount: this.props.rowsCount,
+	      (0, _calculateSizeAndPositionDataAndUpdateScrollOffset2.default)({
+	        cellCount: this.props.rowsCount,
 	        cellSize: this.props.rowHeight,
 	        computeMetadataCallback: this._computeRowMetadata,
 	        computeMetadataCallbackProps: nextProps,
@@ -7854,7 +9460,9 @@ var ProperSearch =
 	        nextCellSize: nextProps.rowHeight,
 	        nextScrollToIndex: nextProps.scrollToRow,
 	        scrollToIndex: this.props.scrollToRow,
-	        updateScrollOffsetForScrollToIndex: this._updateScrollTopForScrollToRow
+	        updateScrollOffsetForScrollToIndex: function updateScrollOffsetForScrollToIndex() {
+	          return _this3._updateScrollTopForScrollToRow(nextProps, nextState);
+	        }
 	      });
 
 	      this.setState({
@@ -7872,6 +9480,7 @@ var ProperSearch =
 	      var overscanColumnsCount = _props3.overscanColumnsCount;
 	      var overscanRowsCount = _props3.overscanRowsCount;
 	      var renderCell = _props3.renderCell;
+	      var renderCellRanges = _props3.renderCellRanges;
 	      var rowsCount = _props3.rowsCount;
 	      var width = _props3.width;
 	      var _state2 = this.state;
@@ -7884,15 +9493,13 @@ var ProperSearch =
 
 	      // Render only enough columns and rows to cover the visible area of the grid.
 	      if (height > 0 && width > 0) {
-	        var visibleColumnIndices = (0, _GridUtils.getVisibleCellIndices)({
-	          cellsCount: columnsCount,
+	        var visibleColumnIndices = (0, _getVisibleCellIndices2.default)({
 	          cellMetadata: this._columnMetadata,
 	          containerSize: width,
 	          currentOffset: scrollLeft
 	        });
 
-	        var visibleRowIndices = (0, _GridUtils.getVisibleCellIndices)({
-	          cellsCount: rowsCount,
+	        var visibleRowIndices = (0, _getVisibleCellIndices2.default)({
 	          cellMetadata: this._rowMetadata,
 	          containerSize: height,
 	          currentOffset: scrollTop
@@ -7904,15 +9511,15 @@ var ProperSearch =
 	        this._renderedRowStartIndex = visibleRowIndices.start;
 	        this._renderedRowStopIndex = visibleRowIndices.stop;
 
-	        var overscanColumnIndices = (0, _GridUtils.getOverscanIndices)({
-	          cellsCount: columnsCount,
+	        var overscanColumnIndices = (0, _getOverscanIndices2.default)({
+	          cellCount: columnsCount,
 	          overscanCellsCount: overscanColumnsCount,
 	          startIndex: this._renderedColumnStartIndex,
 	          stopIndex: this._renderedColumnStopIndex
 	        });
 
-	        var overscanRowIndices = (0, _GridUtils.getOverscanIndices)({
-	          cellsCount: rowsCount,
+	        var overscanRowIndices = (0, _getOverscanIndices2.default)({
+	          cellCount: rowsCount,
 	          overscanCellsCount: overscanRowsCount,
 	          startIndex: this._renderedRowStartIndex,
 	          stopIndex: this._renderedRowStopIndex
@@ -7924,38 +9531,15 @@ var ProperSearch =
 	        this._rowStartIndex = overscanRowIndices.overscanStartIndex;
 	        this._rowStopIndex = overscanRowIndices.overscanStopIndex;
 
-	        for (var rowIndex = this._rowStartIndex; rowIndex <= this._rowStopIndex; rowIndex++) {
-	          var rowDatum = this._rowMetadata[rowIndex];
-
-	          for (var columnIndex = this._columnStartIndex; columnIndex <= this._columnStopIndex; columnIndex++) {
-	            var columnDatum = this._columnMetadata[columnIndex];
-	            var renderedCell = renderCell({ columnIndex: columnIndex, rowIndex: rowIndex });
-	            var key = rowIndex + '-' + columnIndex;
-
-	            // any other falsey value will be rendered
-	            // as a text node by React
-	            if (renderedCell == null || renderedCell === false) {
-	              continue;
-	            }
-
-	            var child = _react2.default.createElement(
-	              'div',
-	              {
-	                key: key,
-	                className: 'Grid__cell',
-	                style: {
-	                  height: rowDatum.size,
-	                  left: columnDatum.offset,
-	                  top: rowDatum.offset,
-	                  width: columnDatum.size
-	                }
-	              },
-	              renderedCell
-	            );
-
-	            childrenToDisplay.push(child);
-	          }
-	        }
+	        childrenToDisplay = renderCellRanges({
+	          columnMetadata: this._columnMetadata,
+	          columnStartIndex: this._columnStartIndex,
+	          columnStopIndex: this._columnStopIndex,
+	          renderCell: renderCell,
+	          rowMetadata: this._rowMetadata,
+	          rowStartIndex: this._rowStartIndex,
+	          rowStopIndex: this._rowStopIndex
+	        });
 	      }
 
 	      var gridStyle = {
@@ -8020,8 +9604,8 @@ var ProperSearch =
 	      var columnWidth = props.columnWidth;
 
 
-	      this._columnMetadata = (0, _GridUtils.initCellMetadata)({
-	        cellsCount: columnsCount,
+	      this._columnMetadata = (0, _initCellMetadata2.default)({
+	        cellCount: columnsCount,
 	        size: columnWidth
 	      });
 	    }
@@ -8032,8 +9616,8 @@ var ProperSearch =
 	      var rowsCount = props.rowsCount;
 
 
-	      this._rowMetadata = (0, _GridUtils.initCellMetadata)({
-	        cellsCount: rowsCount,
+	      this._rowMetadata = (0, _initCellMetadata2.default)({
+	        cellCount: rowsCount,
 	        size: rowHeight
 	      });
 	    }
@@ -8047,15 +9631,15 @@ var ProperSearch =
 	  }, {
 	    key: '_enablePointerEventsAfterDelay',
 	    value: function _enablePointerEventsAfterDelay() {
-	      var _this2 = this;
+	      var _this4 = this;
 
 	      if (this._disablePointerEventsTimeoutId) {
 	        clearTimeout(this._disablePointerEventsTimeoutId);
 	      }
 
 	      this._disablePointerEventsTimeoutId = setTimeout(function () {
-	        _this2._disablePointerEventsTimeoutId = null;
-	        _this2.setState({
+	        _this4._disablePointerEventsTimeoutId = null;
+	        _this4.setState({
 	          isScrolling: false
 	        });
 	      }, IS_SCROLLING_TIMEOUT);
@@ -8103,20 +9687,22 @@ var ProperSearch =
 	  }, {
 	    key: '_invokeOnScrollMemoizer',
 	    value: function _invokeOnScrollMemoizer(_ref) {
+	      var _this5 = this;
+
 	      var scrollLeft = _ref.scrollLeft;
 	      var scrollTop = _ref.scrollTop;
 	      var totalColumnsWidth = _ref.totalColumnsWidth;
 	      var totalRowsHeight = _ref.totalRowsHeight;
-	      var _props4 = this.props;
-	      var height = _props4.height;
-	      var onScroll = _props4.onScroll;
-	      var width = _props4.width;
-
 
 	      this._onScrollMemoizer({
 	        callback: function callback(_ref2) {
 	          var scrollLeft = _ref2.scrollLeft;
 	          var scrollTop = _ref2.scrollTop;
+	          var _props4 = _this5.props;
+	          var height = _props4.height;
+	          var onScroll = _props4.onScroll;
+	          var width = _props4.width;
+
 
 	          onScroll({
 	            clientHeight: height,
@@ -8143,15 +9729,15 @@ var ProperSearch =
 	  }, {
 	    key: '_setNextState',
 	    value: function _setNextState(state) {
-	      var _this3 = this;
+	      var _this6 = this;
 
 	      if (this._setNextStateAnimationFrameId) {
 	        _raf2.default.cancel(this._setNextStateAnimationFrameId);
 	      }
 
 	      this._setNextStateAnimationFrameId = (0, _raf2.default)(function () {
-	        _this3._setNextStateAnimationFrameId = null;
-	        _this3.setState(state);
+	        _this6._setNextStateAnimationFrameId = null;
+	        _this6.setState(state);
 	      });
 	    }
 	  }, {
@@ -8178,16 +9764,32 @@ var ProperSearch =
 	    }
 	  }, {
 	    key: '_updateScrollLeftForScrollToColumn',
-	    value: function _updateScrollLeftForScrollToColumn(scrollToColumnOverride) {
-	      var scrollToColumn = scrollToColumnOverride != null ? scrollToColumnOverride : this.props.scrollToColumn;
+	    value: function _updateScrollLeftForScrollToColumn() {
+	      var props = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
+	      var state = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
 
-	      var width = this.props.width;
-	      var scrollLeft = this.state.scrollLeft;
+	      var _ref4 = props || this.props;
+
+	      var columnsCount = _ref4.columnsCount;
+	      var scrollToColumn = _ref4.scrollToColumn;
+	      var width = _ref4.width;
+
+	      var _ref5 = state || this.state;
+
+	      var scrollLeft = _ref5.scrollLeft;
 
 
-	      if (scrollToColumn >= 0) {
-	        var calculatedScrollLeft = (0, _GridUtils.getUpdatedOffsetForIndex)({
-	          cellMetadata: this._columnMetadata,
+	      if (scrollToColumn >= 0 && columnsCount > 0) {
+	        var targetIndex = (0, _getNearestIndex2.default)({
+	          cellCount: this._columnMetadata.length,
+	          targetIndex: scrollToColumn
+	        });
+
+	        var columnMetadata = this._columnMetadata[targetIndex];
+
+	        var calculatedScrollLeft = (0, _getUpdatedOffsetForIndex2.default)({
+	          cellOffset: columnMetadata.offset,
+	          cellSize: columnMetadata.size,
 	          containerSize: width,
 	          currentOffset: scrollLeft,
 	          targetIndex: scrollToColumn
@@ -8202,16 +9804,32 @@ var ProperSearch =
 	    }
 	  }, {
 	    key: '_updateScrollTopForScrollToRow',
-	    value: function _updateScrollTopForScrollToRow(scrollToRowOverride) {
-	      var scrollToRow = scrollToRowOverride != null ? scrollToRowOverride : this.props.scrollToRow;
+	    value: function _updateScrollTopForScrollToRow() {
+	      var props = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
+	      var state = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
 
-	      var height = this.props.height;
-	      var scrollTop = this.state.scrollTop;
+	      var _ref6 = props || this.props;
+
+	      var height = _ref6.height;
+	      var rowsCount = _ref6.rowsCount;
+	      var scrollToRow = _ref6.scrollToRow;
+
+	      var _ref7 = state || this.state;
+
+	      var scrollTop = _ref7.scrollTop;
 
 
-	      if (scrollToRow >= 0) {
-	        var calculatedScrollTop = (0, _GridUtils.getUpdatedOffsetForIndex)({
-	          cellMetadata: this._rowMetadata,
+	      if (scrollToRow >= 0 && rowsCount > 0) {
+	        var targetIndex = (0, _getNearestIndex2.default)({
+	          cellCount: this._rowMetadata.length,
+	          targetIndex: scrollToRow
+	        });
+
+	        var rowMetadata = this._rowMetadata[targetIndex];
+
+	        var calculatedScrollTop = (0, _getUpdatedOffsetForIndex2.default)({
+	          cellOffset: rowMetadata.offset,
+	          cellSize: rowMetadata.size,
 	          containerSize: height,
 	          currentOffset: scrollTop,
 	          targetIndex: scrollToRow
@@ -8344,6 +9962,20 @@ var ProperSearch =
 	  renderCell: _react.PropTypes.func.isRequired,
 
 	  /**
+	   * Responsible for rendering a group of cells given their index ranges.
+	   * Should implement the following interface: ({
+	   *   columnMetadata:Array<Object>,
+	   *   columnStartIndex: number,
+	   *   columnStopIndex: number,
+	   *   renderCell: Function,
+	   *   rowMetadata:Array<Object>,
+	   *   rowStartIndex: number,
+	   *   rowStopIndex: number
+	   * }): Array<PropTypes.node>
+	   */
+	  renderCellRanges: _react.PropTypes.func.isRequired,
+
+	  /**
 	   * Either a fixed row height (number) or a function that returns the height of a row given its index.
 	   * Should implement the following interface: (index: number): number
 	   */
@@ -8387,12 +10019,59 @@ var ProperSearch =
 	    return null;
 	  },
 	  overscanColumnsCount: 0,
-	  overscanRowsCount: 10
+	  overscanRowsCount: 10,
+	  renderCellRanges: defaultRenderCellRanges
 	};
 	exports.default = Grid;
 
+
+	function defaultRenderCellRanges(_ref8) {
+	  var columnMetadata = _ref8.columnMetadata;
+	  var columnStartIndex = _ref8.columnStartIndex;
+	  var columnStopIndex = _ref8.columnStopIndex;
+	  var renderCell = _ref8.renderCell;
+	  var rowMetadata = _ref8.rowMetadata;
+	  var rowStartIndex = _ref8.rowStartIndex;
+	  var rowStopIndex = _ref8.rowStopIndex;
+
+	  var renderedCells = [];
+
+	  for (var rowIndex = rowStartIndex; rowIndex <= rowStopIndex; rowIndex++) {
+	    var rowDatum = rowMetadata[rowIndex];
+
+	    for (var columnIndex = columnStartIndex; columnIndex <= columnStopIndex; columnIndex++) {
+	      var columnDatum = columnMetadata[columnIndex];
+	      var renderedCell = renderCell({ columnIndex: columnIndex, rowIndex: rowIndex });
+	      var key = rowIndex + '-' + columnIndex;
+
+	      if (renderedCell == null || renderedCell === false) {
+	        continue;
+	      }
+
+	      var child = _react2.default.createElement(
+	        'div',
+	        {
+	          key: key,
+	          className: 'Grid__cell',
+	          style: {
+	            height: rowDatum.size,
+	            left: columnDatum.offset,
+	            top: rowDatum.offset,
+	            width: columnDatum.size
+	          }
+	        },
+	        renderedCell
+	      );
+
+	      renderedCells.push(child);
+	    }
+	  }
+
+	  return renderedCells;
+	}
+
 /***/ },
-/* 24 */
+/* 38 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -8400,18 +10079,11 @@ var ProperSearch =
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
-	exports.computeCellMetadataAndUpdateScrollOffsetHelper = computeCellMetadataAndUpdateScrollOffsetHelper;
-	exports.createCallbackMemoizer = createCallbackMemoizer;
-	exports.findNearestCell = findNearestCell;
-	exports.getOverscanIndices = getOverscanIndices;
-	exports.getUpdatedOffsetForIndex = getUpdatedOffsetForIndex;
-	exports.getVisibleCellIndices = getVisibleCellIndices;
-	exports.initCellMetadata = initCellMetadata;
-	exports.updateScrollIndexHelper = updateScrollIndexHelper;
+	exports.default = calculateSizeAndPositionDataAndUpdateScrollOffset;
 	/**
 	 * Helper method that determines when to recalculate row or column metadata.
 	 *
-	 * @param cellsCount Number of rows or columns in the current axis
+	 * @param cellCount Number of rows or columns in the current axis
 	 * @param cellsSize Width or height of cells for the current axis
 	 * @param computeMetadataCallback Method to invoke if cell metadata should be recalculated
 	 * @param computeMetadataCallbackProps Parameters to pass to :computeMetadataCallback
@@ -8422,8 +10094,8 @@ var ProperSearch =
 	 * @param scrollToIndex Scroll-to-index
 	 * @param updateScrollOffsetForScrollToIndex Callback to invoke if the scroll position should be recalculated
 	 */
-	function computeCellMetadataAndUpdateScrollOffsetHelper(_ref) {
-	  var cellsCount = _ref.cellsCount;
+	function calculateSizeAndPositionDataAndUpdateScrollOffset(_ref) {
+	  var cellCount = _ref.cellCount;
 	  var cellSize = _ref.cellSize;
 	  var computeMetadataCallback = _ref.computeMetadataCallback;
 	  var computeMetadataCallbackProps = _ref.computeMetadataCallbackProps;
@@ -8436,7 +10108,7 @@ var ProperSearch =
 
 	  // Don't compare cell sizes if they are functions because inline functions would cause infinite loops.
 	  // In that event users should use the manual recompute methods to inform of changes.
-	  if (computeMetadataOnNextUpdate || cellsCount !== nextCellsCount || (typeof cellSize === 'number' || typeof nextCellSize === 'number') && cellSize !== nextCellSize) {
+	  if (computeMetadataOnNextUpdate || cellCount !== nextCellsCount || (typeof cellSize === 'number' || typeof nextCellSize === 'number') && cellSize !== nextCellSize) {
 	    computeMetadataCallback(computeMetadataCallbackProps);
 
 	    // Updated cell metadata may have hidden the previous scrolled-to item.
@@ -8447,46 +10119,132 @@ var ProperSearch =
 	  }
 	}
 
+/***/ },
+/* 39 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.default = getNearestIndex;
 	/**
-	 * Helper utility that updates the specified callback whenever any of the specified indices have changed.
+	 * Finds the nearest valid index to the one specified if the specified index is invalid.
+	 * @param cellCount Number of rows or columns in the current axis
+	 * @param targetIndex Index to use if possible
 	 */
-	function createCallbackMemoizer() {
-	  var requireAllKeys = arguments.length <= 0 || arguments[0] === undefined ? true : arguments[0];
+	function getNearestIndex(_ref) {
+	  var cellCount = _ref.cellCount;
+	  var targetIndex = _ref.targetIndex;
 
-	  var cachedIndices = {};
+	  return Math.max(0, Math.min(cellCount - 1, targetIndex));
+	}
 
-	  return function (_ref2) {
-	    var callback = _ref2.callback;
-	    var indices = _ref2.indices;
+/***/ },
+/* 40 */
+/***/ function(module, exports) {
 
-	    var keys = Object.keys(indices);
-	    var allInitialized = !requireAllKeys || keys.every(function (key) {
-	      return indices[key] >= 0;
-	    });
-	    var indexChanged = keys.some(function (key) {
-	      return cachedIndices[key] !== indices[key];
-	    });
+	"use strict";
 
-	    cachedIndices = indices;
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.default = getOverscanIndices;
+	/**
+	 * Calculates the number of cells to overscan before and after a specified range.
+	 * This function ensures that overscanning doesn't exceed the available cells.
+	 * @param cellCount Number of rows or columns in the current axis
+	 * @param overscanCellsCount Maximum number of cells to over-render in either direction
+	 * @param startIndex Begin of range of visible cells
+	 * @param stopIndex End of range of visible cells
+	 */
+	function getOverscanIndices(_ref) {
+	  var cellCount = _ref.cellCount;
+	  var overscanCellsCount = _ref.overscanCellsCount;
+	  var startIndex = _ref.startIndex;
+	  var stopIndex = _ref.stopIndex;
 
-	    if (allInitialized && indexChanged) {
-	      callback(indices);
-	    }
+	  return {
+	    overscanStartIndex: Math.max(0, startIndex - overscanCellsCount),
+	    overscanStopIndex: Math.min(cellCount - 1, stopIndex + overscanCellsCount)
+	  };
+	}
+
+/***/ },
+/* 41 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.default = getVisibleCellIndices;
+	/**
+	 * Determines the range of cells to display for a given offset in order to fill the specified container.
+	 *
+	 * @param cellMetadata Metadata initially computed by initCellMetadata()
+	 * @param containerSize Total size (width or height) of the container
+	 * @param currentOffset Container's current (x or y) offset
+	 * @return An object containing :start and :stop attributes, each specifying a cell index
+	 */
+	function getVisibleCellIndices(_ref) {
+	  var cellMetadata = _ref.cellMetadata;
+	  var containerSize = _ref.containerSize;
+	  var currentOffset = _ref.currentOffset;
+
+	  var cellCount = cellMetadata.length;
+
+	  if (cellCount === 0) {
+	    return {};
+	  }
+
+	  // TODO Add better guards here against NaN offset
+
+	  var lastDatum = cellMetadata[cellMetadata.length - 1];
+	  var totalCellSize = lastDatum.offset + lastDatum.size;
+
+	  // Ensure offset is within reasonable bounds
+	  currentOffset = Math.max(0, Math.min(totalCellSize - containerSize, currentOffset));
+
+	  var maxOffset = Math.min(totalCellSize, currentOffset + containerSize);
+
+	  var start = findNearestCell({
+	    cellMetadata: cellMetadata,
+	    mode: EQUAL_OR_LOWER,
+	    offset: currentOffset
+	  });
+
+	  var datum = cellMetadata[start];
+	  currentOffset = datum.offset + datum.size;
+
+	  var stop = start;
+
+	  while (currentOffset < maxOffset && stop < cellCount - 1) {
+	    stop++;
+
+	    currentOffset += cellMetadata[stop].size;
+	  }
+
+	  return {
+	    start: start,
+	    stop: stop
 	  };
 	}
 
 	/**
 	 * Binary search function inspired by react-infinite.
 	 */
-	function findNearestCell(_ref3) {
-	  var cellMetadata = _ref3.cellMetadata;
-	  var mode = _ref3.mode;
-	  var offset = _ref3.offset;
+	function findNearestCell(_ref2) {
+	  var cellMetadata = _ref2.cellMetadata;
+	  var mode = _ref2.mode;
+	  var offset = _ref2.offset;
 
 	  var high = cellMetadata.length - 1;
 	  var low = 0;
-	  var middle = undefined;
-	  var currentOffset = undefined;
+	  var middle = void 0;
+	  var currentOffset = void 0;
 
 	  // TODO Add better guards here against NaN offset
 
@@ -8503,122 +10261,37 @@ var ProperSearch =
 	    }
 	  }
 
-	  if (mode === findNearestCell.EQUAL_OR_LOWER && low > 0) {
+	  if (mode === EQUAL_OR_LOWER && low > 0) {
 	    return low - 1;
-	  } else if (mode === findNearestCell.EQUAL_OR_HIGHER && high < cellMetadata.length - 1) {
+	  } else if (mode === EQUAL_OR_HIGHER && high < cellMetadata.length - 1) {
 	    return high + 1;
 	  }
 	}
 
-	findNearestCell.EQUAL_OR_LOWER = 1;
-	findNearestCell.EQUAL_OR_HIGHER = 2;
+	var EQUAL_OR_LOWER = 1;
+	var EQUAL_OR_HIGHER = 2;
 
-	function getOverscanIndices(_ref4) {
-	  var cellsCount = _ref4.cellsCount;
-	  var overscanCellsCount = _ref4.overscanCellsCount;
-	  var startIndex = _ref4.startIndex;
-	  var stopIndex = _ref4.stopIndex;
+/***/ },
+/* 42 */
+/***/ function(module, exports) {
 
-	  return {
-	    overscanStartIndex: Math.max(0, startIndex - overscanCellsCount),
-	    overscanStopIndex: Math.min(cellsCount - 1, stopIndex + overscanCellsCount)
-	  };
-	}
+	"use strict";
 
-	/**
-	 * Determines a new offset that ensures a certain cell is visible, given the current offset.
-	 * If the cell is already visible then the current offset will be returned.
-	 * If the current offset is too great or small, it will be adjusted just enough to ensure the specified index is visible.
-	 *
-	 * @param cellMetadata Metadata initially computed by initCellMetadata()
-	 * @param containerSize Total size (width or height) of the container
-	 * @param currentOffset Container's current (x or y) offset
-	 * @param targetIndex Index of target cell
-	 * @return Offset to use to ensure the specified cell is visible
-	 */
-	function getUpdatedOffsetForIndex(_ref5) {
-	  var cellMetadata = _ref5.cellMetadata;
-	  var containerSize = _ref5.containerSize;
-	  var currentOffset = _ref5.currentOffset;
-	  var targetIndex = _ref5.targetIndex;
-
-	  if (cellMetadata.length === 0) {
-	    return 0;
-	  }
-
-	  targetIndex = Math.max(0, Math.min(cellMetadata.length - 1, targetIndex));
-
-	  var datum = cellMetadata[targetIndex];
-	  var maxOffset = datum.offset;
-	  var minOffset = maxOffset - containerSize + datum.size;
-	  var newOffset = Math.max(minOffset, Math.min(maxOffset, currentOffset));
-
-	  return newOffset;
-	}
-
-	/**
-	 * Determines the range of cells to display for a given offset in order to fill the specified container.
-	 *
-	 * @param cellsCount Total number of cells.
-	 * @param cellMetadata Metadata initially computed by initCellMetadata()
-	 * @param containerSize Total size (width or height) of the container
-	 * @param currentOffset Container's current (x or y) offset
-	 * @return An object containing :start and :stop attributes, each specifying a cell index
-	 */
-	function getVisibleCellIndices(_ref6) {
-	  var cellsCount = _ref6.cellsCount;
-	  var cellMetadata = _ref6.cellMetadata;
-	  var containerSize = _ref6.containerSize;
-	  var currentOffset = _ref6.currentOffset;
-
-	  if (cellsCount === 0) {
-	    return {};
-	  }
-
-	  // TODO Add better guards here against NaN offset
-
-	  var lastDatum = cellMetadata[cellMetadata.length - 1];
-	  var totalCellSize = lastDatum.offset + lastDatum.size;
-
-	  // Ensure offset is within reasonable bounds
-	  currentOffset = Math.max(0, Math.min(totalCellSize - containerSize, currentOffset));
-
-	  var maxOffset = Math.min(totalCellSize, currentOffset + containerSize);
-
-	  var start = findNearestCell({
-	    cellMetadata: cellMetadata,
-	    mode: findNearestCell.EQUAL_OR_LOWER,
-	    offset: currentOffset
-	  });
-
-	  var datum = cellMetadata[start];
-	  currentOffset = datum.offset + datum.size;
-
-	  var stop = start;
-
-	  while (currentOffset < maxOffset && stop < cellsCount - 1) {
-	    stop++;
-
-	    currentOffset += cellMetadata[stop].size;
-	  }
-
-	  return {
-	    start: start,
-	    stop: stop
-	  };
-	}
-
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.default = initCellMetadata;
 	/**
 	 * Initializes metadata for an axis and its cells.
 	 * This data is used to determine which cells are visible given a container size and scroll position.
 	 *
-	 * @param cellsCount Total number of cells.
+	 * @param cellCount Total number of cells.
 	 * @param size Either a fixed size or a function that returns the size for a given given an index.
 	 * @return Object mapping cell index to cell metadata (size, offset)
 	 */
-	function initCellMetadata(_ref7) {
-	  var cellsCount = _ref7.cellsCount;
-	  var size = _ref7.size;
+	function initCellMetadata(_ref) {
+	  var cellCount = _ref.cellCount;
+	  var size = _ref.size;
 
 	  var sizeGetter = size instanceof Function ? size : function (index) {
 	    return size;
@@ -8627,11 +10300,11 @@ var ProperSearch =
 	  var cellMetadata = [];
 	  var offset = 0;
 
-	  for (var i = 0; i < cellsCount; i++) {
+	  for (var i = 0; i < cellCount; i++) {
 	    var _size = sizeGetter(i);
 
 	    if (_size == null || isNaN(_size)) {
-	      throw Error('Invalid size returned for cell ' + i + ' of value ' + _size);
+	      throw Error("Invalid size returned for cell " + i + " of value " + _size);
 	    }
 
 	    cellMetadata[i] = {
@@ -8645,11 +10318,32 @@ var ProperSearch =
 	  return cellMetadata;
 	}
 
+/***/ },
+/* 43 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.default = updateScrollIndexHelper;
+
+	var _getNearestIndex = __webpack_require__(39);
+
+	var _getNearestIndex2 = _interopRequireDefault(_getNearestIndex);
+
+	var _getUpdatedOffsetForIndex = __webpack_require__(33);
+
+	var _getUpdatedOffsetForIndex2 = _interopRequireDefault(_getUpdatedOffsetForIndex);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 	/**
 	 * Helper function that determines when to update scroll offsets to ensure that a scroll-to-index remains visible.
 	 *
 	 * @param cellMetadata Metadata initially computed by initCellMetadata()
-	 * @param cellsCount Number of rows or columns in the current axis
+	 * @param cellCount Number of rows or columns in the current axis
 	 * @param cellsSize Width or height of cells for the current axis
 	 * @param previousCellsCount Previous number of rows or columns
 	 * @param previousCellsSize Previous width or height of cells
@@ -8658,354 +10352,56 @@ var ProperSearch =
 	 * @param scrollOffset Current scrollLeft or scrollTop
 	 * @param scrollToIndex Scroll-to-index
 	 * @param size Width or height of the virtualized container
-	 * @param updateScrollIndexCallback Callback to invoke with an optional scroll-to-index override
+	 * @param updateScrollIndexCallback Callback to invoke with an scroll-to-index value
 	 */
-	function updateScrollIndexHelper(_ref8) {
-	  var cellMetadata = _ref8.cellMetadata;
-	  var cellsCount = _ref8.cellsCount;
-	  var cellSize = _ref8.cellSize;
-	  var previousCellsCount = _ref8.previousCellsCount;
-	  var previousCellSize = _ref8.previousCellSize;
-	  var previousScrollToIndex = _ref8.previousScrollToIndex;
-	  var previousSize = _ref8.previousSize;
-	  var scrollOffset = _ref8.scrollOffset;
-	  var scrollToIndex = _ref8.scrollToIndex;
-	  var size = _ref8.size;
-	  var updateScrollIndexCallback = _ref8.updateScrollIndexCallback;
+	function updateScrollIndexHelper(_ref) {
+	  var cellMetadata = _ref.cellMetadata;
+	  var cellCount = _ref.cellCount;
+	  var cellSize = _ref.cellSize;
+	  var previousCellsCount = _ref.previousCellsCount;
+	  var previousCellSize = _ref.previousCellSize;
+	  var previousScrollToIndex = _ref.previousScrollToIndex;
+	  var previousSize = _ref.previousSize;
+	  var scrollOffset = _ref.scrollOffset;
+	  var scrollToIndex = _ref.scrollToIndex;
+	  var size = _ref.size;
+	  var updateScrollIndexCallback = _ref.updateScrollIndexCallback;
 
-	  var hasScrollToIndex = scrollToIndex >= 0 && scrollToIndex < cellsCount;
+	  var hasScrollToIndex = scrollToIndex >= 0 && scrollToIndex < cellCount;
 	  var sizeHasChanged = size !== previousSize || !previousCellSize || typeof cellSize === 'number' && cellSize !== previousCellSize;
 
 	  // If we have a new scroll target OR if height/row-height has changed,
 	  // We should ensure that the scroll target is visible.
 	  if (hasScrollToIndex && (sizeHasChanged || scrollToIndex !== previousScrollToIndex)) {
-	    updateScrollIndexCallback();
+	    updateScrollIndexCallback(scrollToIndex);
 
 	    // If we don't have a selected item but list size or number of children have decreased,
 	    // Make sure we aren't scrolled too far past the current content.
-	  } else if (!hasScrollToIndex && (size < previousSize || cellsCount < previousCellsCount)) {
-	      var calculatedScrollOffset = getUpdatedOffsetForIndex({
-	        cellMetadata: cellMetadata,
-	        containerSize: size,
-	        currentOffset: scrollOffset,
-	        targetIndex: cellsCount - 1
+	  } else if (!hasScrollToIndex && cellCount > 0 && (size < previousSize || cellCount < previousCellsCount)) {
+	      scrollToIndex = (0, _getNearestIndex2.default)({
+	        cellCount: cellCount,
+	        targetIndex: cellCount - 1
 	      });
 
-	      // Only adjust the scroll position if we've scrolled below the last set of rows.
-	      if (calculatedScrollOffset < scrollOffset) {
-	        updateScrollIndexCallback(cellsCount - 1);
+	      if (scrollToIndex < cellCount) {
+	        var cellMetadatum = cellMetadata[scrollToIndex];
+	        var calculatedScrollOffset = (0, _getUpdatedOffsetForIndex2.default)({
+	          cellOffset: cellMetadatum.offset,
+	          cellSize: cellMetadatum.size,
+	          containerSize: size,
+	          currentOffset: scrollOffset
+	        });
+
+	        // Only adjust the scroll position if we've scrolled below the last set of rows.
+	        if (calculatedScrollOffset < scrollOffset) {
+	          updateScrollIndexCallback(cellCount - 1);
+	        }
 	      }
 	    }
 	}
 
 /***/ },
-/* 25 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
-	  Copyright (c) 2016 Jed Watson.
-	  Licensed under the MIT License (MIT), see
-	  http://jedwatson.github.io/classnames
-	*/
-	/* global define */
-
-	(function () {
-		'use strict';
-
-		var hasOwn = {}.hasOwnProperty;
-
-		function classNames () {
-			var classes = [];
-
-			for (var i = 0; i < arguments.length; i++) {
-				var arg = arguments[i];
-				if (!arg) continue;
-
-				var argType = typeof arg;
-
-				if (argType === 'string' || argType === 'number') {
-					classes.push(arg);
-				} else if (Array.isArray(arg)) {
-					classes.push(classNames.apply(null, arg));
-				} else if (argType === 'object') {
-					for (var key in arg) {
-						if (hasOwn.call(arg, key) && arg[key]) {
-							classes.push(key);
-						}
-					}
-				}
-			}
-
-			return classes.join(' ');
-		}
-
-		if (typeof module !== 'undefined' && module.exports) {
-			module.exports = classNames;
-		} else if (true) {
-			// register as 'classnames', consistent with npm package name
-			!(__WEBPACK_AMD_DEFINE_ARRAY__ = [], __WEBPACK_AMD_DEFINE_RESULT__ = function () {
-				return classNames;
-			}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-		} else {
-			window.classNames = classNames;
-		}
-	}());
-
-
-/***/ },
-/* 26 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/* WEBPACK VAR INJECTION */(function(global) {var now = __webpack_require__(27)
-	  , root = typeof window === 'undefined' ? global : window
-	  , vendors = ['moz', 'webkit']
-	  , suffix = 'AnimationFrame'
-	  , raf = root['request' + suffix]
-	  , caf = root['cancel' + suffix] || root['cancelRequest' + suffix]
-
-	for(var i = 0; !raf && i < vendors.length; i++) {
-	  raf = root[vendors[i] + 'Request' + suffix]
-	  caf = root[vendors[i] + 'Cancel' + suffix]
-	      || root[vendors[i] + 'CancelRequest' + suffix]
-	}
-
-	// Some versions of FF have rAF but not cAF
-	if(!raf || !caf) {
-	  var last = 0
-	    , id = 0
-	    , queue = []
-	    , frameDuration = 1000 / 60
-
-	  raf = function(callback) {
-	    if(queue.length === 0) {
-	      var _now = now()
-	        , next = Math.max(0, frameDuration - (_now - last))
-	      last = next + _now
-	      setTimeout(function() {
-	        var cp = queue.slice(0)
-	        // Clear queue here to prevent
-	        // callbacks from appending listeners
-	        // to the current frame's queue
-	        queue.length = 0
-	        for(var i = 0; i < cp.length; i++) {
-	          if(!cp[i].cancelled) {
-	            try{
-	              cp[i].callback(last)
-	            } catch(e) {
-	              setTimeout(function() { throw e }, 0)
-	            }
-	          }
-	        }
-	      }, Math.round(next))
-	    }
-	    queue.push({
-	      handle: ++id,
-	      callback: callback,
-	      cancelled: false
-	    })
-	    return id
-	  }
-
-	  caf = function(handle) {
-	    for(var i = 0; i < queue.length; i++) {
-	      if(queue[i].handle === handle) {
-	        queue[i].cancelled = true
-	      }
-	    }
-	  }
-	}
-
-	module.exports = function(fn) {
-	  // Wrap in a new function to prevent
-	  // `cancel` potentially being assigned
-	  // to the native rAF function
-	  return raf.call(root, fn)
-	}
-	module.exports.cancel = function() {
-	  caf.apply(root, arguments)
-	}
-	module.exports.polyfill = function() {
-	  root.requestAnimationFrame = raf
-	  root.cancelAnimationFrame = caf
-	}
-
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
-
-/***/ },
-/* 27 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/* WEBPACK VAR INJECTION */(function(process) {// Generated by CoffeeScript 1.7.1
-	(function() {
-	  var getNanoSeconds, hrtime, loadTime;
-
-	  if ((typeof performance !== "undefined" && performance !== null) && performance.now) {
-	    module.exports = function() {
-	      return performance.now();
-	    };
-	  } else if ((typeof process !== "undefined" && process !== null) && process.hrtime) {
-	    module.exports = function() {
-	      return (getNanoSeconds() - loadTime) / 1e6;
-	    };
-	    hrtime = process.hrtime;
-	    getNanoSeconds = function() {
-	      var hr;
-	      hr = hrtime();
-	      return hr[0] * 1e9 + hr[1];
-	    };
-	    loadTime = getNanoSeconds();
-	  } else if (Date.now) {
-	    module.exports = function() {
-	      return Date.now() - loadTime;
-	    };
-	    loadTime = Date.now();
-	  } else {
-	    module.exports = function() {
-	      return new Date().getTime() - loadTime;
-	    };
-	    loadTime = new Date().getTime();
-	  }
-
-	}).call(this);
-
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(28)))
-
-/***/ },
-/* 28 */
-/***/ function(module, exports) {
-
-	// shim for using process in browser
-
-	var process = module.exports = {};
-	var queue = [];
-	var draining = false;
-	var currentQueue;
-	var queueIndex = -1;
-
-	function cleanUpNextTick() {
-	    draining = false;
-	    if (currentQueue.length) {
-	        queue = currentQueue.concat(queue);
-	    } else {
-	        queueIndex = -1;
-	    }
-	    if (queue.length) {
-	        drainQueue();
-	    }
-	}
-
-	function drainQueue() {
-	    if (draining) {
-	        return;
-	    }
-	    var timeout = setTimeout(cleanUpNextTick);
-	    draining = true;
-
-	    var len = queue.length;
-	    while(len) {
-	        currentQueue = queue;
-	        queue = [];
-	        while (++queueIndex < len) {
-	            if (currentQueue) {
-	                currentQueue[queueIndex].run();
-	            }
-	        }
-	        queueIndex = -1;
-	        len = queue.length;
-	    }
-	    currentQueue = null;
-	    draining = false;
-	    clearTimeout(timeout);
-	}
-
-	process.nextTick = function (fun) {
-	    var args = new Array(arguments.length - 1);
-	    if (arguments.length > 1) {
-	        for (var i = 1; i < arguments.length; i++) {
-	            args[i - 1] = arguments[i];
-	        }
-	    }
-	    queue.push(new Item(fun, args));
-	    if (queue.length === 1 && !draining) {
-	        setTimeout(drainQueue, 0);
-	    }
-	};
-
-	// v8 likes predictible objects
-	function Item(fun, array) {
-	    this.fun = fun;
-	    this.array = array;
-	}
-	Item.prototype.run = function () {
-	    this.fun.apply(null, this.array);
-	};
-	process.title = 'browser';
-	process.browser = true;
-	process.env = {};
-	process.argv = [];
-	process.version = ''; // empty string to avoid regexp issues
-	process.versions = {};
-
-	function noop() {}
-
-	process.on = noop;
-	process.addListener = noop;
-	process.once = noop;
-	process.off = noop;
-	process.removeListener = noop;
-	process.removeAllListeners = noop;
-	process.emit = noop;
-
-	process.binding = function (name) {
-	    throw new Error('process.binding is not supported');
-	};
-
-	process.cwd = function () { return '/' };
-	process.chdir = function (dir) {
-	    throw new Error('process.chdir is not supported');
-	};
-	process.umask = function() { return 0; };
-
-
-/***/ },
-/* 29 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var canUseDOM = __webpack_require__(30);
-
-	var size;
-
-	module.exports = function (recalc) {
-	  if (!size || recalc) {
-	    if (canUseDOM) {
-	      var scrollDiv = document.createElement('div');
-
-	      scrollDiv.style.position = 'absolute';
-	      scrollDiv.style.top = '-9999px';
-	      scrollDiv.style.width = '50px';
-	      scrollDiv.style.height = '50px';
-	      scrollDiv.style.overflow = 'scroll';
-
-	      document.body.appendChild(scrollDiv);
-	      size = scrollDiv.offsetWidth - scrollDiv.clientWidth;
-	      document.body.removeChild(scrollDiv);
-	    }
-	  }
-
-	  return size;
-	};
-
-/***/ },
-/* 30 */
-/***/ function(module, exports) {
-
-	'use strict';
-	module.exports = !!(typeof window !== 'undefined' && window.document && window.document.createElement);
-
-/***/ },
-/* 31 */
+/* 44 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -9015,19 +10411,19 @@ var ProperSearch =
 	});
 	exports.SortIndicator = exports.SortDirection = exports.FlexColumn = exports.FlexTable = exports.default = undefined;
 
-	var _FlexTable2 = __webpack_require__(32);
+	var _FlexTable2 = __webpack_require__(45);
 
 	var _FlexTable3 = _interopRequireDefault(_FlexTable2);
 
-	var _FlexColumn2 = __webpack_require__(33);
+	var _FlexColumn2 = __webpack_require__(46);
 
 	var _FlexColumn3 = _interopRequireDefault(_FlexColumn2);
 
-	var _SortDirection2 = __webpack_require__(35);
+	var _SortDirection2 = __webpack_require__(48);
 
 	var _SortDirection3 = _interopRequireDefault(_SortDirection2);
 
-	var _SortIndicator2 = __webpack_require__(34);
+	var _SortIndicator2 = __webpack_require__(47);
 
 	var _SortIndicator3 = _interopRequireDefault(_SortIndicator2);
 
@@ -9040,7 +10436,7 @@ var ProperSearch =
 	exports.SortIndicator = _SortIndicator3.default;
 
 /***/ },
-/* 32 */
+/* 45 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -9053,11 +10449,11 @@ var ProperSearch =
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _classnames = __webpack_require__(25);
+	var _classnames = __webpack_require__(23);
 
 	var _classnames2 = _interopRequireDefault(_classnames);
 
-	var _FlexColumn = __webpack_require__(33);
+	var _FlexColumn = __webpack_require__(46);
 
 	var _FlexColumn2 = _interopRequireDefault(_FlexColumn);
 
@@ -9065,17 +10461,17 @@ var ProperSearch =
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _reactDom = __webpack_require__(36);
+	var _reactDom = __webpack_require__(49);
 
 	var _reactAddonsShallowCompare = __webpack_require__(14);
 
 	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
 
-	var _Grid = __webpack_require__(22);
+	var _Grid = __webpack_require__(36);
 
 	var _Grid2 = _interopRequireDefault(_Grid);
 
-	var _SortDirection = __webpack_require__(35);
+	var _SortDirection = __webpack_require__(48);
 
 	var _SortDirection2 = _interopRequireDefault(_SortDirection);
 
@@ -9280,13 +10676,6 @@ var ProperSearch =
 	      });
 	      var style = this._getFlexStyleForColumn(column);
 
-	      // If this is a sortable header, clicking it should update the table data's sorting.
-	      var newSortDirection = sortBy !== dataKey || sortDirection === _SortDirection2.default.DESC ? _SortDirection2.default.ASC : _SortDirection2.default.DESC;
-	      var onClick = function onClick() {
-	        sortEnabled && sort(dataKey, newSortDirection);
-	        onHeaderClick && onHeaderClick(dataKey, columnData);
-	      };
-
 	      var renderedHeader = headerRenderer({
 	        columnData: columnData,
 	        dataKey: dataKey,
@@ -9299,10 +10688,27 @@ var ProperSearch =
 	      var a11yProps = {};
 
 	      if (sortEnabled || onHeaderClick) {
-	        a11yProps['aria-label'] = column.props['aria-label'] || label || dataKey;
-	        a11yProps.role = 'rowheader';
-	        a11yProps.tabIndex = 0;
-	        a11yProps.onClick = onClick;
+	        (function () {
+	          // If this is a sortable header, clicking it should update the table data's sorting.
+	          var newSortDirection = sortBy !== dataKey || sortDirection === _SortDirection2.default.DESC ? _SortDirection2.default.ASC : _SortDirection2.default.DESC;
+
+	          var onClick = function onClick() {
+	            sortEnabled && sort(dataKey, newSortDirection);
+	            onHeaderClick && onHeaderClick(dataKey, columnData);
+	          };
+
+	          var onKeyDown = function onKeyDown(event) {
+	            if (event.key === 'Enter' || event.key === ' ') {
+	              onClick();
+	            }
+	          };
+
+	          a11yProps['aria-label'] = column.props['aria-label'] || label || dataKey;
+	          a11yProps.role = 'rowheader';
+	          a11yProps.tabIndex = 0;
+	          a11yProps.onClick = onClick;
+	          a11yProps.onKeyDown = onKeyDown;
+	        })();
 	      }
 
 	      return _react2.default.createElement(
@@ -9331,7 +10737,7 @@ var ProperSearch =
 	      var rowClass = rowClassName instanceof Function ? rowClassName(rowIndex) : rowClassName;
 	      var rowData = rowGetter(rowIndex);
 
-	      var renderedRow = _react2.default.Children.map(children, function (column, columnIndex) {
+	      var renderedRow = _react2.default.Children.toArray(children).map(function (column, columnIndex) {
 	        return _this3._createColumn(column, columnIndex, rowData, rowIndex);
 	      });
 
@@ -9394,9 +10800,9 @@ var ProperSearch =
 	      var children = _props4.children;
 	      var disableHeader = _props4.disableHeader;
 
-	      var items = disableHeader ? [] : children;
+	      var items = disableHeader ? [] : _react2.default.Children.toArray(children);
 
-	      return _react2.default.Children.map(items, function (column, index) {
+	      return items.map(function (column, index) {
 	        return _this4._createHeader(column, index);
 	      });
 	    }
@@ -9545,7 +10951,7 @@ var ProperSearch =
 	exports.default = FlexTable;
 
 /***/ },
-/* 33 */
+/* 46 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -9561,7 +10967,7 @@ var ProperSearch =
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _SortIndicator = __webpack_require__(34);
+	var _SortIndicator = __webpack_require__(47);
 
 	var _SortIndicator2 = _interopRequireDefault(_SortIndicator);
 
@@ -9711,7 +11117,7 @@ var ProperSearch =
 	exports.default = Column;
 
 /***/ },
-/* 34 */
+/* 47 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -9725,11 +11131,11 @@ var ProperSearch =
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _classnames = __webpack_require__(25);
+	var _classnames = __webpack_require__(23);
 
 	var _classnames2 = _interopRequireDefault(_classnames);
 
-	var _SortDirection = __webpack_require__(35);
+	var _SortDirection = __webpack_require__(48);
 
 	var _SortDirection2 = _interopRequireDefault(_SortDirection);
 
@@ -9764,7 +11170,7 @@ var ProperSearch =
 	};
 
 /***/ },
-/* 35 */
+/* 48 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -9789,13 +11195,13 @@ var ProperSearch =
 	exports.default = SortDirection;
 
 /***/ },
-/* 36 */
+/* 49 */
 /***/ function(module, exports) {
 
 	module.exports = ReactDOM;
 
 /***/ },
-/* 37 */
+/* 50 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -9805,7 +11211,7 @@ var ProperSearch =
 	});
 	exports.InfiniteLoader = exports.default = undefined;
 
-	var _InfiniteLoader2 = __webpack_require__(38);
+	var _InfiniteLoader2 = __webpack_require__(51);
 
 	var _InfiniteLoader3 = _interopRequireDefault(_InfiniteLoader2);
 
@@ -9815,7 +11221,7 @@ var ProperSearch =
 	exports.InfiniteLoader = _InfiniteLoader3.default;
 
 /***/ },
-/* 38 */
+/* 51 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -9898,7 +11304,7 @@ var ProperSearch =
 	      var unloadedRanges = scanForUnloadedRanges({
 	        isRowLoaded: isRowLoaded,
 	        startIndex: Math.max(0, startIndex - threshold),
-	        stopIndex: Math.min(rowsCount, stopIndex + threshold)
+	        stopIndex: Math.min(rowsCount - 1, stopIndex + threshold)
 	      });
 
 	      unloadedRanges.forEach(function (unloadedRange) {
@@ -10029,7 +11435,7 @@ var ProperSearch =
 	}
 
 /***/ },
-/* 39 */
+/* 52 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -10039,7 +11445,7 @@ var ProperSearch =
 	});
 	exports.ScrollSync = exports.default = undefined;
 
-	var _ScrollSync2 = __webpack_require__(40);
+	var _ScrollSync2 = __webpack_require__(53);
 
 	var _ScrollSync3 = _interopRequireDefault(_ScrollSync2);
 
@@ -10049,7 +11455,7 @@ var ProperSearch =
 	exports.ScrollSync = _ScrollSync3.default;
 
 /***/ },
-/* 40 */
+/* 53 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -10155,7 +11561,7 @@ var ProperSearch =
 	exports.default = ScrollSync;
 
 /***/ },
-/* 41 */
+/* 54 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -10165,7 +11571,7 @@ var ProperSearch =
 	});
 	exports.VirtualScroll = exports.default = undefined;
 
-	var _VirtualScroll2 = __webpack_require__(42);
+	var _VirtualScroll2 = __webpack_require__(55);
 
 	var _VirtualScroll3 = _interopRequireDefault(_VirtualScroll2);
 
@@ -10175,7 +11581,7 @@ var ProperSearch =
 	exports.VirtualScroll = _VirtualScroll3.default;
 
 /***/ },
-/* 42 */
+/* 55 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -10186,7 +11592,7 @@ var ProperSearch =
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _Grid = __webpack_require__(22);
+	var _Grid = __webpack_require__(36);
 
 	var _Grid2 = _interopRequireDefault(_Grid);
 
@@ -10194,7 +11600,7 @@ var ProperSearch =
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _classnames = __webpack_require__(25);
+	var _classnames = __webpack_require__(23);
 
 	var _classnames2 = _interopRequireDefault(_classnames);
 
@@ -10374,7 +11780,7 @@ var ProperSearch =
 	exports.default = VirtualScroll;
 
 /***/ },
-/* 43 */
+/* 56 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -10546,7 +11952,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 44 */
+/* 57 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -10557,13 +11963,13 @@ var ProperSearch =
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _dotObject = __webpack_require__(45);
+	var _dotObject = __webpack_require__(58);
 
 	var _dotObject2 = _interopRequireDefault(_dotObject);
 
 	var _underscore = __webpack_require__(4);
 
-	var _deepmerge = __webpack_require__(46);
+	var _deepmerge = __webpack_require__(59);
 
 	var _deepmerge2 = _interopRequireDefault(_deepmerge);
 
@@ -10641,7 +12047,7 @@ var ProperSearch =
 	module.exports = exports['default'];
 
 /***/ },
-/* 45 */
+/* 58 */
 /***/ function(module, exports) {
 
 	'use strict'
@@ -11130,7 +12536,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 46 */
+/* 59 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;(function (root, factory) {
@@ -11188,16 +12594,16 @@ var ProperSearch =
 
 
 /***/ },
-/* 47 */
+/* 60 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	module.exports = __webpack_require__(48)() ? Set : __webpack_require__(49);
+	module.exports = __webpack_require__(61)() ? Set : __webpack_require__(62);
 
 
 /***/ },
-/* 48 */
+/* 61 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -11227,22 +12633,22 @@ var ProperSearch =
 
 
 /***/ },
-/* 49 */
+/* 62 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var clear          = __webpack_require__(50)
-	  , eIndexOf       = __webpack_require__(52)
-	  , setPrototypeOf = __webpack_require__(58)
-	  , callable       = __webpack_require__(63)
-	  , d              = __webpack_require__(64)
-	  , ee             = __webpack_require__(76)
-	  , Symbol         = __webpack_require__(77)
-	  , iterator       = __webpack_require__(82)
-	  , forOf          = __webpack_require__(86)
-	  , Iterator       = __webpack_require__(96)
-	  , isNative       = __webpack_require__(97)
+	var clear          = __webpack_require__(63)
+	  , eIndexOf       = __webpack_require__(65)
+	  , setPrototypeOf = __webpack_require__(71)
+	  , callable       = __webpack_require__(76)
+	  , d              = __webpack_require__(77)
+	  , ee             = __webpack_require__(89)
+	  , Symbol         = __webpack_require__(90)
+	  , iterator       = __webpack_require__(95)
+	  , forOf          = __webpack_require__(99)
+	  , Iterator       = __webpack_require__(109)
+	  , isNative       = __webpack_require__(110)
 
 	  , call = Function.prototype.call
 	  , defineProperty = Object.defineProperty, getPrototypeOf = Object.getPrototypeOf
@@ -11313,7 +12719,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 50 */
+/* 63 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Inspired by Google Closure:
@@ -11322,7 +12728,7 @@ var ProperSearch =
 
 	'use strict';
 
-	var value = __webpack_require__(51);
+	var value = __webpack_require__(64);
 
 	module.exports = function () {
 		value(this).length = 0;
@@ -11331,7 +12737,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 51 */
+/* 64 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -11343,13 +12749,13 @@ var ProperSearch =
 
 
 /***/ },
-/* 52 */
+/* 65 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var toPosInt = __webpack_require__(53)
-	  , value    = __webpack_require__(51)
+	var toPosInt = __webpack_require__(66)
+	  , value    = __webpack_require__(64)
 
 	  , indexOf = Array.prototype.indexOf
 	  , hasOwnProperty = Object.prototype.hasOwnProperty
@@ -11378,12 +12784,12 @@ var ProperSearch =
 
 
 /***/ },
-/* 53 */
+/* 66 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var toInteger = __webpack_require__(54)
+	var toInteger = __webpack_require__(67)
 
 	  , max = Math.max;
 
@@ -11391,12 +12797,12 @@ var ProperSearch =
 
 
 /***/ },
-/* 54 */
+/* 67 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var sign = __webpack_require__(55)
+	var sign = __webpack_require__(68)
 
 	  , abs = Math.abs, floor = Math.floor;
 
@@ -11409,18 +12815,18 @@ var ProperSearch =
 
 
 /***/ },
-/* 55 */
+/* 68 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	module.exports = __webpack_require__(56)()
+	module.exports = __webpack_require__(69)()
 		? Math.sign
-		: __webpack_require__(57);
+		: __webpack_require__(70);
 
 
 /***/ },
-/* 56 */
+/* 69 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -11433,7 +12839,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 57 */
+/* 70 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -11446,18 +12852,18 @@ var ProperSearch =
 
 
 /***/ },
-/* 58 */
+/* 71 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	module.exports = __webpack_require__(59)()
+	module.exports = __webpack_require__(72)()
 		? Object.setPrototypeOf
-		: __webpack_require__(60);
+		: __webpack_require__(73);
 
 
 /***/ },
-/* 59 */
+/* 72 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -11474,7 +12880,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 60 */
+/* 73 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Big thanks to @WebReflection for sorting this out
@@ -11482,8 +12888,8 @@ var ProperSearch =
 
 	'use strict';
 
-	var isObject      = __webpack_require__(61)
-	  , value         = __webpack_require__(51)
+	var isObject      = __webpack_require__(74)
+	  , value         = __webpack_require__(64)
 
 	  , isPrototypeOf = Object.prototype.isPrototypeOf
 	  , defineProperty = Object.defineProperty
@@ -11549,11 +12955,11 @@ var ProperSearch =
 		return false;
 	}())));
 
-	__webpack_require__(62);
+	__webpack_require__(75);
 
 
 /***/ },
-/* 61 */
+/* 74 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -11566,7 +12972,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 62 */
+/* 75 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Workaround for http://code.google.com/p/v8/issues/detail?id=2804
@@ -11575,8 +12981,8 @@ var ProperSearch =
 
 	var create = Object.create, shim;
 
-	if (!__webpack_require__(59)()) {
-		shim = __webpack_require__(60);
+	if (!__webpack_require__(72)()) {
+		shim = __webpack_require__(73);
 	}
 
 	module.exports = (function () {
@@ -11608,7 +13014,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 63 */
+/* 76 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -11620,15 +13026,15 @@ var ProperSearch =
 
 
 /***/ },
-/* 64 */
+/* 77 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var assign        = __webpack_require__(65)
-	  , normalizeOpts = __webpack_require__(71)
-	  , isCallable    = __webpack_require__(72)
-	  , contains      = __webpack_require__(73)
+	var assign        = __webpack_require__(78)
+	  , normalizeOpts = __webpack_require__(84)
+	  , isCallable    = __webpack_require__(85)
+	  , contains      = __webpack_require__(86)
 
 	  , d;
 
@@ -11689,18 +13095,18 @@ var ProperSearch =
 
 
 /***/ },
-/* 65 */
+/* 78 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	module.exports = __webpack_require__(66)()
+	module.exports = __webpack_require__(79)()
 		? Object.assign
-		: __webpack_require__(67);
+		: __webpack_require__(80);
 
 
 /***/ },
-/* 66 */
+/* 79 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -11715,13 +13121,13 @@ var ProperSearch =
 
 
 /***/ },
-/* 67 */
+/* 80 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var keys  = __webpack_require__(68)
-	  , value = __webpack_require__(51)
+	var keys  = __webpack_require__(81)
+	  , value = __webpack_require__(64)
 
 	  , max = Math.max;
 
@@ -11743,18 +13149,18 @@ var ProperSearch =
 
 
 /***/ },
-/* 68 */
+/* 81 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	module.exports = __webpack_require__(69)()
+	module.exports = __webpack_require__(82)()
 		? Object.keys
-		: __webpack_require__(70);
+		: __webpack_require__(83);
 
 
 /***/ },
-/* 69 */
+/* 82 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -11768,7 +13174,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 70 */
+/* 83 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -11781,7 +13187,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 71 */
+/* 84 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -11804,7 +13210,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 72 */
+/* 85 */
 /***/ function(module, exports) {
 
 	// Deprecated
@@ -11815,18 +13221,18 @@ var ProperSearch =
 
 
 /***/ },
-/* 73 */
+/* 86 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	module.exports = __webpack_require__(74)()
+	module.exports = __webpack_require__(87)()
 		? String.prototype.contains
-		: __webpack_require__(75);
+		: __webpack_require__(88);
 
 
 /***/ },
-/* 74 */
+/* 87 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -11840,7 +13246,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 75 */
+/* 88 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -11853,13 +13259,13 @@ var ProperSearch =
 
 
 /***/ },
-/* 76 */
+/* 89 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var d        = __webpack_require__(64)
-	  , callable = __webpack_require__(63)
+	var d        = __webpack_require__(77)
+	  , callable = __webpack_require__(76)
 
 	  , apply = Function.prototype.apply, call = Function.prototype.call
 	  , create = Object.create, defineProperty = Object.defineProperty
@@ -11991,16 +13397,16 @@ var ProperSearch =
 
 
 /***/ },
-/* 77 */
+/* 90 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	module.exports = __webpack_require__(78)() ? Symbol : __webpack_require__(79);
+	module.exports = __webpack_require__(91)() ? Symbol : __webpack_require__(92);
 
 
 /***/ },
-/* 78 */
+/* 91 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -12024,15 +13430,15 @@ var ProperSearch =
 
 
 /***/ },
-/* 79 */
+/* 92 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// ES2015 Symbol polyfill for environments that do not support it (or partially support it_
 
 	'use strict';
 
-	var d              = __webpack_require__(64)
-	  , validateSymbol = __webpack_require__(80)
+	var d              = __webpack_require__(77)
+	  , validateSymbol = __webpack_require__(93)
 
 	  , create = Object.create, defineProperties = Object.defineProperties
 	  , defineProperty = Object.defineProperty, objPrototype = Object.prototype
@@ -12137,12 +13543,12 @@ var ProperSearch =
 
 
 /***/ },
-/* 80 */
+/* 93 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var isSymbol = __webpack_require__(81);
+	var isSymbol = __webpack_require__(94);
 
 	module.exports = function (value) {
 		if (!isSymbol(value)) throw new TypeError(value + " is not a symbol");
@@ -12151,7 +13557,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 81 */
+/* 94 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -12162,12 +13568,12 @@ var ProperSearch =
 
 
 /***/ },
-/* 82 */
+/* 95 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var isIterable = __webpack_require__(83);
+	var isIterable = __webpack_require__(96);
 
 	module.exports = function (value) {
 		if (!isIterable(value)) throw new TypeError(value + " is not iterable");
@@ -12176,14 +13582,14 @@ var ProperSearch =
 
 
 /***/ },
-/* 83 */
+/* 96 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var isArguments    = __webpack_require__(84)
-	  , isString       = __webpack_require__(85)
-	  , iteratorSymbol = __webpack_require__(77).iterator
+	var isArguments    = __webpack_require__(97)
+	  , isString       = __webpack_require__(98)
+	  , iteratorSymbol = __webpack_require__(90).iterator
 
 	  , isArray = Array.isArray;
 
@@ -12197,7 +13603,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 84 */
+/* 97 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -12210,7 +13616,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 85 */
+/* 98 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -12226,15 +13632,15 @@ var ProperSearch =
 
 
 /***/ },
-/* 86 */
+/* 99 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var isArguments = __webpack_require__(84)
-	  , callable    = __webpack_require__(63)
-	  , isString    = __webpack_require__(85)
-	  , get         = __webpack_require__(87)
+	var isArguments = __webpack_require__(97)
+	  , callable    = __webpack_require__(76)
+	  , isString    = __webpack_require__(98)
+	  , get         = __webpack_require__(100)
 
 	  , isArray = Array.isArray, call = Function.prototype.call
 	  , some = Array.prototype.some;
@@ -12278,17 +13684,17 @@ var ProperSearch =
 
 
 /***/ },
-/* 87 */
+/* 100 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var isArguments    = __webpack_require__(84)
-	  , isString       = __webpack_require__(85)
-	  , ArrayIterator  = __webpack_require__(88)
-	  , StringIterator = __webpack_require__(95)
-	  , iterable       = __webpack_require__(82)
-	  , iteratorSymbol = __webpack_require__(77).iterator;
+	var isArguments    = __webpack_require__(97)
+	  , isString       = __webpack_require__(98)
+	  , ArrayIterator  = __webpack_require__(101)
+	  , StringIterator = __webpack_require__(108)
+	  , iterable       = __webpack_require__(95)
+	  , iteratorSymbol = __webpack_require__(90).iterator;
 
 	module.exports = function (obj) {
 		if (typeof iterable(obj)[iteratorSymbol] === 'function') return obj[iteratorSymbol]();
@@ -12299,15 +13705,15 @@ var ProperSearch =
 
 
 /***/ },
-/* 88 */
+/* 101 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var setPrototypeOf = __webpack_require__(58)
-	  , contains       = __webpack_require__(73)
-	  , d              = __webpack_require__(64)
-	  , Iterator       = __webpack_require__(89)
+	var setPrototypeOf = __webpack_require__(71)
+	  , contains       = __webpack_require__(86)
+	  , d              = __webpack_require__(77)
+	  , Iterator       = __webpack_require__(102)
 
 	  , defineProperty = Object.defineProperty
 	  , ArrayIterator;
@@ -12335,18 +13741,18 @@ var ProperSearch =
 
 
 /***/ },
-/* 89 */
+/* 102 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var clear    = __webpack_require__(50)
-	  , assign   = __webpack_require__(65)
-	  , callable = __webpack_require__(63)
-	  , value    = __webpack_require__(51)
-	  , d        = __webpack_require__(64)
-	  , autoBind = __webpack_require__(90)
-	  , Symbol   = __webpack_require__(77)
+	var clear    = __webpack_require__(63)
+	  , assign   = __webpack_require__(78)
+	  , callable = __webpack_require__(76)
+	  , value    = __webpack_require__(64)
+	  , d        = __webpack_require__(77)
+	  , autoBind = __webpack_require__(103)
+	  , Symbol   = __webpack_require__(90)
 
 	  , defineProperty = Object.defineProperty
 	  , defineProperties = Object.defineProperties
@@ -12431,15 +13837,15 @@ var ProperSearch =
 
 
 /***/ },
-/* 90 */
+/* 103 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var copy       = __webpack_require__(91)
-	  , map        = __webpack_require__(92)
-	  , callable   = __webpack_require__(63)
-	  , validValue = __webpack_require__(51)
+	var copy       = __webpack_require__(104)
+	  , map        = __webpack_require__(105)
+	  , callable   = __webpack_require__(76)
+	  , validValue = __webpack_require__(64)
 
 	  , bind = Function.prototype.bind, defineProperty = Object.defineProperty
 	  , hasOwnProperty = Object.prototype.hasOwnProperty
@@ -12468,13 +13874,13 @@ var ProperSearch =
 
 
 /***/ },
-/* 91 */
+/* 104 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var assign = __webpack_require__(65)
-	  , value  = __webpack_require__(51);
+	var assign = __webpack_require__(78)
+	  , value  = __webpack_require__(64);
 
 	module.exports = function (obj) {
 		var copy = Object(value(obj));
@@ -12484,13 +13890,13 @@ var ProperSearch =
 
 
 /***/ },
-/* 92 */
+/* 105 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var callable = __webpack_require__(63)
-	  , forEach  = __webpack_require__(93)
+	var callable = __webpack_require__(76)
+	  , forEach  = __webpack_require__(106)
 
 	  , call = Function.prototype.call;
 
@@ -12505,16 +13911,16 @@ var ProperSearch =
 
 
 /***/ },
-/* 93 */
+/* 106 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	module.exports = __webpack_require__(94)('forEach');
+	module.exports = __webpack_require__(107)('forEach');
 
 
 /***/ },
-/* 94 */
+/* 107 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Internal method, used by iteration functions.
@@ -12523,8 +13929,8 @@ var ProperSearch =
 
 	'use strict';
 
-	var callable = __webpack_require__(63)
-	  , value    = __webpack_require__(51)
+	var callable = __webpack_require__(76)
+	  , value    = __webpack_require__(64)
 
 	  , bind = Function.prototype.bind, call = Function.prototype.call, keys = Object.keys
 	  , propertyIsEnumerable = Object.prototype.propertyIsEnumerable;
@@ -12549,7 +13955,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 95 */
+/* 108 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Thanks @mathiasbynens
@@ -12557,9 +13963,9 @@ var ProperSearch =
 
 	'use strict';
 
-	var setPrototypeOf = __webpack_require__(58)
-	  , d              = __webpack_require__(64)
-	  , Iterator       = __webpack_require__(89)
+	var setPrototypeOf = __webpack_require__(71)
+	  , d              = __webpack_require__(77)
+	  , Iterator       = __webpack_require__(102)
 
 	  , defineProperty = Object.defineProperty
 	  , StringIterator;
@@ -12592,16 +13998,16 @@ var ProperSearch =
 
 
 /***/ },
-/* 96 */
+/* 109 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var setPrototypeOf    = __webpack_require__(58)
-	  , contains          = __webpack_require__(73)
-	  , d                 = __webpack_require__(64)
-	  , Iterator          = __webpack_require__(89)
-	  , toStringTagSymbol = __webpack_require__(77).toStringTag
+	var setPrototypeOf    = __webpack_require__(71)
+	  , contains          = __webpack_require__(86)
+	  , d                 = __webpack_require__(77)
+	  , Iterator          = __webpack_require__(102)
+	  , toStringTagSymbol = __webpack_require__(90).toStringTag
 
 	  , defineProperty = Object.defineProperty
 	  , SetIterator;
@@ -12628,7 +14034,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 97 */
+/* 110 */
 /***/ function(module, exports) {
 
 	// Exports true if environment provides native `Set` implementation,
@@ -12643,7 +14049,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 98 */
+/* 111 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -12662,7 +14068,7 @@ var ProperSearch =
 
 	var _underscore2 = _interopRequireDefault(_underscore);
 
-	var _reactDimensions = __webpack_require__(43);
+	var _reactDimensions = __webpack_require__(56);
 
 	var _reactDimensions2 = _interopRequireDefault(_reactDimensions);
 
@@ -12954,7 +14360,7 @@ var ProperSearch =
 	module.exports = exports['default'];
 
 /***/ },
-/* 99 */
+/* 112 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -12989,7 +14395,7 @@ var ProperSearch =
 	module.exports = exports['default'];
 
 /***/ },
-/* 100 */
+/* 113 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -13031,7 +14437,7 @@ var ProperSearch =
 	module.exports = exports['default'];
 
 /***/ },
-/* 101 */
+/* 114 */
 /***/ function(module, exports) {
 
 	// removed by extract-text-webpack-plugin
