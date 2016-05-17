@@ -113,7 +113,9 @@
         padding-left: 30px;
         padding-right: 30px;
         border: none;
-        outline: none; }
+        outline: none;
+        box-shadow: none;
+        webkit-box-shadow: none; }
       .proper-search .proper-search-field .proper-search-input i.proper-search-field-icon {
         color: #777777;
         overflow: visible;

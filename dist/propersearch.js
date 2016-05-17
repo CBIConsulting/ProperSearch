@@ -886,15 +886,21 @@ var ProperSearch =
 					}
 
 					if (hasAfterSelect) {
-						var filteredData = null,
-						    rawData = this.state.rawData;
+						(function () {
+							var filteredData = null,
+							    rawData = _this7.state.rawData,
+							    id = void 0,
+							    display = void 0;
 
-						// Get the data (rawData) that have idField or displayfield equals to empty string
-						filteredData = rawData.filter(function (element) {
-							return element.get(_this7.state.idField) === '' || element.get(_this7.state.displayField) === '';
-						});
+							// Get the data (rawData) that have idField or displayfield equals to empty string
+							filteredData = rawData.filter(function (element) {
+								id = element.get(_this7.state.idField);
+								display = element.get(_this7.state.displayField);
+								return display === '' || display === null || id === '' || id === null;
+							});
 
-						this.props.afterSelect.call(this, filteredData.toJSON(), ['']);
+							_this7.props.afterSelect.call(_this7, filteredData.toJSON(), ['']);
+						})();
 					}
 				}
 			}
