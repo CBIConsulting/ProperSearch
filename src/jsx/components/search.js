@@ -2,7 +2,7 @@ import React from 'react';
 import Immutable from 'immutable';
 import _ from 'underscore';
 import SearchList from './searchList';
-import SeachField from './searchField';
+import SeachField from 'react-propersearch-field';
 import messages from "../lang/messages";
 import Normalizer from "../utils/normalize";
 import {shallowEqualImmutable} from 'react-immutable-render-mixin';
@@ -650,11 +650,13 @@ class Search extends React.Component {
 			}
 
 			if (hasAfterSelect) {
-				let filteredData = null, rawData = this.state.rawData;
+				let filteredData = null, rawData = this.state.rawData, id, display;
 
 				// Get the data (rawData) that have idField or displayfield equals to empty string
-				filteredData = rawData.filter(element =>{
-					return element.get(this.state.idField) === '' || element.get(this.state.displayField) === '';
+				filteredData = rawData.filter(element => {
+					id = element.get(this.state.idField);
+					display = element.get(this.state.displayField);
+					return  display === '' || display === null || id === '' || id === null;
 				});
 
 				this.props.afterSelect.call(this, filteredData.toJSON(), ['']);
