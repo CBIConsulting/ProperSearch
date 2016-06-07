@@ -2,7 +2,7 @@ import React from 'react';
 import Immutable from 'immutable';
 import _ from 'underscore';
 import SearchList from './searchList';
-import SeachField from './searchField';
+import SeachField from 'react-propersearch-field';
 import messages from "../lang/messages";
 import Normalizer from "../utils/normalize";
 import {shallowEqualImmutable} from 'react-immutable-render-mixin';
