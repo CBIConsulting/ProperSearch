@@ -188,7 +188,10 @@
     padding-left: 0.3em;
     margin-bottom: 0.1em;
     padding-top: 0.1em;
-    cursor: pointer; }
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; }
     .proper-search .proper-search-list .proper-search-list-virtual .proper-search-list-element.proper-search-selected i {
       color: #10AB10; }
     .proper-search .proper-search-list .proper-search-list-virtual .proper-search-list-element.proper-search-single-selected {
