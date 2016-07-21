@@ -58,7 +58,7 @@ var ProperSearch =
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
 	if (true) {
-		__webpack_require__(116);
+		__webpack_require__(115);
 	}
 
 	exports["default"] = _search2["default"];
@@ -94,21 +94,21 @@ var ProperSearch =
 
 	var _searchList2 = _interopRequireDefault(_searchList);
 
-	var _reactPropersearchField = __webpack_require__(112);
+	var _reactPropersearchField = __webpack_require__(111);
 
 	var _reactPropersearchField2 = _interopRequireDefault(_reactPropersearchField);
 
-	var _messages2 = __webpack_require__(114);
+	var _messages2 = __webpack_require__(113);
 
 	var _messages3 = _interopRequireDefault(_messages2);
 
-	var _normalize = __webpack_require__(115);
+	var _normalize = __webpack_require__(114);
 
 	var _normalize2 = _interopRequireDefault(_normalize);
 
 	var _reactImmutableRenderMixin = __webpack_require__(6);
 
-	var _cache = __webpack_require__(58);
+	var _cache = __webpack_require__(57);
 
 	var _cache2 = _interopRequireDefault(_cache);
 
@@ -120,7 +120,7 @@ var ProperSearch =
 
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-	var Set = __webpack_require__(61);
+	var Set = __webpack_require__(60);
 
 	// For more info about this read ReadMe.md
 	function getDefaultProps() {
@@ -6024,7 +6024,7 @@ var ProperSearch =
 
 	var _reactDimensions2 = _interopRequireDefault(_reactDimensions);
 
-	var _cache = __webpack_require__(58);
+	var _cache = __webpack_require__(57);
 
 	var _cache2 = _interopRequireDefault(_cache);
 
@@ -6036,7 +6036,7 @@ var ProperSearch =
 
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-	var Set = __webpack_require__(61);
+	var Set = __webpack_require__(60);
 
 	// For more info about this read ReadMe.md
 	function getDefaultProps() {
@@ -11878,20 +11878,23 @@ var ProperSearch =
 
 	'use strict';
 
+	exports.__esModule = true;
+
 	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+	exports['default'] = Dimensions;
 
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
-	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-	var React = __webpack_require__(2);
-	var onElementResize = __webpack_require__(57);
+	var _react = __webpack_require__(2);
 
-	var defaultContainerStyle = {
+	var _react2 = _interopRequireDefault(_react);
+
+	var style = {
 	  width: '100%',
 	  height: '100%',
 	  padding: 0,
@@ -11917,19 +11920,21 @@ var ProperSearch =
 	 * or as an [ES7 class decorator](https://github.com/wycats/javascript-decorators)
 	 * (see examples)
 	 *
-	 * @param {object} [options]
-	 * @param {function} [options.getHeight] A function that is passed an element and returns element
-	 * height, where element is the wrapper div. Defaults to `(element) => element.clientHeight`
-	 * @param {function} [options.getWidth]  A function that is passed an element and returns element
-	 * width, where element is the wrapper div. Defaults to `(element) => element.clientWidth`
-	 * @param {object} [options.containerStyle] A style object for the `<div>` that will wrap your component.
-	 * The dimensions of this `div` are what are passed as props to your component. The default style is
-	 * `{ width: '100%', height: '100%', padding: 0, border: 0 }` which will cause the `div` to fill its
-	 * parent in most cases. If you are using a flexbox layout you will want to change this default style.
-	 * @param {boolean} [options.elementResize=false] Set true to watch the wrapper `div` for changes in
-	 * size which are not a result of window resizing - e.g. changes to the flexbox and other layout.
-	 * @return {function}                   A higher-order component that can be
+	 * v1.0.0 is for React v0.14 only. Use ^0.1.0 for React v0.13
+	 *
+	 * @param {object} [options] Options
+	 * @param {function} [options.getHeight] `getHeight(element)` should return element
+	 * height, where element is the wrapper div. Defaults to `element.clientHeight`
+	 * @param {function} [options.getWidth]  `getWidth(element)` should return element
+	 * width, where element is the wrapper div. Defaults to `element.clientWidth`
+	 * @return {function}                   Returns a higher-order component that can be
 	 * used to enhance a react component `Dimensions()(MyComponent)`
+	 *
+	 * ### Live Example
+	 *
+	 * Will open a browser window for localhost:9966
+	 *
+	 * `npm i && npm i react react-dom && npm start`
 	 *
 	 * @example
 	 * // ES2015
@@ -11966,211 +11971,81 @@ var ProperSearch =
 	 * module.exports = Dimensions()(MyComponent) // Enhanced component
 	 *
 	 */
-	module.exports = function Dimensions() {
+
+	function Dimensions() {
 	  var _ref = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
 	  var _ref$getHeight = _ref.getHeight;
 	  var getHeight = _ref$getHeight === undefined ? defaultGetHeight : _ref$getHeight;
 	  var _ref$getWidth = _ref.getWidth;
 	  var getWidth = _ref$getWidth === undefined ? defaultGetWidth : _ref$getWidth;
-	  var _ref$containerStyle = _ref.containerStyle;
-	  var containerStyle = _ref$containerStyle === undefined ? defaultContainerStyle : _ref$containerStyle;
-	  var _ref$elementResize = _ref.elementResize;
-	  var elementResize = _ref$elementResize === undefined ? false : _ref$elementResize;
 
 	  return function (ComposedComponent) {
-	    return function (_React$Component) {
+	    return (function (_React$Component) {
 	      _inherits(DimensionsHOC, _React$Component);
 
 	      function DimensionsHOC() {
-	        var _Object$getPrototypeO;
-
-	        var _temp, _this, _ret;
+	        var _this = this;
 
 	        _classCallCheck(this, DimensionsHOC);
 
-	        for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-	          args[_key] = arguments[_key];
-	        }
+	        _React$Component.apply(this, arguments);
 
-	        return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_Object$getPrototypeO = Object.getPrototypeOf(DimensionsHOC)).call.apply(_Object$getPrototypeO, [this].concat(args))), _this), _this.state = {}, _this.updateDimensions = function () {
+	        this.state = {};
+
+	        this.updateDimensions = function () {
 	          var container = _this.refs.container;
-	          var containerWidth = getWidth(container);
-	          var containerHeight = getHeight(container);
-
-	          if (containerWidth !== _this.state.containerWidth || containerHeight !== _this.state.containerHeight) {
-	            _this.setState({ containerWidth: containerWidth, containerHeight: containerHeight });
+	          if (!container) {
+	            throw new Error('Cannot find container div');
 	          }
-	        }, _this.onResize = function () {
+	          _this.setState({
+	            containerWidth: getWidth(container),
+	            containerHeight: getHeight(container)
+	          });
+	        };
+
+	        this.onResize = function () {
 	          if (_this.rqf) return;
-	          _this.rqf = _this.getWindow().requestAnimationFrame(function () {
+	          _this.rqf = window.requestAnimationFrame(function () {
 	            _this.rqf = null;
 	            _this.updateDimensions();
 	          });
-	        }, _temp), _possibleConstructorReturn(_this, _ret);
+	        };
 	      }
-	      // ES7 Class properties
-	      // http://babeljs.io/blog/2015/06/07/react-on-es6-plus/#property-initializers
 
+	      DimensionsHOC.prototype.componentDidMount = function componentDidMount() {
+	        this.updateDimensions();
+	        window.addEventListener('resize', this.onResize, false);
+	      };
 
-	      // Using arrow functions and ES7 Class properties to autobind
-	      // http://babeljs.io/blog/2015/06/07/react-on-es6-plus/#arrow-functions
+	      DimensionsHOC.prototype.componentWillUnmount = function componentWillUnmount() {
+	        window.removeEventListener('resize', this.onResize);
+	      };
 
-
-	      _createClass(DimensionsHOC, [{
-	        key: 'getWindow',
-
-
-	        // If the component is mounted in a different window to the javascript
-	        // context, as with https://github.com/JakeGinnivan/react-popout
-	        // then the `window` global will be different from the `window` that
-	        // contains the component.
-	        // Depends on `defaultView` which is not supported <IE9
-	        value: function getWindow() {
-	          return this.refs.container ? this.refs.container.ownerDocument.defaultView || window : window;
-	        }
-	      }, {
-	        key: 'componentDidMount',
-	        value: function componentDidMount() {
-	          if (!this.refs.container) {
-	            throw new Error('Cannot find container div');
-	          }
-	          this.updateDimensions();
-	          if (elementResize) {
-	            // Experimental: `element-resize-event` fires when an element resizes.
-	            // It attaches its own window resize listener and also uses
-	            // requestAnimationFrame, so we can just call `this.updateDimensions`.
-	            onElementResize(this.refs.container, this.updateDimensions);
-	          } else {
-	            this.getWindow().addEventListener('resize', this.onResize, false);
-	          }
-	        }
-	      }, {
-	        key: 'componentWillUnmount',
-	        value: function componentWillUnmount() {
-	          this.getWindow().removeEventListener('resize', this.onResize);
-	        }
-
-	        /**
-	         * Returns the underlying wrapped component instance.
-	         * Useful if you need to access a method or property of the component
-	         * passed to react-dimensions.
-	         *
-	         * @return {object} The rendered React component
-	         **/
-
-	      }, {
-	        key: 'getWrappedInstance',
-	        value: function getWrappedInstance() {
-	          this.refs.wrappedInstance;
-	        }
-	      }, {
-	        key: 'render',
-	        value: function render() {
-	          return React.createElement(
-	            'div',
-	            { style: containerStyle, ref: 'container' },
-	            (this.state.containerWidth || this.state.containerHeight) && React.createElement(ComposedComponent, _extends({}, this.state, this.props, {
-	              updateDimensions: this.updateDimensions,
-	              ref: 'wrappedInstance'
-	            }))
-	          );
-	        }
-	      }]);
+	      DimensionsHOC.prototype.render = function render() {
+	        return _react2['default'].createElement(
+	          'div',
+	          { style: style, ref: 'container' },
+	          (this.state.containerWidth || this.state.containerHeight) && _react2['default'].createElement(ComposedComponent, _extends({}, this.state, this.props))
+	        );
+	      };
 
 	      return DimensionsHOC;
-	    }(React.Component);
+	    })(_react2['default'].Component);
 	  };
-	};
+	}
+
+	module.exports = exports['default'];
+
+	// ES7 Class properties
+	// http://babeljs.io/blog/2015/06/07/react-on-es6-plus/#property-initializers
+
+	// Using arrow functions and ES7 Class properties to autobind
+	// http://babeljs.io/blog/2015/06/07/react-on-es6-plus/#arrow-functions
 
 
 /***/ },
 /* 57 */
-/***/ function(module, exports) {
-
-	var exports = function exports(element, fn) {
-	  var window = this
-	  var document = window.document
-	  var isIE
-	  var requestFrame
-
-	  var attachEvent = document.attachEvent
-	  if (typeof navigator !== 'undefined') {
-	    isIE = navigator.userAgent.match(/Trident/) || navigator.userAgent.match(/Edge/)
-	  }
-
-	  requestFrame = (function () {
-	    var raf = window.requestAnimationFrame ||
-	      window.mozRequestAnimationFrame ||
-	        window.webkitRequestAnimationFrame ||
-	          function fallbackRAF(func) {
-	            return window.setTimeout(func, 20)
-	          }
-	    return function requestFrameFunction(func) {
-	      return raf(func)
-	    }
-	  })()
-
-	  var cancelFrame = (function () {
-	    var cancel = window.cancelAnimationFrame ||
-	      window.mozCancelAnimationFrame ||
-	        window.webkitCancelAnimationFrame ||
-	          window.clearTimeout
-	    return function cancelFrameFunction(id) {
-	      return cancel(id)
-	    }
-	  })()
-
-	  function resizeListener(e) {
-	    var win = e.target || e.srcElement
-	    if (win.__resizeRAF__) {
-	      cancelFrame(win.__resizeRAF__)
-	    }
-	    win.__resizeRAF__ = requestFrame(function () {
-	      var trigger = win.__resizeTrigger__
-	      trigger.__resizeListeners__.forEach(function (fn) {
-	        fn.call(trigger, e)
-	      })
-	    })
-	  }
-
-	  function objectLoad() {
-	    this.contentDocument.defaultView.__resizeTrigger__ = this.__resizeElement__
-	    this.contentDocument.defaultView.addEventListener('resize', resizeListener)
-	  }
-
-	  if (!element.__resizeListeners__) {
-	    element.__resizeListeners__ = []
-	    if (attachEvent) {
-	      element.__resizeTrigger__ = element
-	      element.attachEvent('onresize', resizeListener)
-	    } else {
-	      if (getComputedStyle(element).position === 'static') {
-	        element.style.position = 'relative'
-	      }
-	      var obj = element.__resizeTrigger__ = document.createElement('object')
-	      obj.setAttribute('style', 'display: block; position: absolute; top: 0; left: 0; height: 100%; width: 100%; overflow: hidden; pointer-events: none; z-index: -1;')
-	      obj.setAttribute('class', 'resize-sensor')
-	      obj.__resizeElement__ = element
-	      obj.onload = objectLoad
-	      obj.type = 'text/html'
-	      if (isIE) {
-	        element.appendChild(obj)
-	      }
-	      obj.data = 'about:blank'
-	      if (!isIE) {
-	        element.appendChild(obj)
-	      }
-	    }
-	  }
-	  element.__resizeListeners__.push(fn)
-	}
-
-	module.exports = (typeof window === 'undefined') ? exports : exports.bind(window)
-
-
-/***/ },
-/* 58 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -12181,13 +12056,13 @@ var ProperSearch =
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _dotObject = __webpack_require__(59);
+	var _dotObject = __webpack_require__(58);
 
 	var _dotObject2 = _interopRequireDefault(_dotObject);
 
 	var _underscore = __webpack_require__(4);
 
-	var _deepmerge = __webpack_require__(60);
+	var _deepmerge = __webpack_require__(59);
 
 	var _deepmerge2 = _interopRequireDefault(_deepmerge);
 
@@ -12265,7 +12140,7 @@ var ProperSearch =
 	module.exports = exports['default'];
 
 /***/ },
-/* 59 */
+/* 58 */
 /***/ function(module, exports) {
 
 	'use strict'
@@ -12754,7 +12629,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 60 */
+/* 59 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;(function (root, factory) {
@@ -12812,16 +12687,16 @@ var ProperSearch =
 
 
 /***/ },
-/* 61 */
+/* 60 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	module.exports = __webpack_require__(62)() ? Set : __webpack_require__(63);
+	module.exports = __webpack_require__(61)() ? Set : __webpack_require__(62);
 
 
 /***/ },
-/* 62 */
+/* 61 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -12851,22 +12726,22 @@ var ProperSearch =
 
 
 /***/ },
-/* 63 */
+/* 62 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var clear          = __webpack_require__(64)
-	  , eIndexOf       = __webpack_require__(66)
-	  , setPrototypeOf = __webpack_require__(72)
-	  , callable       = __webpack_require__(77)
-	  , d              = __webpack_require__(78)
-	  , ee             = __webpack_require__(90)
-	  , Symbol         = __webpack_require__(91)
-	  , iterator       = __webpack_require__(96)
-	  , forOf          = __webpack_require__(100)
-	  , Iterator       = __webpack_require__(110)
-	  , isNative       = __webpack_require__(111)
+	var clear          = __webpack_require__(63)
+	  , eIndexOf       = __webpack_require__(65)
+	  , setPrototypeOf = __webpack_require__(71)
+	  , callable       = __webpack_require__(76)
+	  , d              = __webpack_require__(77)
+	  , ee             = __webpack_require__(89)
+	  , Symbol         = __webpack_require__(90)
+	  , iterator       = __webpack_require__(95)
+	  , forOf          = __webpack_require__(99)
+	  , Iterator       = __webpack_require__(109)
+	  , isNative       = __webpack_require__(110)
 
 	  , call = Function.prototype.call
 	  , defineProperty = Object.defineProperty, getPrototypeOf = Object.getPrototypeOf
@@ -12937,7 +12812,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 64 */
+/* 63 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Inspired by Google Closure:
@@ -12946,7 +12821,7 @@ var ProperSearch =
 
 	'use strict';
 
-	var value = __webpack_require__(65);
+	var value = __webpack_require__(64);
 
 	module.exports = function () {
 		value(this).length = 0;
@@ -12955,7 +12830,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 65 */
+/* 64 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -12967,13 +12842,13 @@ var ProperSearch =
 
 
 /***/ },
-/* 66 */
+/* 65 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var toPosInt = __webpack_require__(67)
-	  , value    = __webpack_require__(65)
+	var toPosInt = __webpack_require__(66)
+	  , value    = __webpack_require__(64)
 
 	  , indexOf = Array.prototype.indexOf
 	  , hasOwnProperty = Object.prototype.hasOwnProperty
@@ -13002,12 +12877,12 @@ var ProperSearch =
 
 
 /***/ },
-/* 67 */
+/* 66 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var toInteger = __webpack_require__(68)
+	var toInteger = __webpack_require__(67)
 
 	  , max = Math.max;
 
@@ -13015,12 +12890,12 @@ var ProperSearch =
 
 
 /***/ },
-/* 68 */
+/* 67 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var sign = __webpack_require__(69)
+	var sign = __webpack_require__(68)
 
 	  , abs = Math.abs, floor = Math.floor;
 
@@ -13033,18 +12908,18 @@ var ProperSearch =
 
 
 /***/ },
-/* 69 */
+/* 68 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	module.exports = __webpack_require__(70)()
+	module.exports = __webpack_require__(69)()
 		? Math.sign
-		: __webpack_require__(71);
+		: __webpack_require__(70);
 
 
 /***/ },
-/* 70 */
+/* 69 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -13057,7 +12932,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 71 */
+/* 70 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -13070,18 +12945,18 @@ var ProperSearch =
 
 
 /***/ },
-/* 72 */
+/* 71 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	module.exports = __webpack_require__(73)()
+	module.exports = __webpack_require__(72)()
 		? Object.setPrototypeOf
-		: __webpack_require__(74);
+		: __webpack_require__(73);
 
 
 /***/ },
-/* 73 */
+/* 72 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -13098,7 +12973,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 74 */
+/* 73 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Big thanks to @WebReflection for sorting this out
@@ -13106,8 +12981,8 @@ var ProperSearch =
 
 	'use strict';
 
-	var isObject      = __webpack_require__(75)
-	  , value         = __webpack_require__(65)
+	var isObject      = __webpack_require__(74)
+	  , value         = __webpack_require__(64)
 
 	  , isPrototypeOf = Object.prototype.isPrototypeOf
 	  , defineProperty = Object.defineProperty
@@ -13173,11 +13048,11 @@ var ProperSearch =
 		return false;
 	}())));
 
-	__webpack_require__(76);
+	__webpack_require__(75);
 
 
 /***/ },
-/* 75 */
+/* 74 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -13190,7 +13065,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 76 */
+/* 75 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Workaround for http://code.google.com/p/v8/issues/detail?id=2804
@@ -13199,8 +13074,8 @@ var ProperSearch =
 
 	var create = Object.create, shim;
 
-	if (!__webpack_require__(73)()) {
-		shim = __webpack_require__(74);
+	if (!__webpack_require__(72)()) {
+		shim = __webpack_require__(73);
 	}
 
 	module.exports = (function () {
@@ -13232,7 +13107,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 77 */
+/* 76 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -13244,15 +13119,15 @@ var ProperSearch =
 
 
 /***/ },
-/* 78 */
+/* 77 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var assign        = __webpack_require__(79)
-	  , normalizeOpts = __webpack_require__(85)
-	  , isCallable    = __webpack_require__(86)
-	  , contains      = __webpack_require__(87)
+	var assign        = __webpack_require__(78)
+	  , normalizeOpts = __webpack_require__(84)
+	  , isCallable    = __webpack_require__(85)
+	  , contains      = __webpack_require__(86)
 
 	  , d;
 
@@ -13313,18 +13188,18 @@ var ProperSearch =
 
 
 /***/ },
-/* 79 */
+/* 78 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	module.exports = __webpack_require__(80)()
+	module.exports = __webpack_require__(79)()
 		? Object.assign
-		: __webpack_require__(81);
+		: __webpack_require__(80);
 
 
 /***/ },
-/* 80 */
+/* 79 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -13339,13 +13214,13 @@ var ProperSearch =
 
 
 /***/ },
-/* 81 */
+/* 80 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var keys  = __webpack_require__(82)
-	  , value = __webpack_require__(65)
+	var keys  = __webpack_require__(81)
+	  , value = __webpack_require__(64)
 
 	  , max = Math.max;
 
@@ -13367,18 +13242,18 @@ var ProperSearch =
 
 
 /***/ },
-/* 82 */
+/* 81 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	module.exports = __webpack_require__(83)()
+	module.exports = __webpack_require__(82)()
 		? Object.keys
-		: __webpack_require__(84);
+		: __webpack_require__(83);
 
 
 /***/ },
-/* 83 */
+/* 82 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -13392,7 +13267,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 84 */
+/* 83 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -13405,7 +13280,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 85 */
+/* 84 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -13428,7 +13303,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 86 */
+/* 85 */
 /***/ function(module, exports) {
 
 	// Deprecated
@@ -13439,18 +13314,18 @@ var ProperSearch =
 
 
 /***/ },
-/* 87 */
+/* 86 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	module.exports = __webpack_require__(88)()
+	module.exports = __webpack_require__(87)()
 		? String.prototype.contains
-		: __webpack_require__(89);
+		: __webpack_require__(88);
 
 
 /***/ },
-/* 88 */
+/* 87 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -13464,7 +13339,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 89 */
+/* 88 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -13477,13 +13352,13 @@ var ProperSearch =
 
 
 /***/ },
-/* 90 */
+/* 89 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var d        = __webpack_require__(78)
-	  , callable = __webpack_require__(77)
+	var d        = __webpack_require__(77)
+	  , callable = __webpack_require__(76)
 
 	  , apply = Function.prototype.apply, call = Function.prototype.call
 	  , create = Object.create, defineProperty = Object.defineProperty
@@ -13615,16 +13490,16 @@ var ProperSearch =
 
 
 /***/ },
-/* 91 */
+/* 90 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	module.exports = __webpack_require__(92)() ? Symbol : __webpack_require__(93);
+	module.exports = __webpack_require__(91)() ? Symbol : __webpack_require__(92);
 
 
 /***/ },
-/* 92 */
+/* 91 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -13648,15 +13523,15 @@ var ProperSearch =
 
 
 /***/ },
-/* 93 */
+/* 92 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// ES2015 Symbol polyfill for environments that do not support it (or partially support it_
 
 	'use strict';
 
-	var d              = __webpack_require__(78)
-	  , validateSymbol = __webpack_require__(94)
+	var d              = __webpack_require__(77)
+	  , validateSymbol = __webpack_require__(93)
 
 	  , create = Object.create, defineProperties = Object.defineProperties
 	  , defineProperty = Object.defineProperty, objPrototype = Object.prototype
@@ -13761,12 +13636,12 @@ var ProperSearch =
 
 
 /***/ },
-/* 94 */
+/* 93 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var isSymbol = __webpack_require__(95);
+	var isSymbol = __webpack_require__(94);
 
 	module.exports = function (value) {
 		if (!isSymbol(value)) throw new TypeError(value + " is not a symbol");
@@ -13775,7 +13650,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 95 */
+/* 94 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -13786,12 +13661,12 @@ var ProperSearch =
 
 
 /***/ },
-/* 96 */
+/* 95 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var isIterable = __webpack_require__(97);
+	var isIterable = __webpack_require__(96);
 
 	module.exports = function (value) {
 		if (!isIterable(value)) throw new TypeError(value + " is not iterable");
@@ -13800,14 +13675,14 @@ var ProperSearch =
 
 
 /***/ },
-/* 97 */
+/* 96 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var isArguments    = __webpack_require__(98)
-	  , isString       = __webpack_require__(99)
-	  , iteratorSymbol = __webpack_require__(91).iterator
+	var isArguments    = __webpack_require__(97)
+	  , isString       = __webpack_require__(98)
+	  , iteratorSymbol = __webpack_require__(90).iterator
 
 	  , isArray = Array.isArray;
 
@@ -13821,7 +13696,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 98 */
+/* 97 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -13834,7 +13709,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 99 */
+/* 98 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -13850,15 +13725,15 @@ var ProperSearch =
 
 
 /***/ },
-/* 100 */
+/* 99 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var isArguments = __webpack_require__(98)
-	  , callable    = __webpack_require__(77)
-	  , isString    = __webpack_require__(99)
-	  , get         = __webpack_require__(101)
+	var isArguments = __webpack_require__(97)
+	  , callable    = __webpack_require__(76)
+	  , isString    = __webpack_require__(98)
+	  , get         = __webpack_require__(100)
 
 	  , isArray = Array.isArray, call = Function.prototype.call
 	  , some = Array.prototype.some;
@@ -13902,17 +13777,17 @@ var ProperSearch =
 
 
 /***/ },
-/* 101 */
+/* 100 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var isArguments    = __webpack_require__(98)
-	  , isString       = __webpack_require__(99)
-	  , ArrayIterator  = __webpack_require__(102)
-	  , StringIterator = __webpack_require__(109)
-	  , iterable       = __webpack_require__(96)
-	  , iteratorSymbol = __webpack_require__(91).iterator;
+	var isArguments    = __webpack_require__(97)
+	  , isString       = __webpack_require__(98)
+	  , ArrayIterator  = __webpack_require__(101)
+	  , StringIterator = __webpack_require__(108)
+	  , iterable       = __webpack_require__(95)
+	  , iteratorSymbol = __webpack_require__(90).iterator;
 
 	module.exports = function (obj) {
 		if (typeof iterable(obj)[iteratorSymbol] === 'function') return obj[iteratorSymbol]();
@@ -13923,15 +13798,15 @@ var ProperSearch =
 
 
 /***/ },
-/* 102 */
+/* 101 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var setPrototypeOf = __webpack_require__(72)
-	  , contains       = __webpack_require__(87)
-	  , d              = __webpack_require__(78)
-	  , Iterator       = __webpack_require__(103)
+	var setPrototypeOf = __webpack_require__(71)
+	  , contains       = __webpack_require__(86)
+	  , d              = __webpack_require__(77)
+	  , Iterator       = __webpack_require__(102)
 
 	  , defineProperty = Object.defineProperty
 	  , ArrayIterator;
@@ -13959,18 +13834,18 @@ var ProperSearch =
 
 
 /***/ },
-/* 103 */
+/* 102 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var clear    = __webpack_require__(64)
-	  , assign   = __webpack_require__(79)
-	  , callable = __webpack_require__(77)
-	  , value    = __webpack_require__(65)
-	  , d        = __webpack_require__(78)
-	  , autoBind = __webpack_require__(104)
-	  , Symbol   = __webpack_require__(91)
+	var clear    = __webpack_require__(63)
+	  , assign   = __webpack_require__(78)
+	  , callable = __webpack_require__(76)
+	  , value    = __webpack_require__(64)
+	  , d        = __webpack_require__(77)
+	  , autoBind = __webpack_require__(103)
+	  , Symbol   = __webpack_require__(90)
 
 	  , defineProperty = Object.defineProperty
 	  , defineProperties = Object.defineProperties
@@ -14055,15 +13930,15 @@ var ProperSearch =
 
 
 /***/ },
-/* 104 */
+/* 103 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var copy       = __webpack_require__(105)
-	  , map        = __webpack_require__(106)
-	  , callable   = __webpack_require__(77)
-	  , validValue = __webpack_require__(65)
+	var copy       = __webpack_require__(104)
+	  , map        = __webpack_require__(105)
+	  , callable   = __webpack_require__(76)
+	  , validValue = __webpack_require__(64)
 
 	  , bind = Function.prototype.bind, defineProperty = Object.defineProperty
 	  , hasOwnProperty = Object.prototype.hasOwnProperty
@@ -14092,13 +13967,13 @@ var ProperSearch =
 
 
 /***/ },
-/* 105 */
+/* 104 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var assign = __webpack_require__(79)
-	  , value  = __webpack_require__(65);
+	var assign = __webpack_require__(78)
+	  , value  = __webpack_require__(64);
 
 	module.exports = function (obj) {
 		var copy = Object(value(obj));
@@ -14108,13 +13983,13 @@ var ProperSearch =
 
 
 /***/ },
-/* 106 */
+/* 105 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var callable = __webpack_require__(77)
-	  , forEach  = __webpack_require__(107)
+	var callable = __webpack_require__(76)
+	  , forEach  = __webpack_require__(106)
 
 	  , call = Function.prototype.call;
 
@@ -14129,16 +14004,16 @@ var ProperSearch =
 
 
 /***/ },
-/* 107 */
+/* 106 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	module.exports = __webpack_require__(108)('forEach');
+	module.exports = __webpack_require__(107)('forEach');
 
 
 /***/ },
-/* 108 */
+/* 107 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Internal method, used by iteration functions.
@@ -14147,8 +14022,8 @@ var ProperSearch =
 
 	'use strict';
 
-	var callable = __webpack_require__(77)
-	  , value    = __webpack_require__(65)
+	var callable = __webpack_require__(76)
+	  , value    = __webpack_require__(64)
 
 	  , bind = Function.prototype.bind, call = Function.prototype.call, keys = Object.keys
 	  , propertyIsEnumerable = Object.prototype.propertyIsEnumerable;
@@ -14173,7 +14048,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 109 */
+/* 108 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Thanks @mathiasbynens
@@ -14181,9 +14056,9 @@ var ProperSearch =
 
 	'use strict';
 
-	var setPrototypeOf = __webpack_require__(72)
-	  , d              = __webpack_require__(78)
-	  , Iterator       = __webpack_require__(103)
+	var setPrototypeOf = __webpack_require__(71)
+	  , d              = __webpack_require__(77)
+	  , Iterator       = __webpack_require__(102)
 
 	  , defineProperty = Object.defineProperty
 	  , StringIterator;
@@ -14216,16 +14091,16 @@ var ProperSearch =
 
 
 /***/ },
-/* 110 */
+/* 109 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var setPrototypeOf    = __webpack_require__(72)
-	  , contains          = __webpack_require__(87)
-	  , d                 = __webpack_require__(78)
-	  , Iterator          = __webpack_require__(103)
-	  , toStringTagSymbol = __webpack_require__(91).toStringTag
+	var setPrototypeOf    = __webpack_require__(71)
+	  , contains          = __webpack_require__(86)
+	  , d                 = __webpack_require__(77)
+	  , Iterator          = __webpack_require__(102)
+	  , toStringTagSymbol = __webpack_require__(90).toStringTag
 
 	  , defineProperty = Object.defineProperty
 	  , SetIterator;
@@ -14252,7 +14127,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 111 */
+/* 110 */
 /***/ function(module, exports) {
 
 	// Exports true if environment provides native `Set` implementation,
@@ -14267,7 +14142,7 @@ var ProperSearch =
 
 
 /***/ },
-/* 112 */
+/* 111 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -14276,7 +14151,7 @@ var ProperSearch =
 		value: true
 	});
 
-	var _searchField = __webpack_require__(113);
+	var _searchField = __webpack_require__(112);
 
 	var _searchField2 = _interopRequireDefault(_searchField);
 
@@ -14290,7 +14165,7 @@ var ProperSearch =
 	module.exports = exports['default'];
 
 /***/ },
-/* 113 */
+/* 112 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -14601,7 +14476,7 @@ var ProperSearch =
 	module.exports = exports['default'];
 
 /***/ },
-/* 114 */
+/* 113 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -14636,7 +14511,7 @@ var ProperSearch =
 	module.exports = exports['default'];
 
 /***/ },
-/* 115 */
+/* 114 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -14678,7 +14553,7 @@ var ProperSearch =
 	module.exports = exports['default'];
 
 /***/ },
-/* 116 */
+/* 115 */
 /***/ function(module, exports) {
 
 	// removed by extract-text-webpack-plugin
