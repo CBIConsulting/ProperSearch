@@ -25,6 +25,7 @@ function getDefaultProps() {
 		showIcon: true,
 		listElementClass: null,
 		allowsEmptySelection: false,
+		hiddenSelection: null,
 		uniqueID: _.uniqueId('search_list_'),
 	}
 }
@@ -52,6 +53,27 @@ class SearchList extends React.Component {
 		this.state = {
 			allSelected: this.props.allSelected,
 			nothingSelected: this.props.selection.size == 0,
+			hiddenSelection: new Set()
+		}
+	}
+
+	componentWillMount() {
+		if (this.props.hiddenSelection) {
+			this.setState({
+				hiddenSelection: this.parseHiddenSelection(this.props)
+			});
+		}
+	}
+
+	componentWillReceiveProps(newProps) {
+		let hiddenChange = !shallowEqualImmutable(this.props.hiddenSelection, newProps.hiddenSelection);
+		let hiddenSelection;
+
+		if (hiddenChange) {
+			hiddenSelection = newProps.hiddenSelection ? this.parseHiddenSelection(newProps) : this.state.hiddenSelection;
+			this.setState({
+				hiddenSelection: hiddenSelection
+			});
 		}
 	}
 
@@ -201,6 +223,26 @@ class SearchList extends React.Component {
 	}
 
 /**
+ * Parse the hidden selection if that property contains somethings.
+ *
+ * @param (array)	props 				Component props (or nextProps)
+ * @return (Set)	hiddenSelection 	The hidden rows.
+ */
+	parseHiddenSelection(props = this.props) {
+		let hidden = [], isArray = _.isArray(props.hiddenSelection), isObject =  _.isObject(props.hiddenSelection);
+
+		if (!isArray && isObject) return props.hiddenSelection; // Is Set
+
+		if (!isArray) { // Is String or number
+			hidden = [props.hiddenSelection.toString()];
+		} else if (props.hiddenSelection.length > 0) { // Is Array
+			hidden = props.hiddenSelection.toString().split(',');
+		}
+
+		return new Set(hidden);
+	}
+
+/**
  * Return the tool bar for the top of the list. It will be displayed only when the selection can be multiple.
  *
  * @return (html) 	The toolbar code
@@ -268,6 +310,11 @@ class SearchList extends React.Component {
 		);
 	}
 
+	getRowHeight(index) {
+		let id = this.props.data.get(index).get(this.props.idField);
+		return this.state.hiddenSelection.has(id) ? 0 : this.props.listRowHeight;
+	}
+
 /**
  * Build and return the content of the list.
  *
@@ -276,11 +323,16 @@ class SearchList extends React.Component {
  */
 	getContent(index) {
 		let icon =  null, selectedClass = null, className = null, element = null, listElementClass = this.props.listElementClass;
-		let data = this.props.data, rowdata, field = this.props.idField, displayField = this.props.displayField, showIcon = this.props.showIcon;
+		let data = this.props.data, rowdata, id, displayField = this.props.displayField, showIcon = this.props.showIcon;
 
 		rowdata = data.get(index);
 		element = rowdata.get(displayField);
 		className = "proper-search-list-element";
+		id = rowdata.get(this.props.idField);
+
+		if (!this.state.hiddenSelection.has(id)) {
+			className += ' hidden-list-element';
+		}
 
 		if (this.props.multiSelect) {
 			if (showIcon) {
@@ -306,7 +358,6 @@ class SearchList extends React.Component {
 		}
 
 		if (typeof element == 'function') {
-			let id = rowdata.get(field);
 			element = element(this.props.indexedData[id]);
 		} else if (this.props.rowFormater) {
 			let ckey = ['search_list', 'list_'+ this.props.uniqueID, 'row__'+rowdata.get(this.props.idField), displayField];
@@ -319,7 +370,7 @@ class SearchList extends React.Component {
 		}
 
 		return (
-			<div key={'element-' + index} ref={this.props.uniqueID + '_' + index} className={className} onClick={this.handleElementClick.bind(this, rowdata.get(field))}>
+			<div key={'element-' + index} ref={this.props.uniqueID + '_' + index} className={className} onClick={this.handleElementClick.bind(this, id)}>
 				{icon}
 				{element}
 			</div>
@@ -346,16 +397,18 @@ class SearchList extends React.Component {
 	}
 
 	render(){
-		let toolbar = null, rowsCount = 0, className = "proper-search-list";
+		let toolbar = null, rowHeight = this.props.listRowHeight, className = "proper-search-list";
 
 		if (this.props.multiSelect) {
 			toolbar = this.props.allowsEmptySelection ? this.getToolbarForEmpty() : this.getToolbar();
 		}
 
-		rowsCount = this.props.data.size;
-
 		if (this.props.className) {
 			className += ' '+this.props.className;
+		}
+
+		if (this.state.hiddenSelection.size > 0) {
+			rowHeight = this.getRowHeight.bind(this);
 		}
 
 		return (
@@ -367,9 +420,9 @@ class SearchList extends React.Component {
 	                width={this.props.listWidth || this.props.containerWidth}
 	                height={this.props.listHeight}
 	                rowRenderer={this.rowRenderer.bind(this)}
-	                rowHeight={this.props.listRowHeight}
+	                rowHeight={rowHeight}
 	                noRowsRenderer={this.noRowsRenderer.bind(this)}
-	                rowsCount={rowsCount}
+	                rowsCount={this.props.data.size}
 	                overscanRowsCount={5}
 	              />
 			</div>

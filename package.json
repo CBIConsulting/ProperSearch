@@ -5,10 +5,11 @@
   "main": "lib/propersearch.js",
   "scripts": {
     "test": "webpack && karma start --single-run --no-auto-watch karma.conf.js",
+    "clean": "rm -Rvf css && rm -Rvf dist && rm -Rvf lib && mkdir dist && mkdir css && mkdir lib",
     "watch": "karma start --auto-watch --no-single-run karma.conf.js",
     "start": "webpack-dev-server --hot --inline --config webpack.config.example.js",
-    "build": "babel src/jsx --out-dir lib && webpack && cp -rvf src/css/* css/",
-    "release": "webpack --config webpack.config.min.js",
+    "build": "npm run clean && babel src/jsx --out-dir lib && webpack && cp -rvf src/css/* css/",
+    "release": "npm run build && webpack --config webpack.config.min.js",
     "build-example": "webpack --config webpack.config.example.dist.js"
   },
   "repository": {

@@ -19,6 +19,7 @@ function getDefaultProps() {
 		lang: 'ENG',
 		rowFormater: null, // function to format values in render
 		defaultSelection: null,
+		hiddenSelection: null,
 		multiSelect: false,
 		listWidth: null,
 		listHeight: 200,
@@ -725,6 +726,7 @@ class Search extends React.Component {
 						showIcon={this.props.listShowIcon}
 						cacheManager={this.props.cacheManager}
 						allowsEmptySelection={this.props.allowsEmptySelection}
+						hiddenSelection={this.props.hiddenSelection}
 					/>
 				</div>
 			);

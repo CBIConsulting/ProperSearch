@@ -132,6 +132,7 @@ var ProperSearch =
 			lang: 'ENG',
 			rowFormater: null, // function to format values in render
 			defaultSelection: null,
+			hiddenSelection: null,
 			multiSelect: false,
 			listWidth: null,
 			listHeight: 200,
@@ -970,7 +971,8 @@ var ProperSearch =
 							listElementClass: this.props.listElementClass,
 							showIcon: this.props.listShowIcon,
 							cacheManager: this.props.cacheManager,
-							allowsEmptySelection: this.props.allowsEmptySelection
+							allowsEmptySelection: this.props.allowsEmptySelection,
+							hiddenSelection: this.props.hiddenSelection
 						})
 					);
 				} else {
@@ -6055,6 +6057,7 @@ var ProperSearch =
 			showIcon: true,
 			listElementClass: null,
 			allowsEmptySelection: false,
+			hiddenSelection: null,
 			uniqueID: _underscore2['default'].uniqueId('search_list_')
 		};
 	}
@@ -6086,12 +6089,35 @@ var ProperSearch =
 
 			_this.state = {
 				allSelected: _this.props.allSelected,
-				nothingSelected: _this.props.selection.size == 0
+				nothingSelected: _this.props.selection.size == 0,
+				hiddenSelection: new Set()
 			};
 			return _this;
 		}
 
 		_createClass(SearchList, [{
+			key: 'componentWillMount',
+			value: function componentWillMount() {
+				if (this.props.hiddenSelection) {
+					this.setState({
+						hiddenSelection: this.parseHiddenSelection(this.props)
+					});
+				}
+			}
+		}, {
+			key: 'componentWillReceiveProps',
+			value: function componentWillReceiveProps(newProps) {
+				var hiddenChange = !(0, _reactImmutableRenderMixin.shallowEqualImmutable)(this.props.hiddenSelection, newProps.hiddenSelection);
+				var hiddenSelection = void 0;
+
+				if (hiddenChange) {
+					hiddenSelection = newProps.hiddenSelection ? this.parseHiddenSelection(newProps) : this.state.hiddenSelection;
+					this.setState({
+						hiddenSelection: hiddenSelection
+					});
+				}
+			}
+		}, {
 			key: 'shouldComponentUpdate',
 			value: function shouldComponentUpdate(nextProps, nextState) {
 				var propschanged = !(0, _reactImmutableRenderMixin.shallowEqualImmutable)(this.props, nextProps);
@@ -6264,6 +6290,35 @@ var ProperSearch =
 			}
 
 			/**
+	   * Parse the hidden selection if that property contains somethings.
+	   *
+	   * @param (array)	props 				Component props (or nextProps)
+	   * @return (Set)	hiddenSelection 	The hidden rows.
+	   */
+
+		}, {
+			key: 'parseHiddenSelection',
+			value: function parseHiddenSelection() {
+				var props = arguments.length <= 0 || arguments[0] === undefined ? this.props : arguments[0];
+
+				var hidden = [],
+				    isArray = _underscore2['default'].isArray(props.hiddenSelection),
+				    isObject = _underscore2['default'].isObject(props.hiddenSelection);
+
+				if (!isArray && isObject) return props.hiddenSelection; // Is Set
+
+				if (!isArray) {
+					// Is String or number
+					hidden = [props.hiddenSelection.toString()];
+				} else if (props.hiddenSelection.length > 0) {
+					// Is Array
+					hidden = props.hiddenSelection.toString().split(',');
+				}
+
+				return new Set(hidden);
+			}
+
+			/**
 	   * Return the tool bar for the top of the list. It will be displayed only when the selection can be multiple.
 	   *
 	   * @return (html) 	The toolbar code
@@ -6366,6 +6421,12 @@ var ProperSearch =
 					)
 				);
 			}
+		}, {
+			key: 'getRowHeight',
+			value: function getRowHeight(index) {
+				var id = this.props.data.get(index).get(this.props.idField);
+				return this.state.hiddenSelection.has(id) ? 0 : this.props.listRowHeight;
+			}
 
 			/**
 	   * Build and return the content of the list.
@@ -6384,13 +6445,18 @@ var ProperSearch =
 				    listElementClass = this.props.listElementClass;
 				var data = this.props.data,
 				    rowdata = void 0,
-				    field = this.props.idField,
+				    id = void 0,
 				    displayField = this.props.displayField,
 				    showIcon = this.props.showIcon;
 
 				rowdata = data.get(index);
 				element = rowdata.get(displayField);
 				className = "proper-search-list-element";
+				id = rowdata.get(this.props.idField);
+
+				if (!this.state.hiddenSelection.has(id)) {
+					className += ' hidden-list-element';
+				}
 
 				if (this.props.multiSelect) {
 					if (showIcon) {
@@ -6415,7 +6481,6 @@ var ProperSearch =
 				}
 
 				if (typeof element == 'function') {
-					var id = rowdata.get(field);
 					element = element(this.props.indexedData[id]);
 				} else if (this.props.rowFormater) {
 					var ckey = ['search_list', 'list_' + this.props.uniqueID, 'row__' + rowdata.get(this.props.idField), displayField];
@@ -6429,7 +6494,7 @@ var ProperSearch =
 
 				return _react2['default'].createElement(
 					'div',
-					{ key: 'element-' + index, ref: this.props.uniqueID + '_' + index, className: className, onClick: this.handleElementClick.bind(this, rowdata.get(field)) },
+					{ key: 'element-' + index, ref: this.props.uniqueID + '_' + index, className: className, onClick: this.handleElementClick.bind(this, id) },
 					icon,
 					element
 				);
@@ -6467,17 +6532,19 @@ var ProperSearch =
 			key: 'render',
 			value: function render() {
 				var toolbar = null,
-				    rowsCount = 0,
+				    rowHeight = this.props.listRowHeight,
 				    className = "proper-search-list";
 
 				if (this.props.multiSelect) {
 					toolbar = this.props.allowsEmptySelection ? this.getToolbarForEmpty() : this.getToolbar();
 				}
 
-				rowsCount = this.props.data.size;
-
 				if (this.props.className) {
 					className += ' ' + this.props.className;
+				}
+
+				if (this.state.hiddenSelection.size > 0) {
+					rowHeight = this.getRowHeight.bind(this);
 				}
 
 				return _react2['default'].createElement(
@@ -6490,9 +6557,9 @@ var ProperSearch =
 						width: this.props.listWidth || this.props.containerWidth,
 						height: this.props.listHeight,
 						rowRenderer: this.rowRenderer.bind(this),
-						rowHeight: this.props.listRowHeight,
+						rowHeight: rowHeight,
 						noRowsRenderer: this.noRowsRenderer.bind(this),
-						rowsCount: rowsCount,
+						rowsCount: this.props.data.size,
 						overscanRowsCount: 5
 					})
 				);
