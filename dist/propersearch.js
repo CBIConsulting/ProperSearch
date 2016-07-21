@@ -6105,25 +6105,17 @@ var ProperSearch =
 				}
 			}
 		}, {
-			key: 'componentWillReceiveProps',
-			value: function componentWillReceiveProps(newProps) {
-				var hiddenChange = !(0, _reactImmutableRenderMixin.shallowEqualImmutable)(this.props.hiddenSelection, newProps.hiddenSelection);
-				var hiddenSelection = void 0;
-
-				if (hiddenChange) {
-					hiddenSelection = newProps.hiddenSelection ? this.parseHiddenSelection(newProps) : this.state.hiddenSelection;
-					this.setState({
-						hiddenSelection: hiddenSelection
-					});
-				}
-			}
-		}, {
 			key: 'shouldComponentUpdate',
 			value: function shouldComponentUpdate(nextProps, nextState) {
 				var propschanged = !(0, _reactImmutableRenderMixin.shallowEqualImmutable)(this.props, nextProps);
+				var stateChanged = !(0, _reactImmutableRenderMixin.shallowEqualImmutable)(this.state, nextState);
+				var somethingChanged = propschanged || stateChanged;
 
 				if (propschanged) {
-					var nothingSelected = false;
+					var nothingSelected = false,
+					    hiddenSelection = void 0;
+					var hiddenChange = !(0, _reactImmutableRenderMixin.shallowEqualImmutable)(this.props.hiddenSelection, newProps.hiddenSelection);
+					hiddenSelection = hiddenChange ? this.parseHiddenSelection(newProps) : this.state.hiddenSelection;
 
 					if (!nextProps.allSelected) nothingSelected = this.isNothingSelected(nextProps.data, nextProps.selection);
 
@@ -6131,12 +6123,18 @@ var ProperSearch =
 					if (nextProps.allSelected != this.state.allSelected || nothingSelected != this.state.nothingSelected) {
 						this.setState({
 							allSelected: nextProps.allSelected,
-							nothingSelected: nothingSelected
+							nothingSelected: nothingSelected,
+							hiddenSelection: hiddenSelection
 						});
+
+						return false;
+					} else if (hiddenChange) {
+						this.setState({ hiddenSelection: hiddenSelection });
+						return false;
 					}
 				}
 
-				return propschanged;
+				return somethingChanged;
 			}
 
 			/**
