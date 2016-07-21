@@ -192,10 +192,9 @@ Check your http://localhost:8080/ or  `open http://localhost:8080/`
 		filter={filter}
 		...
 	/>
-```
 * hiddenSelection: Thats the selection of what elements should not be displayed. It's an array, string, number or Set obj of the data ids (idField).
 
-
+```
 ### Basic Example
 
 ```javascript
