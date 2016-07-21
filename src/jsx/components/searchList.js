@@ -65,23 +65,15 @@ class SearchList extends React.Component {
 		}
 	}
 
-	componentWillReceiveProps(newProps) {
-		let hiddenChange = !shallowEqualImmutable(this.props.hiddenSelection, newProps.hiddenSelection);
-		let hiddenSelection;
-
-		if (hiddenChange) {
-			hiddenSelection = newProps.hiddenSelection ? this.parseHiddenSelection(newProps) : this.state.hiddenSelection;
-			this.setState({
-				hiddenSelection: hiddenSelection
-			});
-		}
-	}
-
 	shouldComponentUpdate(nextProps, nextState){
 		let propschanged = !shallowEqualImmutable(this.props, nextProps);
+		let stateChanged = !shallowEqualImmutable(this.state, nextState);
+		let somethingChanged = propschanged || stateChanged;
 
 		if (propschanged) {
-			let nothingSelected = false;
+			let nothingSelected = false, hiddenSelection;
+			let hiddenChange = !shallowEqualImmutable(this.props.hiddenSelection, newProps.hiddenSelection);
+			hiddenSelection = hiddenChange ? this.parseHiddenSelection(newProps) : this.state.hiddenSelection;
 
 			if (!nextProps.allSelected) nothingSelected = this.isNothingSelected(nextProps.data, nextProps.selection);
 
@@ -90,11 +82,17 @@ class SearchList extends React.Component {
 				this.setState({
 					allSelected: nextProps.allSelected,
 					nothingSelected: nothingSelected,
+					hiddenSelection: hiddenSelection
 				});
+
+				return false;
+			} else if (hiddenChange) {
+				this.setState({hiddenSelection: hiddenSelection});
+				return false;
 			}
 		}
 
-		return propschanged;
+		return somethingChanged;
 	}
 
 /**
