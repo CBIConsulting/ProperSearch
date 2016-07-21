@@ -1,6 +1,6 @@
 {
   "name": "react-propersearch",
-  "version": "0.2.5.1",
+  "version": "0.2.6",
   "description": "A react component that render a search field with a list of items, allows the user to filter that list and select the items. The component return the selected data when it get selected",
   "main": "lib/propersearch.js",
   "scripts": {
@@ -17,6 +17,7 @@
     "url": "git+https://github.com/CBIConsulting/ProperSearch.git"
   },
   "keywords": [
+    "react",
     "react-component",
     "search",
     "filter",

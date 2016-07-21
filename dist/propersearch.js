@@ -6454,10 +6454,6 @@ var ProperSearch =
 				className = "proper-search-list-element";
 				id = rowdata.get(this.props.idField);
 
-				if (!this.state.hiddenSelection.has(id)) {
-					className += ' hidden-list-element';
-				}
-
 				if (this.props.multiSelect) {
 					if (showIcon) {
 						if (rowdata.get('_selected', false)) {
