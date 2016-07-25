@@ -58,6 +58,8 @@ class SearchList extends React.Component {
 	}
 
 	componentWillMount() {
+		this.forceRecomputeRowHeights = false;
+
 		if (this.props.hiddenSelection) {
 			this.setState({
 				hiddenSelection: this.parseHiddenSelection(this.props)
@@ -71,9 +73,7 @@ class SearchList extends React.Component {
 		let somethingChanged = propschanged || stateChanged;
 
 		if (propschanged) {
-			let nothingSelected = false, hiddenSelection;
-			let hiddenChange = !shallowEqualImmutable(this.props.hiddenSelection, newProps.hiddenSelection);
-			hiddenSelection = hiddenChange ? this.parseHiddenSelection(newProps) : this.state.hiddenSelection;
+			let nothingSelected = false;
 
 			if (!nextProps.allSelected) nothingSelected = this.isNothingSelected(nextProps.data, nextProps.selection);
 
@@ -81,18 +81,25 @@ class SearchList extends React.Component {
 			if (nextProps.allSelected != this.state.allSelected || nothingSelected != this.state.nothingSelected) {
 				this.setState({
 					allSelected: nextProps.allSelected,
-					nothingSelected: nothingSelected,
-					hiddenSelection: hiddenSelection
+					nothingSelected: nothingSelected
 				});
-
-				return false;
-			} else if (hiddenChange) {
-				this.setState({hiddenSelection: hiddenSelection});
-				return false;
 			}
 		}
 
 		return somethingChanged;
+	}
+
+	componentWillReceiveProps(newProps) {
+		let hiddenChange = !shallowEqualImmutable(this.props.hiddenSelection, newProps.hiddenSelection);
+		let hiddenSelection;
+
+		if (hiddenChange) {
+			this.forceRecomputeRowHeights = true;
+			hiddenSelection = this.parseHiddenSelection(newProps);
+			this.setState({
+				hiddenSelection: hiddenSelection
+			});
+		}
 	}
 
 /**
@@ -253,7 +260,6 @@ class SearchList extends React.Component {
 				<div className="btn-group form-inline">
 					<a
 						id="proper-search-list-bar-check"
-						ref={this.props.uniqueID + '_all'}
 						className="btn-select list-bar-check" role="button"
 						onClick={this.handleSelectAll.bind(this, true)}
 						style={{maxWidth: maxWidth, boxSizing: 'border-box'}}>
@@ -261,7 +267,6 @@ class SearchList extends React.Component {
 					</a>
 					<a
 						id="proper-search-list-bar-unCheck"
-						ref={this.props.uniqueID + '_none'}
 						className="btn-select list-bar-unCheck"
 						role="button"
 						onClick={this.handleSelectAll.bind(this, false)}
@@ -287,7 +292,6 @@ class SearchList extends React.Component {
 				<div className="btn-group form-inline">
 					<a
 						id="proper-search-list-bar-select"
-						ref={this.props.uniqueID + '_all'}
 						className="btn-select list-bar-select"
 						role="button"
 						onClick={this.handleSelectAll.bind(this, !allSelected)}
@@ -296,7 +300,6 @@ class SearchList extends React.Component {
 					</a>
 					<a
 						id="proper-search-list-bar-empty"
-						ref={this.props.uniqueID + '_none'}
 						className="btn-select list-bar-empty"
 						role="button"
 						onClick={this.handleSelectEmpty.bind(this)}
@@ -308,18 +311,16 @@ class SearchList extends React.Component {
 		);
 	}
 
-	getRowHeight(index) {
-		let id = this.props.data.get(index).get(this.props.idField);
-		return this.state.hiddenSelection.has(id) ? 0 : this.props.listRowHeight;
-	}
-
 /**
  * Build and return the content of the list.
  *
- * @param {integer} index 		Index of the data to be rendered
- * @return {html}	list-row	A row of the list
+ * @param {object} 	contentData
+ * 							- index (integer) 		Index of the data to be rendered
+ * 							- isScrolling (bool) 	If grid is scrollings
+ * @return {html}	list-row 	A row of the list
  */
-	getContent(index) {
+	getContent(contentData) {
+		let index = contentData.index;
 		let icon =  null, selectedClass = null, className = null, element = null, listElementClass = this.props.listElementClass;
 		let data = this.props.data, rowdata, id, displayField = this.props.displayField, showIcon = this.props.showIcon;
 
@@ -364,7 +365,7 @@ class SearchList extends React.Component {
 		}
 
 		return (
-			<div key={'element-' + index} ref={this.props.uniqueID + '_' + index} className={className} onClick={this.handleElementClick.bind(this, id)}>
+			<div key={'element-' + index} className={className} onClick={this.handleElementClick.bind(this, id)}>
 				{icon}
 				{element}
 			</div>
@@ -392,6 +393,7 @@ class SearchList extends React.Component {
 
 	render(){
 		let toolbar = null, rowHeight = this.props.listRowHeight, className = "proper-search-list";
+		let forceRecomputeRowHeights = this.forceRecomputeRowHeights;
 
 		if (this.props.multiSelect) {
 			toolbar = this.props.allowsEmptySelection ? this.getToolbarForEmpty() : this.getToolbar();
@@ -402,7 +404,18 @@ class SearchList extends React.Component {
 		}
 
 		if (this.state.hiddenSelection.size > 0) {
-			rowHeight = this.getRowHeight.bind(this);
+			let data = this.props.data, hiddenSelection = this.state.hiddenSelection;
+			let idField = this.props.idField, listRowHeight = this.props.listRowHeight;
+
+			if (forceRecomputeRowHeights) {
+				this.forceRecomputeRowHeights = false;
+			}
+
+			rowHeight = (rowData) => {
+				let index = rowData.index;
+				let id = data.get(index).get(idField);
+				return hiddenSelection.has(id) ? 0 : listRowHeight;
+			};
 		}
 
 		return (
@@ -416,8 +429,9 @@ class SearchList extends React.Component {
 	                rowRenderer={this.rowRenderer.bind(this)}
 	                rowHeight={rowHeight}
 	                noRowsRenderer={this.noRowsRenderer.bind(this)}
-	                rowsCount={this.props.data.size}
+	                rowCount={this.props.data.size}
 	                overscanRowsCount={5}
+	                forceRecomputeRowHeights={forceRecomputeRowHeights}
 	              />
 			</div>
 		)
