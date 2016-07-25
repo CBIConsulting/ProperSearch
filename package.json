@@ -1,6 +1,6 @@
 {
   "name": "react-propersearch",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "description": "A react component that render a search field with a list of items, allows the user to filter that list and select the items. The component return the selected data when it get selected",
   "main": "lib/propersearch.js",
   "scripts": {
@@ -8,7 +8,7 @@
     "clean": "rm -Rvf css && rm -Rvf dist && rm -Rvf lib && mkdir dist && mkdir css && mkdir lib",
     "watch": "karma start --auto-watch --no-single-run karma.conf.js",
     "start": "webpack-dev-server --hot --inline --config webpack.config.example.js",
-    "build": "npm run clean && babel src/jsx --out-dir lib && webpack && cp -rvf src/css/* css/",
+    "build": "babel src/jsx --out-dir lib && webpack && cp -rvf src/css/* css/",
     "release": "npm run build && webpack --config webpack.config.min.js",
     "build-example": "webpack --config webpack.config.example.dist.js"
   },
@@ -63,7 +63,7 @@
     "react-addons-test-utils": "^0.14.7",
     "sass-loader": "^3.2.0",
     "style-loader": "^0.13.1",
-    "webpack": "^1.12.14",
+    "webpack": "^1.13.1",
     "webpack-dev-server": "^1.14.1"
   },
   "dependencies": {
@@ -77,7 +77,7 @@
     "react-dom": "^0.14.7",
     "react-addons-shallow-compare": "^0.14.7",
     "react-immutable-render-mixin": "^0.9.5",
-    "react-virtualized": "^6.0.2",
+    "react-virtualized": "^7.12.3",
     "underscore": "^1.8.3"
   }
 }

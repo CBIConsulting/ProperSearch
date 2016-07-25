@@ -80,7 +80,7 @@ describe('SearchList', function() {
 	    let component = prepare(props);
 
 	    // Click elements
-		let node = ReactDOM.findDOMNode(component.refs.test_all);
+		let node = TestUtils.findRenderedDOMComponentWithClass(component, "list-bar-check");
 		TestUtils.Simulate.click(node);
 
 		def.done((selection) => {
@@ -99,7 +99,7 @@ describe('SearchList', function() {
 	    let component = prepare(props);
 
 	    // Click elements
-		let node = ReactDOM.findDOMNode(component.refs.test_none);
+		let node = TestUtils.findRenderedDOMComponentWithClass(component, "list-bar-unCheck");
 		TestUtils.Simulate.click(node);
 
 		def.done((selection) => {

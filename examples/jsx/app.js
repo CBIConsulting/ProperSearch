@@ -1,4 +1,4 @@
-import React from 'react';
+import {Component} from 'react';
 import Search from "../../src/jsx/propersearch";
 import Normalizer from "../../src/jsx/utils/normalize";
 import {shallowEqualImmutable} from 'react-immutable-render-mixin';
@@ -10,7 +10,7 @@ function getDefaultProps() {
 	}
 }
 
-class App extends React.Component {
+class App extends Component {
 
 	constructor(props) {
 		super(props);
@@ -28,7 +28,8 @@ class App extends React.Component {
 			listRowHeight: this.props.listRowHeight,
 			placeholder: 'Search placeHolder',
 			filterOff: false,
-			dataSize: 100
+			dataSize: 100,
+			hidden: null
 		}
 	}
 
@@ -249,6 +250,19 @@ class App extends React.Component {
 		});
 	}
 
+	apllyHidden(e) {
+		e.preventDefault();
+		let hidden = ["item-1", "item-2", "item-3"];
+
+		if (this.state.hidden && this.state.hidden[0] === hidden[0]) {
+			hidden = ["item-5", "item-6", "item-7"];
+		}
+
+		this.setState({
+			hidden: hidden
+		});
+	}
+
 	render() {
 		let filter = !this.state.filterOff ? this.filter.bind(this) : null;
 		let multiSelect = this.state.multiSelect, language = this.state.language;
@@ -268,6 +282,7 @@ class App extends React.Component {
 					                <div className="form-inline">
 					                	<input ref="dataSize" type="text" className="form-control" placeholder="Number of elements" defaultValue={this.state.dataSize} style={{marginRight: '30px'}}/>
 					            		<button className="btn btn-default" onClick={this.onChangeSize.bind(this)}>-></button>
+					            		<button className="btn -btn-default" onClick={this.apllyHidden.bind(this)}>Apply Hidden</button>
 					            	</div>
 					            </div>
 				          		<div className="form-group">
@@ -322,6 +337,8 @@ class App extends React.Component {
 				    <div style={{position: 'absolute', top: 0, left: '33%',  width: '45%'}}>
 				        <div id="canvas" style={{position: 'absolute', top: 0, bottom: 0, width:' 40%'}}>
 				        	<Search
+				        		key="search1"
+				        		ref="search1"
 								data={this.state.data}
 								idField={this.state.idField}
 								displayField={this.state.displayField}
@@ -336,10 +353,13 @@ class App extends React.Component {
 								afterSelect={this.afterSelect.bind(this)}
 								afterSearch={this.afterSearch.bind(this)}
 								allowsEmptySelection={false}
+								hiddenSelection={this.state.hidden}
 							/>
 				        </div>
 				        <div id="canvas" style={{position: 'absolute', top: 0, bottom: 0, left:'55%', width:' 30%'}}>
 				        	<Search
+				        		key="search1"
+				        		ref="search2"
 								data={this.state.data}
 								idField={this.state.idField}
 								displayField={this.state.displayField}
