@@ -6188,8 +6188,8 @@ var ProperSearch =
 			/**
 	   * Check if all the current data are not selected
 	   *
-	   * @param {array}	data		The data to compare with selection
-	   * @param {object}	selection	The current selection Set of values (idField)
+	   * @param (array)	data		The data to compare with selection
+	   * @param (object)	selection	The current selection Set of values (idField)
 	   */
 
 		}, {
@@ -6214,8 +6214,8 @@ var ProperSearch =
 			/**
 	   * Check if all the current data are selected.
 	   *
-	   * @param {array}	data		The data to compare with selection
-	   * @param {object}	selection	The current selection Set of values (idField)
+	   * @param (array)	data		The data to compare with selection
+	   * @param (object)	selection	The current selection Set of values (idField)
 	   */
 
 		}, {
@@ -6423,10 +6423,10 @@ var ProperSearch =
 			/**
 	   * Build and return the content of the list.
 	   *
-	   * @param {object} 	contentData
+	   * @param (object) 	contentData
 	   * 							- index (integer) 		Index of the data to be rendered
 	   * 							- isScrolling (bool) 	If grid is scrollings
-	   * @return {html}	list-row 	A row of the list
+	   * @return (html)	list-row 	A row of the list
 	   */
 
 		}, {
@@ -6509,21 +6509,23 @@ var ProperSearch =
 			/**
 	   * Function called to get the content of each element of the list.
 	   *
-	   * @param 	list 		List of elements builded on getContent.
-	   * @param 	index 		Current index to be rendered.
-	   * @return 	element 	The element on the index position
+	   * @param (object) 	contentData
+	   * 							- index (integer) 		Index of the data to be rendered
+	   * 							- isScrolling (bool) 	If grid is scrollings
+	   * @return  (node)		element 	The element on the index position
 	   */
 
 		}, {
 			key: 'rowRenderer',
-			value: function rowRenderer(index) {
-				return this.getContent(index);
+			value: function rowRenderer(contentData) {
+				return this.getContent(contentData);
 			}
 
 			/**
 	   *	Function that gets the height for the current row of the list.
 	   *
-	   * @param rowData 		It's an object that contains the index of the current row
+	   * @param (object) 	rowData 	It's an object that contains the index of the current row
+	   * @return (integer) rowHeight  The height of each row.
 	   */
 
 		}, {
@@ -6550,7 +6552,7 @@ var ProperSearch =
 				}
 
 				if (this.state.hiddenSelection.size > 0) {
-					rowHeight = this.getRowHeight;
+					rowHeight = this.getRowHeight.bind(this);
 				}
 
 				return _react2['default'].createElement(

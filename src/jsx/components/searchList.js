@@ -142,8 +142,8 @@ class SearchList extends React.Component {
 /**
  * Check if all the current data are not selected
  *
- * @param {array}	data		The data to compare with selection
- * @param {object}	selection	The current selection Set of values (idField)
+ * @param (array)	data		The data to compare with selection
+ * @param (object)	selection	The current selection Set of values (idField)
  */
 	isNothingSelected(data, selection) {
 		let result = true;
@@ -162,8 +162,8 @@ class SearchList extends React.Component {
 /**
  * Check if all the current data are selected.
  *
- * @param {array}	data		The data to compare with selection
- * @param {object}	selection	The current selection Set of values (idField)
+ * @param (array)	data		The data to compare with selection
+ * @param (object)	selection	The current selection Set of values (idField)
  */
 	isAllSelected(data, selection) {
 		let result = true;
@@ -312,10 +312,10 @@ class SearchList extends React.Component {
 /**
  * Build and return the content of the list.
  *
- * @param {object} 	contentData
+ * @param (object) 	contentData
  * 							- index (integer) 		Index of the data to be rendered
  * 							- isScrolling (bool) 	If grid is scrollings
- * @return {html}	list-row 	A row of the list
+ * @return (html)	list-row 	A row of the list
  */
 	getContent(contentData) {
 		let index = contentData.index;
@@ -381,18 +381,20 @@ class SearchList extends React.Component {
 /**
  * Function called to get the content of each element of the list.
  *
- * @param 	list 		List of elements builded on getContent.
- * @param 	index 		Current index to be rendered.
- * @return 	element 	The element on the index position
+ * @param (object) 	contentData
+ * 							- index (integer) 		Index of the data to be rendered
+ * 							- isScrolling (bool) 	If grid is scrollings
+ * @return  (node)		element 	The element on the index position
  */
-	rowRenderer(index) {
-		return this.getContent(index);
+	rowRenderer(contentData) {
+		return this.getContent(contentData);
 	}
 
 /**
  *	Function that gets the height for the current row of the list.
  *
- * @param rowData 		It's an object that contains the index of the current row
+ * @param (object) 	rowData 	It's an object that contains the index of the current row
+ * @return (integer) rowHeight  The height of each row.
  */
 	getRowHeight(rowData) {
 		let id = this.props.data.get(rowData.index).get(this.props.idField);
@@ -411,7 +413,7 @@ class SearchList extends React.Component {
 		}
 
 		if (this.state.hiddenSelection.size > 0) {
-			rowHeight = this.getRowHeight;
+			rowHeight = this.getRowHeight.bind(this);
 		}
 
 		return (
