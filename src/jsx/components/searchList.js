@@ -58,8 +58,6 @@ class SearchList extends React.Component {
 	}
 
 	componentWillMount() {
-		this.forceRecomputeRowHeights = false;
-
 		if (this.props.hiddenSelection) {
 			this.setState({
 				hiddenSelection: this.parseHiddenSelection(this.props)
@@ -94,7 +92,7 @@ class SearchList extends React.Component {
 		let hiddenSelection;
 
 		if (hiddenChange) {
-			this.forceRecomputeRowHeights = true;
+			if (this._virtualScroll) this._virtualScroll.recomputeRowHeights(0);
 			hiddenSelection = this.parseHiddenSelection(newProps);
 			this.setState({
 				hiddenSelection: hiddenSelection
@@ -374,10 +372,10 @@ class SearchList extends React.Component {
 /**
  * To be rendered when the data has no data (Ex. filtered data)
  *
- * @return (html) An div with a message
+ * @return (node) An div with a message
  */
 	noRowsRenderer () {
-	    return <div key={'element-0'} ref={this.props.uniqueID + '_noData'} className={"proper-search-list search-list-no-data"}>{this.props.messages.noData}</div>;
+	    return <div key={'element-0'} className={"proper-search-list search-list-no-data"}>{this.props.messages.noData}</div>;
 	}
 
 /**
@@ -391,9 +389,18 @@ class SearchList extends React.Component {
 		return this.getContent(index);
 	}
 
+/**
+ *	Function that gets the height for the current row of the list.
+ *
+ * @param rowData 		It's an object that contains the index of the current row
+ */
+	getRowHeight(rowData) {
+		let id = this.props.data.get(rowData.index).get(this.props.idField);
+		return this.state.hiddenSelection.has(id) ? 0 : this.props.listRowHeight;
+	}
+
 	render(){
 		let toolbar = null, rowHeight = this.props.listRowHeight, className = "proper-search-list";
-		let forceRecomputeRowHeights = this.forceRecomputeRowHeights;
 
 		if (this.props.multiSelect) {
 			toolbar = this.props.allowsEmptySelection ? this.getToolbarForEmpty() : this.getToolbar();
@@ -404,25 +411,16 @@ class SearchList extends React.Component {
 		}
 
 		if (this.state.hiddenSelection.size > 0) {
-			let data = this.props.data, hiddenSelection = this.state.hiddenSelection;
-			let idField = this.props.idField, listRowHeight = this.props.listRowHeight;
-
-			if (forceRecomputeRowHeights) {
-				this.forceRecomputeRowHeights = false;
-			}
-
-			rowHeight = (rowData) => {
-				let index = rowData.index;
-				let id = data.get(index).get(idField);
-				return hiddenSelection.has(id) ? 0 : listRowHeight;
-			};
+			rowHeight = this.getRowHeight;
 		}
 
 		return (
 			<div className={className}>
 				{toolbar}
 				<VirtualScroll
-					ref={this.props.uniqueID + '_virtual'}
+					ref={(ref) => {
+			          	this._virtualScroll = ref
+			        }}
 					className={"proper-search-list-virtual"}
 	                width={this.props.listWidth || this.props.containerWidth}
 	                height={this.props.listHeight}
@@ -431,7 +429,6 @@ class SearchList extends React.Component {
 	                noRowsRenderer={this.noRowsRenderer.bind(this)}
 	                rowCount={this.props.data.size}
 	                overscanRowsCount={5}
-	                forceRecomputeRowHeights={forceRecomputeRowHeights}
 	              />
 			</div>
 		)

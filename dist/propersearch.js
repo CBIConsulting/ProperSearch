@@ -6097,8 +6097,6 @@ var ProperSearch =
 		_createClass(SearchList, [{
 			key: 'componentWillMount',
 			value: function componentWillMount() {
-				this.forceRecomputeRowHeights = false;
-
 				if (this.props.hiddenSelection) {
 					this.setState({
 						hiddenSelection: this.parseHiddenSelection(this.props)
@@ -6135,7 +6133,7 @@ var ProperSearch =
 				var hiddenSelection = void 0;
 
 				if (hiddenChange) {
-					this.forceRecomputeRowHeights = true;
+					if (this._virtualScroll) this._virtualScroll.recomputeRowHeights(0);
 					hiddenSelection = this.parseHiddenSelection(newProps);
 					this.setState({
 						hiddenSelection: hiddenSelection
@@ -6495,7 +6493,7 @@ var ProperSearch =
 			/**
 	   * To be rendered when the data has no data (Ex. filtered data)
 	   *
-	   * @return (html) An div with a message
+	   * @return (node) An div with a message
 	   */
 
 		}, {
@@ -6503,7 +6501,7 @@ var ProperSearch =
 			value: function noRowsRenderer() {
 				return _react2['default'].createElement(
 					'div',
-					{ key: 'element-0', ref: this.props.uniqueID + '_noData', className: "proper-search-list search-list-no-data" },
+					{ key: 'element-0', className: "proper-search-list search-list-no-data" },
 					this.props.messages.noData
 				);
 			}
@@ -6521,6 +6519,19 @@ var ProperSearch =
 			value: function rowRenderer(index) {
 				return this.getContent(index);
 			}
+
+			/**
+	   *	Function that gets the height for the current row of the list.
+	   *
+	   * @param rowData 		It's an object that contains the index of the current row
+	   */
+
+		}, {
+			key: 'getRowHeight',
+			value: function getRowHeight(rowData) {
+				var id = this.props.data.get(rowData.index).get(this.props.idField);
+				return this.state.hiddenSelection.has(id) ? 0 : this.props.listRowHeight;
+			}
 		}, {
 			key: 'render',
 			value: function render() {
@@ -6529,7 +6540,6 @@ var ProperSearch =
 				var toolbar = null,
 				    rowHeight = this.props.listRowHeight,
 				    className = "proper-search-list";
-				var forceRecomputeRowHeights = this.forceRecomputeRowHeights;
 
 				if (this.props.multiSelect) {
 					toolbar = this.props.allowsEmptySelection ? this.getToolbarForEmpty() : this.getToolbar();
@@ -6540,22 +6550,7 @@ var ProperSearch =
 				}
 
 				if (this.state.hiddenSelection.size > 0) {
-					(function () {
-						var data = _this4.props.data,
-						    hiddenSelection = _this4.state.hiddenSelection;
-						var idField = _this4.props.idField,
-						    listRowHeight = _this4.props.listRowHeight;
-
-						if (forceRecomputeRowHeights) {
-							_this4.forceRecomputeRowHeights = false;
-						}
-
-						rowHeight = function rowHeight(rowData) {
-							var index = rowData.index;
-							var id = data.get(index).get(idField);
-							return hiddenSelection.has(id) ? 0 : listRowHeight;
-						};
-					})();
+					rowHeight = this.getRowHeight;
 				}
 
 				return _react2['default'].createElement(
@@ -6563,7 +6558,9 @@ var ProperSearch =
 					{ className: className },
 					toolbar,
 					_react2['default'].createElement(_reactVirtualized.VirtualScroll, {
-						ref: this.props.uniqueID + '_virtual',
+						ref: function ref(_ref) {
+							_this4._virtualScroll = _ref;
+						},
 						className: "proper-search-list-virtual",
 						width: this.props.listWidth || this.props.containerWidth,
 						height: this.props.listHeight,
@@ -6571,8 +6568,7 @@ var ProperSearch =
 						rowHeight: rowHeight,
 						noRowsRenderer: this.noRowsRenderer.bind(this),
 						rowCount: this.props.data.size,
-						overscanRowsCount: 5,
-						forceRecomputeRowHeights: forceRecomputeRowHeights
+						overscanRowsCount: 5
 					})
 				);
 			}
@@ -6954,6 +6950,7 @@ var ProperSearch =
 	/**
 	 * This HOC decorates a virtualized component and responds to arrow-key events by scrolling one row or column at a time.
 	 */
+
 	var ArrowKeyStepper = function (_Component) {
 	  _inherits(ArrowKeyStepper, _Component);
 
@@ -7212,6 +7209,7 @@ var ProperSearch =
 	 * Child component should not be declared as a child but should rather be specified by a `ChildComponent` property.
 	 * All other properties will be passed through to the child component.
 	 */
+
 	var AutoSizer = function (_Component) {
 	  _inherits(AutoSizer, _Component);
 
@@ -7572,6 +7570,7 @@ var ProperSearch =
 	 * Measures a Grid cell's contents by rendering them in a way that is not visible to the user.
 	 * Either a fixed width or height may be provided if it is desirable to measure only in one direction.
 	 */
+
 	var CellMeasurer = function (_Component) {
 	  _inherits(CellMeasurer, _Component);
 
@@ -7894,6 +7893,7 @@ var ProperSearch =
 	 * Renders scattered or non-linear data.
 	 * Unlike Grid, which renders checkerboard data, Collection can render arbitrarily positioned- even overlapping- data.
 	 */
+
 	var Collection = function (_Component) {
 	  _inherits(Collection, _Component);
 
@@ -9239,6 +9239,7 @@ var ProperSearch =
 	 * Grows (and adds Sections) dynamically as cells are registered.
 	 * Automatically adds cells to the appropriate Section(s).
 	 */
+
 	var SectionManager = function () {
 	  function SectionManager() {
 	    var sectionSize = arguments.length <= 0 || arguments[0] === undefined ? SECTION_SIZE : arguments[0];
@@ -9387,6 +9388,7 @@ var ProperSearch =
 	 * This enables us to more quickly determine which cells to display in a given region of the Window.
 	 * Sections have a fixed size and contain 0 to many cells (tracked by their indices).
 	 */
+
 	var Section = function () {
 	  function Section(_ref) {
 	    var height = _ref.height;
@@ -9540,6 +9542,7 @@ var ProperSearch =
 	/**
 	 * High-order component that auto-calculates column-widths for `Grid` cells.
 	 */
+
 	var ColumnSizer = function (_Component) {
 	  _inherits(ColumnSizer, _Component);
 
@@ -10803,7 +10806,8 @@ var ProperSearch =
 	    key: 'getOffsetAdjustment',
 	    value: function getOffsetAdjustment(_ref2) {
 	      var containerSize = _ref2.containerSize;
-	      var offset = _ref2.offset;
+	      var offset // safe
+	      = _ref2.offset;
 
 	      var totalSize = this._cellSizeAndPositionManager.getTotalSize();
 	      var safeTotalSize = this.getTotalSize();
@@ -10843,7 +10847,8 @@ var ProperSearch =
 	      var align = _ref3$align === undefined ? 'auto' : _ref3$align;
 	      var containerSize = _ref3.containerSize;
 	      var currentOffset = _ref3.currentOffset;
-	      var targetIndex = _ref3.targetIndex;
+	      var // safe
+	      targetIndex = _ref3.targetIndex;
 	      var totalSize = _ref3.totalSize;
 
 	      currentOffset = this._safeOffsetToOffset({
@@ -10871,7 +10876,8 @@ var ProperSearch =
 	    key: 'getVisibleCellRange',
 	    value: function getVisibleCellRange(_ref4) {
 	      var containerSize = _ref4.containerSize;
-	      var offset = _ref4.offset;
+	      var offset // safe
+	      = _ref4.offset;
 
 	      offset = this._safeOffsetToOffset({
 	        containerSize: containerSize,
@@ -10893,7 +10899,8 @@ var ProperSearch =
 	    value: function _getOffsetPercentage(_ref5) {
 	      var containerSize = _ref5.containerSize;
 	      var offset = _ref5.offset;
-	      var totalSize = _ref5.totalSize;
+	      var // safe
+	      totalSize = _ref5.totalSize;
 
 	      return totalSize <= containerSize ? 0 : offset / (totalSize - containerSize);
 	    }
@@ -10901,7 +10908,8 @@ var ProperSearch =
 	    key: '_offsetToSafeOffset',
 	    value: function _offsetToSafeOffset(_ref6) {
 	      var containerSize = _ref6.containerSize;
-	      var offset = _ref6.offset;
+	      var offset // unsafe
+	      = _ref6.offset;
 
 	      var totalSize = this._cellSizeAndPositionManager.getTotalSize();
 	      var safeTotalSize = this.getTotalSize();
@@ -10922,7 +10930,8 @@ var ProperSearch =
 	    key: '_safeOffsetToOffset',
 	    value: function _safeOffsetToOffset(_ref7) {
 	      var containerSize = _ref7.containerSize;
-	      var offset = _ref7.offset;
+	      var offset // safe
+	      = _ref7.offset;
 
 	      var totalSize = this._cellSizeAndPositionManager.getTotalSize();
 	      var safeTotalSize = this.getTotalSize();
@@ -10963,6 +10972,7 @@ var ProperSearch =
 	/**
 	 * Just-in-time calculates and caches size and position information for a collection of cells.
 	 */
+
 	var CellSizeAndPositionManager = function () {
 	  function CellSizeAndPositionManager(_ref) {
 	    var cellCount = _ref.cellCount;
@@ -10991,13 +11001,6 @@ var ProperSearch =
 
 	      this._cellCount = cellCount;
 	      this._estimatedCellSize = estimatedCellSize;
-	    }
-	  }, {
-	    key: 'configureSizeGetter',
-	    value: function configureSizeGetter(_ref3) {
-	      var cellSizeGetter = _ref3.cellSizeGetter;
-
-	      this._cellSizeGetter = cellSizeGetter;
 	    }
 	  }, {
 	    key: 'getCellCount',
@@ -11088,12 +11091,12 @@ var ProperSearch =
 
 	  }, {
 	    key: 'getUpdatedOffsetForIndex',
-	    value: function getUpdatedOffsetForIndex(_ref4) {
-	      var _ref4$align = _ref4.align;
-	      var align = _ref4$align === undefined ? 'auto' : _ref4$align;
-	      var containerSize = _ref4.containerSize;
-	      var currentOffset = _ref4.currentOffset;
-	      var targetIndex = _ref4.targetIndex;
+	    value: function getUpdatedOffsetForIndex(_ref3) {
+	      var _ref3$align = _ref3.align;
+	      var align = _ref3$align === undefined ? 'auto' : _ref3$align;
+	      var containerSize = _ref3.containerSize;
+	      var currentOffset = _ref3.currentOffset;
+	      var targetIndex = _ref3.targetIndex;
 
 	      var datum = this.getSizeAndPositionOfCell(targetIndex);
 	      var maxOffset = datum.offset;
@@ -11122,9 +11125,9 @@ var ProperSearch =
 	    }
 	  }, {
 	    key: 'getVisibleCellRange',
-	    value: function getVisibleCellRange(_ref5) {
-	      var containerSize = _ref5.containerSize;
-	      var offset = _ref5.offset;
+	    value: function getVisibleCellRange(_ref4) {
+	      var containerSize = _ref4.containerSize;
+	      var offset = _ref4.offset;
 
 	      var totalSize = this.getTotalSize();
 
@@ -11165,10 +11168,10 @@ var ProperSearch =
 	    }
 	  }, {
 	    key: '_binarySearch',
-	    value: function _binarySearch(_ref6) {
-	      var high = _ref6.high;
-	      var low = _ref6.low;
-	      var offset = _ref6.offset;
+	    value: function _binarySearch(_ref5) {
+	      var high = _ref5.high;
+	      var low = _ref5.low;
+	      var offset = _ref5.offset;
 
 	      var middle = void 0;
 	      var currentOffset = void 0;
@@ -11192,9 +11195,9 @@ var ProperSearch =
 	    }
 	  }, {
 	    key: '_exponentialSearch',
-	    value: function _exponentialSearch(_ref7) {
-	      var index = _ref7.index;
-	      var offset = _ref7.offset;
+	    value: function _exponentialSearch(_ref6) {
+	      var index = _ref6.index;
+	      var offset = _ref6.offset;
 
 	      var interval = 1;
 
@@ -11337,19 +11340,19 @@ var ProperSearch =
 	    // If we don't have a selected item but list size or number of children have decreased,
 	    // Make sure we aren't scrolled too far past the current content.
 	  } else if (!hasScrollToIndex && cellCount > 0 && (size < previousSize || cellCount < previousCellsCount)) {
-	    scrollToIndex = cellCount - 1;
+	      scrollToIndex = cellCount - 1;
 
-	    var calculatedScrollOffset = cellSizeAndPositionManager.getUpdatedOffsetForIndex({
-	      containerSize: size,
-	      currentOffset: scrollOffset,
-	      targetIndex: scrollToIndex
-	    });
+	      var calculatedScrollOffset = cellSizeAndPositionManager.getUpdatedOffsetForIndex({
+	        containerSize: size,
+	        currentOffset: scrollOffset,
+	        targetIndex: scrollToIndex
+	      });
 
-	    // Only adjust the scroll position if we've scrolled below the last set of rows.
-	    if (calculatedScrollOffset < scrollOffset) {
-	      updateScrollIndexCallback(cellCount - 1);
+	      // Only adjust the scroll position if we've scrolled below the last set of rows.
+	      if (calculatedScrollOffset < scrollOffset) {
+	        updateScrollIndexCallback(cellCount - 1);
+	      }
 	    }
-	  }
 	}
 
 /***/ },
@@ -11424,12 +11427,12 @@ var ProperSearch =
 	        // If the user is no longer scrolling, don't cache cells.
 	        // This makes dynamic cell content difficult for users and would also lead to a heavier memory footprint.
 	      } else {
-	        renderedCell = cellRenderer({
-	          columnIndex: columnIndex,
-	          isScrolling: isScrolling,
-	          rowIndex: rowIndex
-	        });
-	      }
+	          renderedCell = cellRenderer({
+	            columnIndex: columnIndex,
+	            isScrolling: isScrolling,
+	            rowIndex: rowIndex
+	          });
+	        }
 
 	      if (renderedCell == null || renderedCell === false) {
 	        continue;
@@ -11546,6 +11549,7 @@ var ProperSearch =
 	 * Table component with fixed headers and virtualized rows for improved performance with large data sets.
 	 * This component expects explicit width, height, and padding parameters.
 	 */
+
 	var FlexTable = function (_Component) {
 	  _inherits(FlexTable, _Component);
 
@@ -11815,6 +11819,7 @@ var ProperSearch =
 	      var _props3 = this.props;
 	      var children = _props3.children;
 	      var onRowClick = _props3.onRowClick;
+	      var onRowDoubleClick = _props3.onRowDoubleClick;
 	      var onRowMouseOver = _props3.onRowMouseOver;
 	      var onRowMouseOut = _props3.onRowMouseOut;
 	      var rowClassName = _props3.rowClassName;
@@ -11839,13 +11844,19 @@ var ProperSearch =
 
 	      var a11yProps = {};
 
-	      if (onRowClick || onRowMouseOver || onRowMouseOut) {
+	      if (onRowClick || onRowDoubleClick || onRowMouseOver || onRowMouseOut) {
 	        a11yProps['aria-label'] = 'row';
 	        a11yProps.role = 'row';
 	        a11yProps.tabIndex = 0;
+
 	        if (onRowClick) {
 	          a11yProps.onClick = function () {
 	            return onRowClick({ index: index });
+	          };
+	        }
+	        if (onRowDoubleClick) {
+	          a11yProps.onDoubleClick = function () {
+	            return onRowDoubleClick({ index: index });
 	          };
 	        }
 	        if (onRowMouseOut) {
@@ -12032,6 +12043,12 @@ var ProperSearch =
 	  onRowClick: _react.PropTypes.func,
 
 	  /**
+	   * Callback invoked when a user double-clicks on a table row.
+	   * ({ index: number }): void
+	   */
+	  onRowDoubleClick: _react.PropTypes.func,
+
+	  /**
 	   * Callback invoked when the mouse leaves a table row.
 	   * ({ index: number }): void
 	   */
@@ -12179,6 +12196,7 @@ var ProperSearch =
 	/**
 	 * Describes the header and cell contents of a table column.
 	 */
+
 	var Column = function (_Component) {
 	  _inherits(Column, _Component);
 
@@ -12502,6 +12520,7 @@ var ProperSearch =
 	 * This component decorates a virtual component and just-in-time prefetches rows as a user scrolls.
 	 * It is intended as a convenience component; fork it if you'd like finer-grained control over data-loading.
 	 */
+
 	var InfiniteLoader = function (_Component) {
 	  _inherits(InfiniteLoader, _Component);
 
@@ -12771,6 +12790,7 @@ var ProperSearch =
 	/**
 	 * HOC that simplifies the process of synchronizing scrolling between two or more virtualized components.
 	 */
+
 	var ScrollSync = function (_Component) {
 	  _inherits(ScrollSync, _Component);
 
@@ -12913,6 +12933,7 @@ var ProperSearch =
 	 *
 	 * This component renders a virtualized list of elements with either fixed or dynamic heights.
 	 */
+
 	var VirtualScroll = function (_Component) {
 	  _inherits(VirtualScroll, _Component);
 
@@ -12989,13 +13010,6 @@ var ProperSearch =
 	    key: 'shouldComponentUpdate',
 	    value: function shouldComponentUpdate(nextProps, nextState) {
 	      return (0, _reactAddonsShallowCompare2.default)(this, nextProps, nextState);
-	    }
-	  }, {
-	    key: 'componentWillReceiveProps',
-	    value: function componentWillReceiveProps(newProps) {
-	      if (newProps.forceRecomputeRowHeights) {
-	        this.recomputeRowHeights(0);
-	      }
 	    }
 	  }, {
 	    key: '_cellRenderer',
@@ -13124,14 +13138,7 @@ var ProperSearch =
 	   */
 	  rowHeight: _react.PropTypes.oneOfType([_react.PropTypes.number, _react.PropTypes.func]).isRequired,
 
-	  /**
-	   * Force to recompute row height on component receive new props. It may be usefull when you have a
-	   * function in rowHeight property and you change internal values in that function and need's to rerender
-	   * the component with the new height getter.
-	   */
-	  forceRecomputeRowHeights: _react.PropTypes.bool,
-
-	  /** Responsible for rendering a row given an index; ({ index: number }): node */
+	  /** Responsbile for rendering a row given an index; ({ index: number }): node */
 	  rowRenderer: _react.PropTypes.func.isRequired,
 
 	  /** Optional custom CSS class for individual rows */
@@ -13249,8 +13256,9 @@ var ProperSearch =
 	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(WindowScroller).call(this, props));
 
 	    _this.state = {
-	      scrollTop: 0,
-	      height: 0
+	      isScrolling: false,
+	      height: 0,
+	      scrollTop: 0
 	    };
 
 	    _this._onScrollWindow = _this._onScrollWindow.bind(_this);
@@ -13301,6 +13309,7 @@ var ProperSearch =
 	    value: function render() {
 	      var children = this.props.children;
 	      var _state = this.state;
+	      var isScrolling = _state.isScrolling;
 	      var scrollTop = _state.scrollTop;
 	      var height = _state.height;
 
@@ -13310,6 +13319,7 @@ var ProperSearch =
 	        null,
 	        children({
 	          height: height,
+	          isScrolling: isScrolling,
 	          scrollTop: scrollTop
 	        })
 	      );
@@ -13336,6 +13346,10 @@ var ProperSearch =
 	      document.body.style.pointerEvents = this._originalBodyPointerEvents;
 
 	      this._originalBodyPointerEvents = null;
+
+	      this.setState({
+	        isScrolling: false
+	      });
 	    }
 	  }, {
 	    key: '_onResizeWindow',
@@ -13360,14 +13374,23 @@ var ProperSearch =
 
 	      var scrollTop = Math.max(0, scrollY - this._positionFromTop);
 
-	      this._setNextState({ scrollTop: scrollTop });
-
 	      if (this._originalBodyPointerEvents == null) {
 	        this._originalBodyPointerEvents = document.body.style.pointerEvents;
 
 	        document.body.style.pointerEvents = 'none';
 
 	        this._enablePointerEventsAfterDelay();
+	      }
+
+	      var state = {
+	        isScrolling: true,
+	        scrollTop: scrollTop
+	      };
+
+	      if (!this.state.isScrolling) {
+	        this.setState(state);
+	      } else {
+	        this._setNextState(state);
 	      }
 
 	      onScroll({ scrollTop: scrollTop });
