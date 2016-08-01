@@ -80,7 +80,7 @@ Check your http://localhost:8080/ or  `open http://localhost:8080/`
 * lang: Language for the component (String)
 * allowsEmptySelection: The empty string values will never be rendered into the list but if you set this prop to true then a new button will appear. When you click that button ('Select Empty') you'll get selection => [''] and the data array with all the elements that has empty values in idField or displayField
 * rowFormater: Process the data of each element of the list, it's a function that get the value, it should return the value formated. (NOTE: If the element it's a function then this prop does nothing)
-* defaultSelection: Items of the list selected by default. (React eS6 Set) Default new Set()
+* defaultSelection: Items of the list selected by default. (String or Array)
 * multiSelect: Type of the selection, multiple or single (Boolean)
 * listWidth: Custom width for the list under the search field (Integer) Default component's width.
 * listHeight: Height of the list. Default 200 (Integer)
