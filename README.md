@@ -65,8 +65,8 @@ Check your http://localhost:8080/ or  `open http://localhost:8080/`
 
 ### Component properties
 * data: List data. (Array) (You can send data as an Inmutable but it should have a similar structure to the procesed data in method prepareData() [src/search::445](https://github.com/CBIConsulting/ProperSearch/tree/dev/src/jsx/components/search.js), and in this case don't forget to send indexed and rawdata too. It's not recomended)
- 	* value: Id name. (String)
- 	* label: Name to show (String)
+ 	* value: Id field name. (String)
+ 	* label: Name of the field to be displayed (String)
 * messages: Get the translated messages of the lang selected in the property lang. Default ENG (An example can be found in src/lang)
 	* Default:
 	```javascript
@@ -77,7 +77,7 @@ Check your http://localhost:8080/ or  `open http://localhost:8080/`
 			noData:'No data found'
 		}
 	```
-* lang: Language for the messages (String)
+* lang: Language for the component (String)
 * allowsEmptySelection: The empty string values will never be rendered into the list but if you set this prop to true then a new button will appear. When you click that button ('Select Empty') you'll get selection => [''] and the data array with all the elements that has empty values in idField or displayField
 * rowFormater: Process the data of each element of the list, it's a function that get the value, it should return the value formated. (NOTE: If the element it's a function then this prop does nothing)
 * defaultSelection: Items of the list selected by default. (React eS6 Set) Default new Set()
@@ -104,7 +104,7 @@ Check your http://localhost:8080/ or  `open http://localhost:8080/`
 			}
 		}
 	```
-* afterSelectGetSelection: Function called after select a row. This one works same as afterSelec(data, selection) but this one is faster because doesn't work over data, only get selection instead
+* afterSelectGetSelection: Function called after select a row. This one works same as afterSelec(data, selection) but is faster because doesn't work over data, only get selection instead. If you are working with large amount of data and just need the id's this one is more optimal.
 	* Ex:
 	```javascript
 		afterSelectGetSelection={
@@ -120,9 +120,9 @@ Check your http://localhost:8080/ or  `open http://localhost:8080/`
 * className: ClassName for the component container (String)
 * placeholder: Placeholder for the search field (String) Default 'Search...'
 * searchIcon: ClassName for the search icon in the left of the search field (String) Default 'fa fa-search fa-fw' (FontAwesome)
-* clearIcon: ClassName for the clear icon inside the clear button in the right side of the search field. (String) Default 'fa fa-times fa-fw' (FontAwesome)
-* throttle: Time between filtering action and the next. It affects to the search field onChange method setting an timeout (Integer) Default 160
-* minLength: Min. length of the written string in the search field to start filtering. (Integer) Default 3
+* clearIcon: ClassName for the clear icon (X) in the right side of the search field. (String) Default 'fa fa-times fa-fw' (FontAwesome)
+* throttle: Time between filtering action and the next. It affects to the search input onChange method setting an timeout (Integer) Default 160
+* minLength: Min. length of the search input to start filtering. (Integer) Default 3
 * onEnter: Custom function to be called on Enter key up.
 * idField: Name of the field that will be used to build the selection. Default 'value'
 	* Ex:
@@ -138,7 +138,7 @@ Check your http://localhost:8080/ or  `open http://localhost:8080/`
 
 		Selecting Orange you ill get a selection -> [3] and data -> [{value:'3', label: 'Orange', price: '9', kg: 200}]
 	```
-* displayField: Field of the data which should be used to display in each element of the list. It can be a string or a function, just remenber to set the showIcon property to false if you are using another component and then only that component will be rendered inside each list element. Default: 'label'.
+* displayField: Field of the data which should be used to display each element of the list. It can be a string or a function, just remenber to set the showIcon property to false if you are using another component and then only that component will be rendered inside each list element. Default: 'label'.
 	* Ex:
 	```javascript
 		let buttonClick = (e, name) => {
@@ -159,13 +159,13 @@ Check your http://localhost:8080/ or  `open http://localhost:8080/`
 			...
 		/>
 	```
-* listShowIcon: Setting if the check icon on the left of each list element must be printed or not
+* listShowIcon: If the checked icon on the left of each list element must be printed or not
 * autoComplete: If the search field has autocomplete 'on' or 'off'. Default 'off'
-* defaultSearch: Set a default searching string to search when the components get mounted or this prop is updated.
+* defaultSearch: Set a default searching string to search input when the components get mounted or this prop is updated.
 * indexed: In case you want to use your own data (it has to be an Immutable obj) you must send indexed data by its idField.
 * rawdata: In case you want to use your own data (it has to be an Immutable obj) you must send raw data. (the data you'll get when someone clicks in list)
-* filterField: Field to use for filtering on search field change.
-* filter: Function used to filter on type something in the search field. By default the data will be filtered by its displayfield, if it's a function then by it's name, if it doesn't exist then by its idField. (Important: If filterField it's set up then the data will by filter by this field). Note: if you use the filter then you'll get each element of list and the search field value, then you can filter that in the way you wanted). The search value it's normalized.
+* filterField: Field used for filtering on search input change.
+* filter: Function to filter on type something in the search input. By default the data will be filtered by its displayfield, if displayfield is a function then by it's name, if name doesn't exist then by its idField. (Important: If you set filterField then the data will be filter by the field you have chosen). Note: if you use the filter then you'll get each element of list and the search input value, then you can filter that data in the way you wanted). The search value it's normalized.
 	* Ex:
 	```javascript
 	let filter = (listElement, searchValue) => {
