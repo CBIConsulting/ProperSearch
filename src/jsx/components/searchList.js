@@ -26,7 +26,7 @@ function getDefaultProps() {
 		listElementClass: null,
 		allowsEmptySelection: false,
 		hiddenSelection: null,
-		uniqueID: _.uniqueId('search_list_'),
+		uniqueID: null,
 	}
 }
 
@@ -51,13 +51,14 @@ class SearchList extends React.Component {
 		super(props);
 
 		this.state = {
-			allSelected: this.props.allSelected,
-			nothingSelected: this.props.selection.size == 0,
+			allSelected: props.allSelected,
+			nothingSelected: props.selection.size == 0,
 			hiddenSelection: new Set()
 		}
 	}
 
 	componentWillMount() {
+		this.uniqueId = this.props.uniqueID ? this.props.uniqueID : _.uniqueId('search_list_');
 		if (this.props.hiddenSelection) {
 			this.setState({
 				hiddenSelection: this.parseHiddenSelection(this.props)
@@ -353,7 +354,7 @@ class SearchList extends React.Component {
 		if (typeof element == 'function') {
 			element = element(this.props.indexedData[id]);
 		} else if (this.props.rowFormater) {
-			let ckey = ['search_list', 'list_'+ this.props.uniqueID, 'row__'+rowdata.get(this.props.idField), displayField];
+			let ckey = ['search_list', 'list_'+ this.uniqueId, 'row__'+rowdata.get(this.props.idField), displayField];
 			element = cache.read(ckey);
 
 			if (element === undefined) {
