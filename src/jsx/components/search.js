@@ -78,7 +78,7 @@ class Search extends React.Component {
 	constructor(props) {
 		super(props);
 
-		let preparedData = this.prepareData(null, this.props.idField, false, this.props.displayField);
+		let preparedData = this.prepareData(null, props.idField, false, props.displayField);
 
 		this.state = {
 			data: preparedData.data, // Data to work with (Inmutable)
@@ -86,8 +86,8 @@ class Search extends React.Component {
 			rawData: preparedData.rawdata, // Received data without any modfication (Inmutable)
 			indexedData: preparedData.indexed, // Received data indexed (No Inmutable)
 			initialIndexed: preparedData.indexed, // When data get filtered keep the full indexed
-			idField: this.props.idField, // To don't update the idField if that field doesn't exist in the fields of data array
-			displayField: this.props.displayField, // same
+			idField: props.idField, // To don't update the idField if that field doesn't exist in the fields of data array
+			displayField: props.displayField, // same
 			selection: new Set(),
 			allSelected: false,
 			selectionApplied: false, // If the selection has been aplied to the data (mostly for some cases of updating props data)
