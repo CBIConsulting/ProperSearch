@@ -191,7 +191,8 @@
     cursor: pointer;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis; }
+    text-overflow: ellipsis;
+    box-sizing: border-box; }
     .proper-search .proper-search-list .proper-search-list-virtual .proper-search-list-element.proper-search-selected i {
       color: #10AB10; }
     .proper-search .proper-search-list .proper-search-list-virtual .proper-search-list-element.proper-search-single-selected {
