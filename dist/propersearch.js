@@ -16666,11 +16666,11 @@ var ProperSearch =
 
 			var rex = null;
 
-			for (var charEl in charMap) {
-				rex = new RegExp('[' + charMap[charEl].toString() + ']', 'g');
+			for (var element in charMap) {
+				rex = new RegExp('[' + charMap[element].toString() + ']', 'g');
 
 				try {
-					value = value.replace(rex, charEl);
+					value = value.replace(rex, element);
 				} catch (e) {
 					console.log('error', value);
 				}
