@@ -15,11 +15,11 @@ export default {
 	normalize: function (value, parseToLower = true) {
 		let rex = null;
 
-		for(let charEl in charMap){
-			rex = new RegExp('[' + charMap[charEl].toString() + ']', 'g');
+		for(let element in charMap){
+			rex = new RegExp('[' + charMap[element].toString() + ']', 'g');
 
 			try{
-				value = value.replace(rex, charEl);
+				value = value.replace(rex, element);
 			} catch(e) {
 				console.log('error', value);
 			}
