@@ -8,18 +8,18 @@ const charMap =  {
 	'c': ['ç','Ç','č','Č','ć','Ć'],
 	's': ['ś','Ś','š','Š'],
 	'z': ['ź','Ź','ż','Ż'],
-	'' : ['@','#','~','$','!','º','|','"','·','%','&','¬','/','(',')','=','?','¿','¡','*','+','^','`','-','´','{','}','ç',';',':','.'],
+	'' : ['@','#','~','$','!','º','|','"','·','%','&','¬','/','(',')','=','?','¿','¡','*','+','^','`','-','´','{','}','ç',';',':','.']
 }
 
 export default {
 	normalize: function (value, parseToLower = true) {
 		let rex = null;
 
-		for(let char in charMap){
-			rex = new RegExp('[' + charMap[char].toString() + ']', 'g');
+		for(let charEl in charMap){
+			rex = new RegExp('[' + charMap[charEl].toString() + ']', 'g');
 
 			try{
-				value = value.replace(rex, char);
+				value = value.replace(rex, charEl);
 			} catch(e) {
 				console.log('error', value);
 			}
