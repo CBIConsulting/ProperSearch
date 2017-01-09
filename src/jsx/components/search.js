@@ -164,7 +164,7 @@ class Search extends React.Component {
 
 			if (idFieldChanged || displayFieldChanged) {
 				let fieldsSet = new Set(_.keys(nextProps.data[0]));
-				let messages = this.props.messages[this.props.lang];
+				let messages = this.getTranslatedMessages();
 
 				// Change idField / displayField but that field doesn't exist in the data
 				if (!fieldsSet.has(nextProps.idField) || !fieldsSet.has(nextProps.displayField)) {
@@ -379,6 +379,23 @@ class Search extends React.Component {
 
 		if (oldSize - 1 == newSize || oldSize + 1 == newSize) return true;
 		else return false;
+	}
+
+/**
+ * Get the translated messages for the component.
+ *
+ * @return object Messages of the selected language or in English if the translation for this lang doesn't exist.
+ */
+	getTranslatedMessages() {
+		if (!_.isObject(this.props.messages)) {
+			return {};
+		}
+
+		if (this.props.messages[this.props.lang]) {
+			return this.props.messages[this.props.lang];
+		}
+
+		return this.props.messages['ENG'];
 	}
 
 /**
@@ -677,7 +694,7 @@ class Search extends React.Component {
 	}
 
 	render() {
-		let messages = this.props.messages[this.props.lang],
+		let messages = this.getTranslatedMessages(),
 		content = null,
 		data = this.state.data,
 		selection = new Set(),
