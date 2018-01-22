@@ -48,7 +48,7 @@
     "imports-loader": "^0.6.5",
     "jasmine": "^2.4.1",
     "jasmine-core": "^2.4.1",
-    "jquery": "^2.2.3",
+    "jquery": "^3.0.0",
     "karma": "^0.13.22",
     "karma-chrome-launcher": "^0.2.3",
     "karma-cli": "^0.1.2",
