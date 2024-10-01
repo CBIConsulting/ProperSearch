@@ -364,7 +364,9 @@ class SearchList extends React.Component {
 		}
 
 		return (
-			<div key={'element-' + index} className={className} onClick={this.handleElementClick.bind(this, id)}>
+			<div key={'element-' + index} className={className} 
+			onClick={this.handleElementClick.bind(this, id)}  
+			title={element}>
 				{icon}
 				{element}
 			</div>
