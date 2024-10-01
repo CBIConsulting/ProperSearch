@@ -328,6 +328,19 @@ class SearchList extends React.Component {
 		className = "proper-search-list-element";
 		id = rowdata.get(this.props.idField);
 
+		const showTooltip = this.props.showTooltip && element.length > 40; 
+		const content = showTooltip ? (
+			<span 
+				className={this.props.styleTooltip || ''} 
+				style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}
+			>
+				{element}
+			</span>
+		) : (
+			<span>{element}</span>
+		);
+	
+
 		if (this.props.multiSelect) {
 			if (showIcon) {
 				if (rowdata.get('_selected', false)) {
@@ -366,7 +379,7 @@ class SearchList extends React.Component {
 		return (
 			<div key={'element-' + index} className={className} onClick={this.handleElementClick.bind(this, id)}>
 				{icon}
-				{element}
+				{content}
 			</div>
 		);
 	}
